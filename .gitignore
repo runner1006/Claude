@@ -16,3 +16,5 @@ rlm_test/
 rlm_ids.txt
 ids.txt
 saison*/
+players.csv
+players_cache.json
