@@ -1,0 +1,12 @@
+# Output of the scraper
+out/
+
+# Reference / debug downloads (Anubis client JS, etc.)
+ref/
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
