@@ -10,3 +10,9 @@ ref/
 # Python
 __pycache__/
 *.pyc
+
+# Test-/Arbeitsausgaben
+rlm_test/
+rlm_ids.txt
+ids.txt
+saison*/

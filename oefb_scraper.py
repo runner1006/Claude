@@ -397,7 +397,7 @@ def _classify_event_type(text: str) -> str | None:
 _DISPLAY_NONE_RE = re.compile(
     r"display\s*:\s*none|visibility\s*:\s*hidden|font-size\s*:\s*0", re.I
 )
-_PRELOAD_RE = re.compile(r"appPreloads\['?\d+'?\]\s*=\s*")
+_PRELOAD_RE = re.compile(r"appPreloads\['?-?\d+'?\]\s*=\s*")
 
 
 def _cell(node) -> str:
