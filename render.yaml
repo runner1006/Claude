@@ -1,0 +1,20 @@
+# render.com Blueprint — statische Auslieferung des Dashboards.
+# In render.com: "New +" -> "Blueprint" -> dieses Repo wählen.
+# Es ist kein Build noetig; alle Dateien (Dashboard, JS, data/) werden direkt
+# statisch ausgeliefert. Die Seite ruft data/matches.json + data/players.csv
+# per fetch ab (gleiche Origin), daher funktioniert es ohne Backend.
+services:
+  - type: web
+    name: oefb-dashboard
+    runtime: static
+    buildCommand: "echo 'no build needed'"
+    staticPublishPath: .
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: "no-cache"
+    routes:
+      # Saubere Root-URL: / liefert das Dashboard direkt aus.
+      - type: rewrite
+        source: /
+        destination: /dashboard.html

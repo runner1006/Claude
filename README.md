@@ -1,71 +1,89 @@
-# OEFB Spielbericht-Scraper
+# ÖFB Daten-Dashboard & Scraper
 
-Scrapt Spielberichte des ÖFB aus der Druckansicht:
+Toolkit, um Spielberichte des österreichischen Fußballbundes (oefb.at / STFV) zu
+scrapen und in einem interaktiven, eigenständigen HTML-Dashboard auszuwerten —
+inklusive Spieler-Alter, Spielminuten und Filtern. Online deploybar als Static
+Site (z. B. render.com).
 
+## Live-Dashboard (Deployment)
+
+Das Dashboard ist eine **einzelne HTML-Datei** ohne Backend. Es lädt
+`data/matches.json` und `data/players.csv` per `fetch` von derselben Origin.
+
+### render.com (Blueprint)
+
+1. Repo auf GitHub pushen (siehe unten).
+2. In render.com: **New +** → **Blueprint** → dieses Repo wählen.
+3. `render.yaml` wird erkannt → Static Site ohne Build, `/` zeigt das Dashboard.
+
+Alternativ manuell als **Static Site**: Build Command leer, Publish Directory `.`.
+
+> Funktioniert genauso auf GitHub Pages, Netlify oder Cloudflare Pages — es sind
+> reine statische Dateien.
+
+### Lokal ansehen
+
+```bash
+python3 -m http.server 8000      # im Repo-Verzeichnis
+# -> http://localhost:8000/dashboard.html
 ```
-https://www.oefb.at/Spiel/Druck/<SPIEL_ID>/
-```
 
-Beispiel-ID: `3855332`
+## Dashboard-Funktionen
 
-## Installation
+- **Matches** — filter-/sortierbare Spielliste; aufklappbares Detail mit beiden
+  Aufstellungen (Alter + Spielminuten pro Spieler), Toren, Karten, Wechseln.
+- **Spieler** — pro Spieler aggregiert (Gesamt-Minuten/-Tore/-Spiele), Alter,
+  Verein, Bewerb; Profil-Verlinkung.
+- **Statistik** — Ø Alter & Ø Minuten je Verein / Bewerb / Kategorie / Position /
+  Rolle / Jahrgang, sortierbar, mit Balken.
+- **Filter** in einer Sidebar (Tabelle immer sichtbar): Multiselect-Dropdowns,
+  Ja/Nein, und **Histogramm-Dual-Slider** (Dichtediagramm) mit manueller Eingabe.
+  Kategorie-Filter trennt **Jugend** (U18) von **Erwachsenen**-Ligen.
+
+Die Dichte-Slider stecken in der wiederverwendbaren Komponente
+[`histogram-range.js`](histogram-range.js) (`HistogramRange({values, scale, …})`).
+
+## Datenpipeline (3 Schritte)
 
 ```bash
 pip install -r requirements.txt
+
+# 1) Spiel-IDs eines Bewerbs sammeln (Liga finden: --list)
+python collect_ids.py --list
+python collect_ids.py --bewerb 226374 --rounds 1-4 -o data/all_ids.txt
+
+# 2) Spielberichte scrapen -> data/matches.json (+ CSVs)
+python oefb_scraper.py --ids-file data/all_ids.txt --delay 1.0 --out-dir data
+
+# 3) Spieler-Alter + Spielminuten -> data/players.csv (Cache: nur neue laden)
+python player_ages.py --ids-file data/all_ids.txt -o data/players.csv \
+       --cache players_cache.json
 ```
 
-## Verwendung
+### Die drei Skripte
 
-```bash
-# Einzelnes Spiel
-python oefb_scraper.py --ids 3855332
+| Skript | Zweck |
+|--------|-------|
+| `collect_ids.py` | Findet Spiel-IDs eines Bewerbs über die Datenservice-REST-API. `--list` zeigt alle Bewerbe. |
+| `oefb_scraper.py` | Scrapt Spielberichte (löst den Anubis-Bot-Schutz per Proof-of-Work, parst die eingebettete Aufstellung/Events). Schreibt `matches.json` + CSVs. |
+| `player_ages.py` | Holt je Spieler Geburtsjahr (→ Alter) und berechnet Spielminuten aus der Wechsel-Timeline. Cacht Geburtsdaten (`has_age` / `partition_ids`), sodass bei neuen Runden nur neue Spieler geladen werden. |
 
-# ID-Bereich (inklusive)
-python oefb_scraper.py --id-range 3855330 3855340 --delay 1.5
+## Datenstand
 
-# IDs aus Datei (eine pro Zeile, '#' = Kommentar)
-python oefb_scraper.py --ids-file ids.txt --format both --out-dir ergebnisse
+Aktuell enthalten (`data/`): 7 Bewerbe der Saison 2025/26, je 4 Runden —
+Regionalliga Mitte, Landesliga Steiermark, Oberliga Nord / Mitte-West / Süd-Ost,
+ÖFB Jugendliga U18 und Jugendregionalliga U18 (≈ 200 Spiele, ≈ 2.000 Spieler).
 
-# Roh-HTML zur Selektor-Anpassung mitspeichern
-python oefb_scraper.py --ids 3855332 --save-html
-```
+### Neue Daten erzeugen
 
-### Wichtige Optionen
-
-| Option | Beschreibung | Default |
-|--------|--------------|---------|
-| `--ids ID [ID ...]` | Einzelne Spiel-IDs | – |
-| `--id-range START END` | ID-Bereich (inklusive) | – |
-| `--ids-file DATEI` | Datei mit IDs | – |
-| `--out-dir` | Zielverzeichnis | `out` |
-| `--format` | `json` \| `csv` \| `both` | `both` |
-| `--save-html` | Roh-HTML je Spiel speichern | aus |
-| `--delay` | Pause zwischen Anfragen (s) | `1.0` |
-| `--retries` | Versuche pro Spiel | `4` |
-| `--backoff` | Backoff-Basis (s, exponentiell) | `2.0` |
-
-## Ausgabe
-
-- **`matches.json`** – vollständige, verschachtelte Daten (Aufstellungen, Ereignisse etc.)
-- **`matches.csv`** – eine Zeile pro Spiel (Grunddaten, Teams, Ergebnis, Trainer)
-- **`events.csv`** – eine Zeile pro Ereignis (Tore, Karten, Wechsel)
-- **`lineups.csv`** – eine Zeile pro Spieler
-
-## ⚠️ Selektoren anpassen
-
-Die CSS-Selektoren sind **heuristisch** gesetzt (label-basiert + Tabellen-Fallbacks),
-weil das echte HTML der Seite beim Erstellen nicht abrufbar war. Vorgehen:
-
-1. Einmal mit `--save-html` laufen lassen und `out/html/<id>.html` ansehen.
-2. In `oefb_scraper.py` den Block `SELECTORS` mit den echten CSS-Selektoren füllen
-   und bei Bedarf die Funktionen unter `# PARSER` feinjustieren.
-
-Die spezifischen Selektoren greifen vor den Heuristiken – die Heuristiken bleiben
-als Fallback aktiv.
+`collect_ids.py --bewerb <ID> --rounds <a-b>` für weitere Ligen/Runden, dann
+Schritte 2 + 3. IDs in `data/all_ids.txt` zusammenführen (dedupliziert), erneut
+scrapen und `player_ages.py` laufen lassen — der Cache lädt nur neue Profile.
 
 ## Hinweise
 
-- Bitte fair scrapen: `--delay` nicht auf 0 setzen, Server nicht überlasten.
-- `robots.txt` und Nutzungsbedingungen von oefb.at beachten.
-- Nicht existierende IDs (HTTP 404) werden übersprungen und in der Ausgabe als
-  `ok=false` markiert.
+- Fair scrapen: `--delay` nicht auf 0 setzen, Nutzungsbedingungen von oefb.at
+  beachten. Nicht existierende IDs werden übersprungen (`ok=false`).
+- Geburtsdaten sind öffentlich nur als **Jahr** hinterlegt (Tag = 1.1.); das Alter
+  ist daher jahresbasiert (±1 Jahr). Fehlende Daten (`geburtsdatum=0`) werden als
+  *unbekannt* behandelt, nicht als Jahrgang 1970.

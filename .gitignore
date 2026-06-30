@@ -1,20 +1,24 @@
-# Output of the scraper
-out/
-
-# Reference / debug downloads (Anubis client JS, etc.)
-ref/
-
-# macOS
+# macOS / editors
 .DS_Store
 
 # Python
 __pycache__/
 *.pyc
 
-# Test-/Arbeitsausgaben
-rlm_test/
-rlm_ids.txt
-ids.txt
-saison*/
-players.csv
-players_cache.json
+# Scraper artifacts not needed for deployment (large raw HTML dumps & logs)
+out/
+ref/
+data/html/
+*.log
+
+# Local working / test outputs (root-level only — the deployed data lives in data/)
+/players.csv
+/rlm_test/
+/rlm_ids.txt
+/steiermark_ids.txt
+/ids.txt
+/saison*/
+
+# Keep for deployment:
+#   data/matches.json, data/players.csv, data/all_ids.txt, players_cache.json,
+#   dashboard.html, index.html, histogram-range.js, *.py, render.yaml
