@@ -19,6 +19,11 @@ data/html/
 /ids.txt
 /saison*/
 
+# Grosser Profil-Cache (regenerierbar; die deployten Rohdaten liegen in
+# data/players_profiles.json)
+/data/profiles_cache.json
+
 # Keep for deployment:
-#   data/matches.json, data/players.csv, data/all_ids.txt, players_cache.json,
-#   dashboard.html, index.html, histogram-range.js, *.py, render.yaml
+#   data/matches.json, data/players.csv, data/players_profiles.json,
+#   data/all_ids.txt, dashboard.html, index.html, histogram-range.js,
+#   *.py, render.yaml

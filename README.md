@@ -48,31 +48,52 @@ Die Dichte-Slider stecken in der wiederverwendbaren Komponente
 ```bash
 pip install -r requirements.txt
 
-# 1) Spiel-IDs eines Bewerbs sammeln (Liga finden: --list)
-python collect_ids.py --list
+# 1) Spiel-IDs sammeln
+#    a) einzelner Bewerb, bestimmte Runden (Liga finden: --list):
 python collect_ids.py --bewerb 226374 --rounds 1-4 -o data/all_ids.txt
+#    b) volle Saison aller aktuell enthaltenen 7 Ligen:
+python collect_all.py -o data/all_ids.txt
 
 # 2) Spielberichte scrapen -> data/matches.json (+ CSVs)
 python oefb_scraper.py --ids-file data/all_ids.txt --delay 1.0 --out-dir data
 
-# 3) Spieler-Alter + Spielminuten -> data/players.csv (Cache: nur neue laden)
+# 3) Spieler-Profile + Alter + Spielminuten -> data/players.csv
+#    (+ data/players_profiles.json; Cache: nur neue Profile laden)
 python player_ages.py --ids-file data/all_ids.txt -o data/players.csv \
-       --cache players_cache.json
+       --cache data/profiles_cache.json --delay 0.5
 ```
 
-### Die drei Skripte
+### Die Skripte
 
 | Skript | Zweck |
 |--------|-------|
 | `collect_ids.py` | Findet Spiel-IDs eines Bewerbs über die Datenservice-REST-API. `--list` zeigt alle Bewerbe. |
+| `collect_all.py` | Sammelt die **volle Saison** aller 7 aktuell enthaltenen Ligen (feste Bewerb-IDs) dedupliziert in eine ID-Datei. |
 | `oefb_scraper.py` | Scrapt Spielberichte (löst den Anubis-Bot-Schutz per Proof-of-Work, parst die eingebettete Aufstellung/Events). Schreibt `matches.json` + CSVs. |
-| `player_ages.py` | Holt je Spieler Geburtsjahr (→ Alter) und berechnet Spielminuten aus der Wechsel-Timeline. Cacht Geburtsdaten (`has_age` / `partition_ids`), sodass bei neuen Runden nur neue Spieler geladen werden. |
+| `player_ages.py` | Holt je Spieler das **volle Profil** (`parse_profile`) → Alter, Nationalität, Verein, Größe/Gewicht, Karriere-Vereine, Karriere-Statistik, Erfolge, Foto … und berechnet Spielminuten aus der Wechsel-Timeline. Skalare Felder → `players.csv`, reiche Rohdaten → `players_profiles.json`. Cacht ganze Profile, sodass nur neue Spieler geladen werden. |
+
+### Spieler-Profilfelder (neu in `players.csv`)
+
+Zusätzlich zu `birth_year`/`age`/`minutes`/`goals`: `nationalitaet`, `verband`
+(Landesverband-Kürzel), `profil_verein`, `groesse`, `gewicht`, `nachwuchs`,
+`blueCards`, `foto_url`, `erstes_spiel`, `letztes_spiel`, `anzahl_vereine`,
+`bewerbe_aktuell` sowie die Karrieresummen `karriere_spiele`, `karriere_tore`,
+`karriere_minuten`, `karriere_siege/unentschieden/niederlagen`,
+`karriere_gelbe/gelbrote/rote`. Die verschachtelten Rohdaten (Karriere-Vereine,
+Statistik je Kategorie, Erfolge, Bewerbe) stehen je Spieler in
+`data/players_profiles.json`.
 
 ## Datenstand
 
-Aktuell enthalten (`data/`): 7 Bewerbe der Saison 2025/26, je 4 Runden —
-Regionalliga Mitte, Landesliga Steiermark, Oberliga Nord / Mitte-West / Süd-Ost,
-ÖFB Jugendliga U18 und Jugendregionalliga U18 (≈ 200 Spiele, ≈ 2.000 Spieler).
+Aktuell enthalten (`data/`): 7 Bewerbe der Saison 2025/26, **komplette Saison** —
+Regionalliga Mitte (30 Runden), Landesliga Steiermark (30), Oberliga Nord /
+Mitte-West / Süd-Ost (je 26), ÖFB Jugendliga U18 (22) und Jugendregionalliga U18
+(26); zusammen ≈ 1.300 Spiele. Je Spieler inkl. vollem Profil (Nationalität,
+Verein, Karriere-Statistik, Erfolge …).
+
+Bewerb-IDs: Regionalliga Mitte `226374`, Landesliga Steiermark `226282`,
+Oberliga Nord `226273`, Oberliga Mitte West `226278`, Oberliga Süd Ost `226272`,
+ÖFB Jugendliga U18 `227230`, ÖFB Jugendregionalliga U18 `227253`.
 
 ### Neue Daten erzeugen
 
