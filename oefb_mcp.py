@@ -17,10 +17,19 @@ import sqlite3
 
 from mcp.server.fastmcp import FastMCP
 
+try:  # Host-Check des Streamable-HTTP-Transports lockern (Auth macht der
+    # Bearer-Token in server/app.py; hinter Render-Proxy stimmt der Host nie)
+    from mcp.server.transport_security import TransportSecuritySettings
+    _TS = {"transport_security": TransportSecuritySettings(
+        allowed_hosts=["*"], allowed_origins=["*"])}
+except ImportError:  # aeltere SDK-Version ohne Host-Check
+    _TS = {}
+
 DB = os.environ.get("OEFB_DB", os.path.join(os.path.dirname(__file__), "data", "oefb.sqlite"))
 
 mcp = FastMCP(
     "oefb",
+    **_TS,
     instructions=(
         "Datenbank des österreichischen Fußballs (oefb.at-Scrape): 10.990+ Spiele "
         "(Bundesland-Landesligen, Regionalligen, Oberligen, ÖFB-Jugendligen U15/U16/U18, "
