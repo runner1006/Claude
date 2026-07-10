@@ -21,7 +21,7 @@ try:  # Host-Check des Streamable-HTTP-Transports lockern (Auth macht der
     # Bearer-Token in server/app.py; hinter Render-Proxy stimmt der Host nie)
     from mcp.server.transport_security import TransportSecuritySettings
     _TS = {"transport_security": TransportSecuritySettings(
-        allowed_hosts=["*"], allowed_origins=["*"])}
+        enable_dns_rebinding_protection=False)}
 except ImportError:  # aeltere SDK-Version ohne Host-Check
     _TS = {}
 
