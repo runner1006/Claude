@@ -1,20 +1,21 @@
-# render.com Blueprint — statische Auslieferung des Dashboards.
-# In render.com: "New +" -> "Blueprint" -> dieses Repo wählen.
-# Es ist kein Build noetig; alle Dateien (Dashboard, JS, data/) werden direkt
-# statisch ausgeliefert. Die Seite ruft data/matches.json + data/players.csv
-# per fetch ab (gleiche Origin), daher funktioniert es ohne Backend.
 services:
   - type: web
-    name: oefb-dashboard
-    runtime: static
-    buildCommand: "echo 'no build needed'"
-    staticPublishPath: .
-    headers:
-      - path: /*
-        name: Cache-Control
-        value: "no-cache"
-    routes:
-      # Saubere Root-URL: / liefert das Dashboard direkt aus.
-      - type: rewrite
-        source: /
-        destination: /dashboard.html
+    name: oefb-daten
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements-server.txt
+    startCommand: uvicorn server.app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    disk:
+      name: oefb-data
+      mountPath: /var/data
+      sizeGB: 2
+    envVars:
+      - key: OEFB_DATA_DIR
+        value: /var/data
+      - key: PYTHON_VERSION
+        value: 3.12.6
+      - key: ADMIN_TOKEN
+        sync: false
+      - key: MCP_TOKEN
+        sync: false

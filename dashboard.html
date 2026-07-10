@@ -108,6 +108,97 @@
   .ms-opt{display:flex;align-items:center;gap:8px;padding:5px 7px;border-radius:6px;font-size:13px;cursor:pointer}
   .ms-opt:hover{background:var(--panel)}
   .ms-opt input{accent-color:var(--accent);flex:none}
+  /* ---- Methodik / Erklärung ---- */
+  .explain{max-width:1000px;margin:0 auto;line-height:1.65}
+  .explain .lead{color:var(--muted);font-size:15px;margin:2px 0 8px}
+  .explain .lead b{color:var(--text)}
+  .explain .cite{font-size:12px;color:var(--muted);margin:0 0 26px}
+  .step{display:grid;grid-template-columns:42px 1fr;gap:16px;margin:0 0 34px}
+  .step .n{width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;
+        display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex:none}
+  .step h3{margin:3px 0 8px;font-size:17px}
+  .step .body{min-width:0}
+  .step p{margin:6px 0}
+  .viz{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:14px 0}
+  .viz svg{display:block;width:100%;height:auto;overflow:visible}
+  .legend{display:flex;flex-wrap:wrap;gap:16px;font-size:12px;color:var(--muted);margin-top:12px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:12px;height:12px;border-radius:3px;display:inline-block;flex:none}
+  .eq{font-family:"Cambria Math","Latin Modern Math","Times New Roman",Georgia,serif;
+        font-size:18px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+        padding:16px;margin:14px 0;overflow-x:auto;text-align:center;white-space:nowrap}
+  .eq small{font-size:12px;color:var(--muted);display:block;white-space:normal;margin-top:6px;
+        font-family:-apple-system,sans-serif;text-align:center}
+  .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 4px;font-size:14px}
+  .frac .den{border-top:1px solid currentColor;padding-top:1px}
+  .big{font-size:24px;vertical-align:-4px;margin:0 2px}
+  .t-off{color:#3fb950}
+  .t-def{color:#f0836b}
+  .t-hfa{color:#4c8bf5}
+  .t-man{color:#d8a12a}
+  .t-reg{color:#c98bc0}
+  .note{border-left:3px solid var(--accent);background:var(--panel);padding:11px 14px;
+        border-radius:0 8px 8px 0;margin:14px 0;font-size:13px;color:var(--muted)}
+  .note b{color:var(--text)}
+  /* ---- Spielerprofil ---- */
+  .plink{color:var(--accent2);cursor:pointer}
+  .plink:hover{text-decoration:underline}
+  .pf{max-width:1100px;margin:0 auto}
+  .pf-search{position:relative;max-width:420px;margin-bottom:18px}
+  .pf-sug{position:absolute;top:100%;left:0;right:0;z-index:8;background:var(--panel2);
+        border:1px solid var(--line);border-radius:9px;margin-top:4px;max-height:280px;overflow:auto}
+  .pf-sug:empty{display:none}
+  .pf-sug div{padding:7px 11px;cursor:pointer;font-size:13px}
+  .pf-sug div:hover{background:var(--panel)}
+  .pf-sug small{color:var(--muted)}
+  .pf-head{display:flex;gap:18px;align-items:flex-start;background:var(--panel);
+        border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px;flex-wrap:wrap}
+  .pf-foto{width:84px;height:84px;border-radius:12px;object-fit:cover;background:var(--panel2);flex:none}
+  .pf-foto.ph{display:flex;align-items:center;justify-content:center;font-size:34px;color:var(--muted)}
+  .pf-id{flex:1;min-width:220px}
+  .pf-id h2{margin:0 0 4px;font-size:20px}
+  .pf-meta{color:var(--muted);font-size:13px;line-height:1.7}
+  .pf-meta b{color:var(--text)}
+  .pf-badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .badge{font-size:12px;padding:3px 10px;border-radius:20px;background:var(--panel2);
+        border:1px solid var(--line);color:var(--muted)}
+  .badge b{color:var(--text)}
+  .badge.hl{border-color:var(--good);color:var(--good)}
+  .badge.hl b{color:var(--good)}
+  .pf-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+  .pf-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+  .pf-card .v{font-size:21px;font-weight:700;font-variant-numeric:tabular-nums}
+  .pf-card .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
+  .pf-splitbar{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:10px 0 6px}
+  .pf-splitbar div{height:100%}
+  .pf h3{margin:22px 0 10px;font-size:15px}
+  .pf h3 small{color:var(--muted);font-weight:400;font-size:12px}
+  .cat-j{color:#d29922}.cat-e{color:#4c8bf5}
+  .pf-empty{color:var(--muted);font-size:13px;padding:8px 0}
+  .pm-pos{color:var(--good)}.pm-neg{color:#f0836b}
+  .res{display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;border-radius:5px;
+       font-size:11px;font-weight:700;margin-left:7px;vertical-align:1px}
+  .res-S{background:#1c3a24;color:var(--good)}
+  .res-N{background:#3d1f1c;color:#f0836b}
+  .res-U{background:var(--panel2);color:var(--muted)}
+  .bench{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+        padding:10px 14px;margin-top:12px}
+  .bench table{font-size:12px;border-collapse:collapse;width:auto;min-width:340px}
+  .bench td{padding:3px 12px 3px 0;border:none;vertical-align:middle}
+  .bench .barbg{width:110px}
+  .bench .lab{color:var(--muted)}
+  .bench .lab.good{color:var(--good)}
+  .bench .expl{font-size:11px;color:var(--muted);margin-top:7px}
+  .pf-card .sub{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.45}
+  .pf-card .sub b{color:var(--text)}
+  .copybtn{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:8px;
+        padding:3px 9px;font-size:12px;cursor:pointer;vertical-align:2px;white-space:nowrap}
+  .copybtn:hover{border-color:var(--accent2);color:var(--text)}
+  .copybtn.big{padding:8px 14px;font-size:13px;flex:none;align-self:flex-start;margin-left:auto}
+  .symtab{font-size:13px;border-collapse:collapse;margin:8px 0}
+  .symtab td{padding:3px 12px 3px 0;border:none;vertical-align:top}
+  .symtab td:first-child{font-family:"Cambria Math",Georgia,serif;color:var(--text);white-space:nowrap}
+  @media(max-width:760px){.step{grid-template-columns:1fr}.step .n{margin-bottom:-10px}}
 </style>
 </head>
 <body>
@@ -115,24 +206,33 @@
   <h1>⚽ ÖFB Dashboard <small>lokale Auswertung</small></h1>
   <label class="drop" id="dropM">📄 <b>matches.json</b> laden<input type="file" accept=".json" hidden id="fileM"></label>
   <label class="drop" id="dropP">👥 <b>players.csv</b> laden<input type="file" accept=".csv" hidden id="fileP"></label>
+  <label class="drop" id="dropR">📊 <b>ratings.csv</b> laden<input type="file" accept=".csv" hidden id="fileR"></label>
   <span class="pill" id="pillM">keine Matches</span>
   <span class="pill" id="pillP">keine Spieler</span>
+  <span class="pill" id="pillR">keine Ratings</span>
 </header>
 <nav>
   <button data-tab="matches" class="active">Matches</button>
   <button data-tab="players">Spieler</button>
+  <button data-tab="profile">Profil</button>
+  <button data-tab="ratings">Ratings</button>
+  <button data-tab="explain">Methodik</button>
   <button data-tab="stats">Statistik</button>
 </nav>
 <main>
   <section id="tab-matches"></section>
   <section id="tab-players" hidden></section>
+  <section id="tab-profile" hidden></section>
+  <section id="tab-ratings" hidden></section>
+  <section id="tab-explain" hidden></section>
   <section id="tab-stats" hidden></section>
 </main>
 
 <script src="histogram-range.js"></script>
 <script>
 "use strict";
-const state = { matches: [], players: [], sortM:{k:"date",dir:1}, sortP:{k:"age",dir:-1}, sortS:{k:"avg",dir:-1}, open:null };
+const state = { matches: [], players: [], ratings: [], sortM:{k:"date",dir:1}, sortP:{k:"age",dir:-1}, sortS:{k:"avg",dir:-1}, sortR:{k:"total",dir:-1}, open:null,
+  profileKey:null, extras:null, extrasLoading:false };
 
 /* ---------- helpers ---------- */
 const $ = s => document.querySelector(s);
@@ -170,17 +270,21 @@ wireDrop("dropM","fileM",txt=>{ try{ state.matches=JSON.parse(txt);
 wireDrop("dropP","fileP",txt=>{ state.players=parseCSV(txt);
   $("#pillP").textContent=state.players.length+" Spieler-Zeilen"; $("#pillP").classList.add("on");
   renderPlayers(); renderMatches(); renderStats(); });
+wireDrop("dropR","fileR",txt=>{ state.ratings=parseCSV(txt);
+  $("#pillR").textContent=state.ratings.length+" Ratings"; $("#pillR").classList.add("on");
+  renderRatings(); });
 
 /* auto-load if served over http(s) from same dir */
 async function tryAuto(url,onText){ if(location.protocol==="file:")return;
   try{const r=await fetch(url); if(r.ok)onText(await r.text());}catch(e){} }
 
 /* ---------- tabs ---------- */
-document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>{
-  document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
-  b.classList.add("active");
-  for(const t of ["matches","players","stats"]) $("#tab-"+t).hidden = (t!==b.dataset.tab);
-}));
+const TABS=["matches","players","profile","ratings","explain","stats"];
+function switchTab(tab){
+  document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("active",x.dataset.tab===tab));
+  for(const t of TABS) $("#tab-"+t).hidden = (t!==tab);
+}
+document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
 
 /* ---------- generic filter framework ---------- */
 function uniqueVals(rows,get){
@@ -463,10 +567,10 @@ function renderPlayers(){
     fb.count.textContent=`${rows.length} Spieler${unknown?` · ${unknown} ohne Alter`:""}`;
     tb.innerHTML="";
     for(const p of rows){
-      const prof=p.player_id?`https://www.oefb.at/Profile/Spieler/${p.player_id}`:null;
+      const nameEl=el("span",{class:"plink",title:"Profil öffnen"},esc(p.name));
+      nameEl.onclick=()=>openProfile(p.player_id,p.name);
       tb.append(el("tr",{},
-        el("td",{},prof?el("a",{class:"ext",href:prof,target:"_blank"},esc(p.name)):esc(p.name),
-                 p.captain?el("span",{class:"cap"}," ©"):""),
+        el("td",{},nameEl,p.captain?el("span",{class:"cap"}," ©"):""),
         el("td",{},esc(p.team)),
         el("td",{},el("span",{class:"tag"},esc(p.comp))),
         el("td",{class:"num"},p.age!==""?p.age+"J":"—"),
@@ -542,6 +646,894 @@ function renderStats(){
   draw();
 }
 
+/* ---------- RATINGS (Plus-Minus / Talent) ---------- */
+const splitList=s=>esc(s).split(" / ").filter(Boolean);
+const fmtRat=v=>(v===""||v==null||isNaN(+v))?"—":((+v>=0?"+":"")+(+v).toFixed(3));
+function renderRatings(){
+  const sec=$("#tab-ratings"); sec.innerHTML="";
+  if(!state.ratings.length){ sec.append(emptyMsg("ratings.csv",
+    "Lade deine <code>ratings.csv</code> (aus <code>plusminus.py</code>).")); return; }
+  const {side,content}=tabScaffold(sec);
+  const rowsAll=state.ratings;                       // ratings.csv ist schon 1 Zeile je Spieler
+  const compOpts=[...new Set(rowsAll.flatMap(p=>splitList(p.competitions)))].sort((a,b)=>a.localeCompare(b,"de"));
+  const teamOpts=[...new Set(rowsAll.flatMap(p=>splitList(p.teams)))].sort((a,b)=>a.localeCompare(b,"de"));
+  const anyIn=(v,set)=>(Array.isArray(v)?v:[v]).some(x=>set.includes(x));
+  const fb=makeFilterBar(side,rowsAll,[
+    {key:"name",type:"text",label:"Name",placeholder:"Spieler suchen…",get:p=>p.name},
+    {key:"cat",type:"select",label:"Kategorie",options:["Erwachsen","Jugend"],get:p=>leagueCat(p.competitions)},
+    {key:"comp",type:"select",label:"Bewerb",options:compOpts,test:(p,v)=>anyIn(v,splitList(p.competitions))},
+    {key:"team",type:"select",label:"Verein",options:teamOpts,test:(p,v)=>anyIn(v,splitList(p.teams))},
+    {key:"jg",type:"range",label:"Jahrgang",get:p=>p.birth_year===""?NaN:+p.birth_year,scale:"quantile"},
+    {key:"age",type:"range",label:"Alter",get:p=>p.age===""?NaN:+p.age,min:10},
+    {key:"min",type:"range",label:"Minuten",get:p=>+p.minutes||0,format:v=>v+"'",scale:"quantile"},
+    {key:"total",type:"range",label:"Total-Rating",get:p=>+p.total,step:0.01,format:v=>(+v).toFixed(2)},
+    {key:"peak",type:"range",label:"Peak-Rating",get:p=>+p.peak,step:0.01,format:v=>(+v).toFixed(2)},
+    {key:"tal",type:"range",label:"Talent-Perzentil (0=Top)",get:p=>p.pct_talent===""?NaN:+p.pct_talent,format:v=>(+v).toFixed(0)+"%"},
+  ],draw);
+
+  const cols=[["name","Name"],["birth_year","Jg."],["teams","Verein"],["competitions","Bewerb"],
+              ["minutes","Min."],["matches","Sp."],["off","Off"],["def","Def"],
+              ["total","Total"],["peak","Peak"],["pct_talent","Talent %"]];
+  const nums=new Set(["birth_year","minutes","matches","off","def","total","peak","pct_talent","age"]);
+  const table=el("table"),thead=el("tr");
+  cols.forEach(([k,l])=>{const th=el("th",{},l);
+    th.onclick=()=>{state.sortR.dir=state.sortR.k===k?-state.sortR.dir:1;state.sortR.k=k;draw();};thead.append(th);});
+  table.append(el("thead",{},thead)); const tb=el("tbody"); table.append(tb);
+  content.append(el("div",{class:"content-head"},fb.count),table);
+
+  function draw(){
+    let rows=fb.apply(rowsAll);
+    const k=state.sortR.k,d=state.sortR.dir;
+    rows.sort((a,b)=>{
+      if(nums.has(k)){ let va=(a[k]===""||a[k]==null)?NaN:+a[k], vb=(b[k]===""||b[k]==null)?NaN:+b[k];
+        const an=isNaN(va),bn=isNaN(vb);
+        if(an&&bn)return 0; if(an)return 1; if(bn)return -1;   // Unbekannte ans Ende
+        return (va-vb)*d; }
+      const va=norm(a[k]),vb=norm(b[k]); return (va>vb?1:va<vb?-1:0)*d;});
+    fb.count.textContent=`${rows.length} / ${rowsAll.length} Spieler`;
+    tb.innerHTML="";
+    for(const p of rows){
+      const tal=p.pct_talent!==""&&!isNaN(+p.pct_talent);
+      const nameEl=el("span",{class:"plink",title:"Profil öffnen"},esc(p.name));
+      nameEl.onclick=()=>openProfile(p.player_id,p.name);
+      tb.append(el("tr",{},
+        el("td",{},nameEl),
+        el("td",{class:"num"},esc(p.birth_year)),
+        el("td",{},esc(p.teams)),
+        el("td",{},el("span",{class:"tag"},esc(p.competitions))),
+        el("td",{class:"num"},(+p.minutes||0)+"'"),
+        el("td",{class:"num"},esc(p.matches)),
+        el("td",{class:"num"},fmtRat(p.off)),
+        el("td",{class:"num"},fmtRat(p.def)),
+        el("td",{class:"num",style:"font-weight:600"},fmtRat(p.total)),
+        el("td",{class:"num"},fmtRat(p.peak)),
+        el("td",{class:"num",style:tal&&+p.pct_talent<=20?"color:var(--good);font-weight:600":""},
+          tal?(+p.pct_talent).toFixed(1):"—")));
+    }
+  }
+  draw();
+}
+
+/* ---------- SPIELERPROFIL ---------- */
+let _aggCache=null,_aggN=-1,_matchMap=null,_matchN=-1;
+function aggList(){ if(_aggN!==state.players.length){_aggCache=aggregatePlayers(state.players,compMapFromMatches());_aggN=state.players.length;} return _aggCache; }
+function matchMap(){ if(_matchN!==state.matches.length){_matchMap={};state.matches.forEach(m=>_matchMap[String(m.match_id)]=m);_matchN=state.matches.length;} return _matchMap; }
+function dIso(d){const m=/(\d{2})\.(\d{2})\.(\d{4})/.exec(d||"");return m?`${m[3]}-${m[2]}-${m[1]}`:"";}
+function seasonOf(d){const m=/(\d{2})\.(\d{2})\.(\d{4})/.exec(d||"");if(!m)return "?";
+  const yy=+m[3],mm=+m[2];return mm<7?`${yy-1}/${String(yy).slice(2)}`:`${yy}/${String(yy+1).slice(2)}`;}
+function fmtPM(v,dec=0){const n=+v;return (n>0?"+":"")+n.toFixed(dec);}
+function pmClass(v){return +v>0?"pm-pos":(+v<0?"pm-neg":"");}
+
+/* Text in die Zwischenablage kopieren; kurzes Erfolgs-Feedback am Button */
+function copyText(txt,btn){
+  const done=()=>{ if(!btn)return; const old=btn.textContent; btn.textContent="✓ kopiert";
+    setTimeout(()=>{btn.textContent=old;},1500); };
+  const fallback=()=>{ try{
+      const ta=document.createElement("textarea"); ta.value=txt;
+      ta.style.position="fixed"; ta.style.opacity="0";
+      (document.body||document.documentElement).appendChild(ta);
+      ta.select(); document.execCommand("copy"); ta.remove();
+    }catch(e){} done(); };
+  if(typeof navigator!=="undefined"&&navigator.clipboard&&navigator.clipboard.writeText)
+    navigator.clipboard.writeText(txt).then(done,fallback);
+  else fallback();
+}
+function openProfile(pid,name){
+  pid=pid&&!String(pid).startsWith("name::")?String(pid):null;
+  state.profileKey={pid,name:name||""};
+  switchTab("profile"); loadExtras(); renderProfile();
+  window.scrollTo(0,0);
+}
+function loadExtras(){
+  if(state.extras||state.extrasLoading)return; state.extrasLoading=true;
+  tryAuto("data/player_extras.json",t=>{try{state.extras=JSON.parse(t); if(state.profileKey)renderProfile();}catch(e){}});
+}
+function profileRows(key){
+  if(!key)return [];
+  if(key.pid)return state.players.filter(p=>p.player_id===key.pid);
+  const nn=norm(key.name);
+  return state.players.filter(p=>!p.player_id&&norm(p.name)===nn);
+}
+/* Roh-+/- eines Spielers in einem Match: Tore fuer/gegen waehrend Anwesenheit.
+   pm=null, wenn die Tor-Timeline unvollstaendig ist (weniger Tor-Events mit
+   Minute als der Score verlangt) — solche Spiele fliegen aus allen
+   +/--Aggregaten, statt faelschlich als 0 zu zaehlen. */
+function rawPM(m,side,on,off){
+  const expected=(+m.score_home||0)+(+m.score_away||0);
+  let gf=0,ga=0,cnt=0;
+  for(const e of (m.events||[])){
+    if(e.type!=="goal")continue;
+    const mm=parseInt(e.minute,10); if(isNaN(mm))continue;
+    cnt++;
+    if(mm<on||mm>off)continue;
+    if(e.team===side)gf++; else if(e.team==="home"||e.team==="away")ga++;
+  }
+  if(expected>0&&cnt<expected)return {gf:null,ga:null,pm:null};
+  return {gf,ga,pm:gf-ga};
+}
+/* Alle Einsaetze des Spielers, chronologisch, mit Kontext */
+function playerGames(rows){
+  const mm=matchMap(),out=[];
+  for(const p of rows){
+    const m=mm[String(p.match_id)]; if(!m)continue;
+    const mins=+p.minutes||0; if(mins<=0)continue;
+    const on=+p.on||0, off=(p.off===""||p.off==null)?90:+p.off;
+    const {gf,ga,pm}=rawPM(m,p.side,on,off);
+    // Endstand aus Team-Perspektive (sf = eigene Tore) + Sieg/Unentschieden/Niederlage
+    const sh=+m.score_home||0, sa2=+m.score_away||0;
+    const sf=p.side==="home"?sh:sa2, sg=p.side==="home"?sa2:sh;
+    out.push({iso:dIso(m.date),date:m.date,season:seasonOf(m.date),comp:m.competition||"",
+      cat:leagueCat(m.competition),team:p.team,opp:p.side==="home"?m.away_team:m.home_team,
+      ha:p.side==="home"?"H":"A",score:m.score||"",sf,sg,res:sf>sg?"S":(sf<sg?"N":"U"),
+      min:mins,on,off:(p.off===""||p.off==null)?null:+p.off,
+      goals:+p.goals||0,gf,ga,pm,pos:p.position,role:p.role});
+  }
+  out.sort((a,b)=>a.iso<b.iso?-1:a.iso>b.iso?1:0);
+  return out;
+}
+/* SVG: +/- je Match + minutengewichteter Running Average (Fenster 5) */
+function drawPMChart(host,games){
+  const W=920,H=280,L=44,R=14,T=18,B=46,n=games.length;
+  const xs=i=>n>1?L+i*(W-L-R)/(n-1):(L+(W-L-R)/2);
+  const vals=games.map(g=>g.pm);
+  let lo=Math.min(-1,...vals),hi=Math.max(1,...vals);
+  const Y=v=>T+(hi-v)/(hi-lo)*(H-T-B);
+  const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Plus-Minus-Verlauf"});
+  // y-Gitter
+  for(let v=Math.ceil(lo);v<=Math.floor(hi);v++){
+    s.append(sv("line",{x1:L,y1:Y(v),x2:W-R,y2:Y(v),stroke:v===0?"#2a313d":"#ffffff08",
+      "stroke-width":v===0?1.5:1}));
+    s.append(sv("text",{x:L-7,y:Y(v)+4,"text-anchor":"end",fill:"#9aa4b2","font-size":10},fmtPM(v)));
+  }
+  // Saisongrenzen
+  let lastSeason=null;
+  games.forEach((g,i)=>{ if(g.season!==lastSeason){
+    if(lastSeason!==null)s.append(sv("line",{x1:xs(i)-3,y1:T,x2:xs(i)-3,y2:H-B,stroke:"#b16286","stroke-width":1,"stroke-dasharray":"3 4"}));
+    s.append(sv("text",{x:xs(i),y:H-B+16,"text-anchor":"start",fill:"#b16286","font-size":10},g.season));
+    lastSeason=g.season; }});
+  // Running Average (minutengewichtet, Fenster 5)
+  const WIN=5,pts=[];
+  for(let i=0;i<n;i++){
+    let sw=0,sv2=0;
+    for(let j=Math.max(0,i-WIN+1);j<=i;j++){sw+=games[j].min;sv2+=games[j].pm*games[j].min;}
+    pts.push(`${xs(i)},${Y(sw?sv2/sw:0)}`);
+  }
+  s.append(sv("polyline",{points:pts.join(" "),fill:"none",stroke:"#3fb950","stroke-width":2.2,"stroke-linejoin":"round"}));
+  // Punkte je Match
+  games.forEach((g,i)=>{
+    const c=g.cat==="Jugend"?"#d29922":"#4c8bf5";
+    const dot=sv("circle",{cx:xs(i),cy:Y(g.pm),r:2.2+2.6*Math.min(1,g.min/90),
+      fill:c,"fill-opacity":.35+.6*Math.min(1,g.min/90),stroke:c,"stroke-width":.8});
+    dot.append(sv("title",{},`${g.date} ${g.ha==="H"?"vs":"@"} ${g.opp} (${g.sf}:${g.sg} ${g.res})\n${g.comp} · ${g.min}′ · +/- ${fmtPM(g.pm)}`));
+    s.append(dot);
+  });
+  s.append(sv("text",{x:L,y:12,fill:"#9aa4b2","font-size":10},"Tordifferenz während Einsatzzeit, je Spiel"));
+  host.append(s);
+  host.append(el("div",{class:"legend"},
+    el("span",{},el("span",{class:"sw",style:"background:#d29922"}),"Jugend-Bewerb"),
+    el("span",{},el("span",{class:"sw",style:"background:#4c8bf5"}),"Erwachsenen-Bewerb"),
+    el("span",{},el("span",{class:"sw",style:"background:#3fb950"}),"Running Average (5 Spiele, minutengewichtet)"),
+    el("span",{},"Punktgröße = Spielminuten")));
+}
+/* Kohorten-Zeitreihen (kumuliertes roh +/- pro 90) je Geburtsjahrgang, gecacht.
+   cat = "Jugend"/"Erwachsen" beschraenkt auf diese Bewerbs-Kategorie (fairer
+   Vergleich); Spiele ohne verlaessliches +/- (pm=null) werden ausgelassen. */
+let _cohortCache={};
+function cohortSeries(by,cat){
+  const key=String(by)+"|"+(cat||"alle");
+  if(_cohortCache[key])return _cohortCache[key];
+  const byr=String(by);
+  const rowsBy=new Map();
+  for(const p of state.players){
+    if(p.birth_year!==byr||!p.player_id)continue;
+    if(!rowsBy.has(p.player_id))rowsBy.set(p.player_id,[]);
+    rowsBy.get(p.player_id).push(p);
+  }
+  const series=[];
+  rowsBy.forEach(rows=>{
+    const gs=playerGames(rows); if(!gs.length)return;
+    let cm=0,cp=0; const arr=[];
+    gs.forEach(g=>{
+      if(g.pm==null)return;               // unvollstaendige Timeline -> auslassen
+      if(cat&&g.cat!==cat)return;         // andere Bewerbs-Kategorie -> auslassen
+      cm+=g.min;cp+=g.pm;arr.push({iso:g.iso,cumMin:cm,cumPm90:cm?cp/cm*90:0});});
+    if(arr.length)series.push(arr);
+  });
+  _cohortCache[key]=series; return series;
+}
+/* Werte aller Kohorten-Spieler (cumPm90) zum Stichtag; nur >= minMin kumulierte Minuten */
+function cohortValsAt(series,iso,minMin){
+  const vals=[];
+  for(const arr of series){
+    let last=null;
+    for(const pt of arr){ if(pt.iso<=iso)last=pt; else break; }
+    if(last&&last.cumMin>=(minMin||270))vals.push(last.cumPm90);
+  }
+  return vals;
+}
+function quantile(vals,q){
+  if(!vals.length)return null;
+  const v=[...vals].sort((a,b)=>a-b), idx=(v.length-1)*q,
+        lo=Math.floor(idx), hi=Math.ceil(idx);
+  return v[lo]+(v[hi]-v[lo])*(idx-lo);
+}
+/* Rating-Benchmark: sortierte Verteilungen aller Spieler mit >= 270 Min. (gecacht) */
+let _ratBench=null,_ratBenchN=-1;
+function ratBench(){
+  if(_ratBenchN!==state.ratings.length){
+    const rows=state.ratings.filter(r=>(+r.minutes||0)>=270);
+    _ratBench={n:rows.length};
+    ["off","def","total","peak"].forEach(k=>{
+      _ratBench[k]=rows.map(r=>+r[k]).filter(v=>!isNaN(v)).sort((a,b)=>a-b);
+    });
+    _ratBenchN=state.ratings.length;
+  }
+  return _ratBench;
+}
+function pctIn(sorted,v){ /* Anteil mit hoeherem Wert -> 0 = bester */
+  if(!sorted||!sorted.length)return null;
+  let lo=0,hi=sorted.length;
+  while(lo<hi){const mid=(lo+hi)>>1; if(sorted[mid]<=v)lo=mid+1; else hi=mid;}
+  return 100*(sorted.length-lo)/sorted.length;
+}
+function pctLabel(p){return p<=5?"herausragend":p<=20?"stark":p<=40?"überdurchschnittlich":
+  p<=60?"durchschnittlich":p<=80?"unterdurchschnittlich":"schwach";}
+
+/* Jugend-/Erwachsenen-Minuten aller Kohorten-Spieler eines Jahrgangs (gecacht) */
+let _minSplitCache={};
+function cohortMinSplit(by){
+  const key=String(by);
+  if(_minSplitCache[key])return _minSplitCache[key];
+  const mm=matchMap(),per=new Map();
+  for(const p of state.players){
+    if(p.birth_year!==key||!p.player_id)continue;
+    const m=mm[String(p.match_id)]; if(!m)continue;
+    const mins=+p.minutes||0; if(mins<=0)continue;
+    let o=per.get(p.player_id);
+    if(!o){o={j:0,e:0,g:0};per.set(p.player_id,o);}
+    if(leagueCat(m.competition)==="Jugend")o.j+=mins; else o.e+=mins;
+    o.g++;
+  }
+  const arr=[...per.values()];
+  _minSplitCache[key]=arr; return arr;
+}
+
+/* SVG: kumuliertes +/- pro 90 des Spielers + mitlaufende Jahrgangs-Referenzlinien.
+   `games` muss bereits auf pm!=null gefiltert sein. cat = Bewerbs-Kategorie der
+   Referenz (dominante Kategorie des Spielers) fuer einen fairen Vergleich. */
+function drawCumChart(host,games,birthYear,cat){
+  const W=920,H=300,L=48,R=130,T=18,B=46,n=games.length,MINM=270,COHMIN=20;
+  const xs=i=>n>1?L+i*(W-L-R)/(n-1):(L+(W-L-R)/2);
+  // Spieler-Kumulation
+  let cm=0,cp=0;
+  const cum=games.map(g=>{cm+=g.min;cp+=g.pm;return {v:cm?cp/cm*90:0,min:cm};});
+  // Kohorten-Linien (Top-20 % = 0.8-Quantil, Median) je Match-Datum
+  const series=birthYear?cohortSeries(birthYear,cat):[];
+  const th=[],med=[]; let cohortOk=false;
+  games.forEach(g=>{
+    const vals=cohortValsAt(series,g.iso,MINM);
+    if(vals.length>=COHMIN){cohortOk=true;th.push(quantile(vals,0.8));med.push(quantile(vals,0.5));}
+    else {th.push(null);med.push(null);}
+  });
+  // y-Bereich NUR aus dem stabilen Teil (>= MINM kumulierte Minuten) + Referenzen;
+  // der verrauschte Anfang wird geclippt statt die Skala zu sprengen.
+  const solidStart=cum.findIndex(c=>c.min>=MINM);
+  const stable=(solidStart===-1?cum:cum.slice(solidStart)).map(c=>c.v);
+  const all=[...(stable.length?stable:cum.map(c=>c.v)),
+             ...th.filter(v=>v!=null),...med.filter(v=>v!=null),0];
+  let lo=Math.min(...all),hi=Math.max(...all);
+  const pad=Math.max(.25,(hi-lo)*.18); lo-=pad; hi+=pad;
+  const clip=v=>Math.max(lo+0.02*(hi-lo),Math.min(hi-0.02*(hi-lo),v));
+  const Y=v=>T+(hi-v)/(hi-lo)*(H-T-B);
+  const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Kumuliertes Plus-Minus"});
+  // Gitter mit "nice" Schrittweite (ca. 4-7 Linien)
+  const niceSteps=[0.1,0.2,0.25,0.5,1,2,5];
+  const step=niceSteps.find(st=>(hi-lo)/st<=7)||5;
+  for(let v=Math.ceil(lo/step)*step;v<=hi+1e-9;v+=step){
+    const yy=Y(v);
+    s.append(sv("line",{x1:L,y1:yy,x2:W-R,y2:yy,stroke:Math.abs(v)<1e-9?"#2a313d":"#ffffff08","stroke-width":Math.abs(v)<1e-9?1.5:1}));
+    s.append(sv("text",{x:L-7,y:yy+4,"text-anchor":"end",fill:"#9aa4b2","font-size":10},fmtPM(v,step<0.25?2:1)));
+  }
+  // Saisongrenzen
+  let lastSeason=null;
+  games.forEach((g,i)=>{ if(g.season!==lastSeason){
+    if(lastSeason!==null)s.append(sv("line",{x1:xs(i)-3,y1:T,x2:xs(i)-3,y2:H-B,stroke:"#b16286","stroke-width":1,"stroke-dasharray":"3 4"}));
+    s.append(sv("text",{x:xs(i),y:H-B+16,"text-anchor":"start",fill:"#b16286","font-size":10},g.season));
+    lastSeason=g.season; }});
+  // Kohorten-Linien
+  const path=(vals)=>vals.map((v,i)=>v==null?null:`${xs(i)},${Y(clip(v))}`).filter(Boolean).join(" ");
+  // rechte Rand-Labels sammeln und Kollisionen aufloesen
+  const rlabels=[];
+  if(cohortOk){
+    if(med.some(v=>v!=null))s.append(sv("polyline",{points:path(med),fill:"none",stroke:"#9aa4b2","stroke-width":1.2,"stroke-dasharray":"2 4"}));
+    if(th.some(v=>v!=null))s.append(sv("polyline",{points:path(th),fill:"none",stroke:"#d8a12a","stroke-width":2,"stroke-dasharray":"7 4"}));
+    const li=th.map((v,i)=>v!=null?i:null).filter(v=>v!=null).pop();
+    const mi=med.map((v,i)=>v!=null?i:null).filter(v=>v!=null).pop();
+    if(li!=null)rlabels.push({y:Y(clip(th[li])),txt:`Top 20 % Jg. ${birthYear}`,fill:"#d8a12a",size:10});
+    if(mi!=null)rlabels.push({y:Y(clip(med[mi])),txt:"Median",fill:"#9aa4b2",size:10});
+  }
+  // Spieler-Linie: gepunktet solange < MINM kumulierte Minuten, danach durchgezogen
+  const seg=(a,b)=>games.slice(a,b+1).map((g,k)=>`${xs(a+k)},${Y(clip(cum[a+k].v))}`).join(" ");
+  if(solidStart!==0){
+    const end=solidStart===-1?n-1:solidStart;
+    s.append(sv("polyline",{points:seg(0,end),fill:"none",stroke:"#3fb950","stroke-width":2.4,"stroke-dasharray":"2 5","stroke-linejoin":"round"}));
+  }
+  if(solidStart!==-1)
+    s.append(sv("polyline",{points:seg(solidStart,n-1),fill:"none",stroke:"#3fb950","stroke-width":2.6,"stroke-linejoin":"round"}));
+  // Endwert + Roh-Perzentil
+  const fv=cum[n-1].v;
+  s.append(sv("circle",{cx:xs(n-1),cy:Y(clip(fv)),r:4,fill:"#3fb950"}));
+  let pct=null;
+  if(cohortOk){
+    const vals=cohortValsAt(series,games[n-1].iso,MINM);
+    if(vals.length>=COHMIN)pct=100*vals.filter(v=>v>fv).length/vals.length;
+  }
+  rlabels.push({y:Y(clip(fv))-4,txt:fmtPM(fv,2)+"/90"+(pct!=null?` · P${pct.toFixed(0)}`:""),
+    fill:pct!=null&&pct<=20?"#3fb950":"#e6e9ef",size:12,bold:true});
+  // Kollisionen: von oben nach unten mindestens 13px Abstand erzwingen
+  rlabels.sort((a,b)=>a.y-b.y);
+  for(let i=1;i<rlabels.length;i++)
+    if(rlabels[i].y-rlabels[i-1].y<13)rlabels[i].y=rlabels[i-1].y+13;
+  rlabels.forEach(lb=>s.append(sv("text",{x:W-R+8,y:lb.y+4,fill:lb.fill,"font-size":lb.size,
+    "font-weight":lb.bold?"600":"400"},lb.txt)));
+  s.append(sv("text",{x:L,y:12,fill:"#9aa4b2","font-size":10},"kumulierte Tordifferenz pro 90 Minuten (minutengewichtet)"));
+  host.append(s);
+  const catLab=cat?` (${cat==="Jugend"?"Jugend":"Erwachsenen"}-Bewerbe)`:"";
+  host.append(el("div",{class:"legend"},
+    el("span",{},el("span",{class:"sw",style:"background:#3fb950"}),"Spieler kumuliert (gepunktet: < 270 Min., noch verrauscht; Anfang ggf. geclippt)"),
+    el("span",{},el("span",{class:"sw",style:"background:#d8a12a"}),`Top-20-%-Schwelle Jg.${birthYear?" "+birthYear:""}${catLab}, roh, ≥ 270 Min.`),
+    el("span",{},el("span",{class:"sw",style:"background:#9aa4b2"}),"Jahrgangs-Median"+catLab)));
+  if(!cohortOk)host.append(el("div",{class:"pf-empty"},birthYear?
+    "Zu wenige Jahrgangs-Spieler mit ≥ 270 Minuten für Referenzlinien.":"Kein Geburtsjahr bekannt — keine Jahrgangs-Referenz."));
+  return pct;
+}
+function renderProfile(){
+  const sec=$("#tab-profile"); sec.innerHTML="";
+  const wrap=el("div",{class:"pf"}); sec.append(wrap);
+  // --- Suche ---
+  const search=el("input",{type:"search",class:"fctl",placeholder:"Spieler suchen…"});
+  const sug=el("div",{class:"pf-sug"});
+  const sbox=el("div",{class:"pf-search"},search,sug);
+  wrap.append(sbox);
+  search.oninput=()=>{
+    sug.innerHTML=""; const q=norm(search.value); if(q.length<2)return;
+    const hits=aggList().filter(p=>norm(p.name).includes(q)).slice(0,20);
+    hits.forEach(p=>{
+      const row=el("div",{},`${p.name} `,el("small",{},`${p.birth_year?("Jg. "+p.birth_year+" · "):""}${p.team}`));
+      row.onclick=()=>{openProfile(p.player_id,p.name);};
+      sug.append(row);
+    });
+  };
+  if(!state.players.length){wrap.append(emptyMsg("players.csv","Lade <code>players.csv</code> und <code>matches.json</code>, dann Spieler suchen oder in Spieler/Ratings anklicken."));return;}
+  const key=state.profileKey;
+  if(!key){wrap.append(el("div",{class:"pf-empty"},"Spieler suchen – oder in den Tabs Spieler/Ratings einen Namen anklicken."));return;}
+  const rows=profileRows(key);
+  if(!rows.length){wrap.append(el("div",{class:"pf-empty"},"Keine Daten zu diesem Spieler gefunden."));return;}
+  const r0=rows.find(r=>r.foto_url||r.nationalitaet)||rows[0];
+  const games=playerGames(rows);
+  const rat=key.pid?state.ratings.find(r=>String(r.player_id)===key.pid):null;
+
+  // --- Kopf ---
+  const head=el("div",{class:"pf-head"});
+  if(r0.foto_url){ const img=el("img",{class:"pf-foto",src:r0.foto_url,alt:""});
+    img.onerror=()=>{img.replaceWith(el("div",{class:"pf-foto ph"},"👤"));}; head.append(img); }
+  else head.append(el("div",{class:"pf-foto ph"},"👤"));
+  const meta=[];
+  if(r0.birth_year)meta.push(`Jahrgang <b>${esc(r0.birth_year)}</b>${r0.age?` (${esc(r0.age)} J.)`:""}`);
+  if(r0.nationalitaet)meta.push(`Nationalität <b>${esc(r0.nationalitaet)}</b>`);
+  if(r0.verband)meta.push(`Verband <b>${esc(r0.verband)}</b>`);
+  if(r0.profil_verein)meta.push(`Verein <b>${esc(r0.profil_verein)}</b>`);
+  if(r0.erstes_spiel)meta.push(`erstes Spiel <b>${esc(r0.erstes_spiel)}</b>`);
+  if(r0.anzahl_vereine)meta.push(`${esc(r0.anzahl_vereine)} Vereine`);
+  const nameCopy=el("button",{class:"copybtn",title:"Namen kopieren"},"⧉");
+  nameCopy.onclick=()=>copyText(r0.name,nameCopy);
+  const idBox=el("div",{class:"pf-id"},
+    el("h2",{},esc(r0.name)," ",
+      key.pid?el("a",{class:"ext",href:`https://www.oefb.at/Profile/Spieler/${key.pid}`,target:"_blank",style:"font-size:13px"},"↗ ÖFB"):"",
+      " ",nameCopy),
+    el("div",{class:"pf-meta",html:meta.join(" · ")}));
+  const badges=el("div",{class:"pf-badges"});
+  if(+r0.karriere_spiele)badges.append(el("span",{class:"badge"},"Karriere: ",el("b",{},esc(r0.karriere_spiele))," Spiele · ",el("b",{},esc(r0.karriere_tore))," Tore · ",el("b",{},String(Math.round(+r0.karriere_minuten/90)))," Spiele-Äquiv."));
+  if(+r0.karriere_gelbe||+r0.karriere_rote)badges.append(el("span",{class:"badge"},`🟨 ${esc(r0.karriere_gelbe||0)} · 🟥 ${+r0.karriere_rote+ +r0.karriere_gelbrote||0}`));
+  if(rat&&rat.pct_talent!==""&&!isNaN(+rat.pct_talent))
+    badges.append(el("span",{class:"badge"+(+rat.pct_talent<=20?" hl":"")},"Talent-Perzentil ",el("b",{},(+rat.pct_talent).toFixed(1)+" %")," (Jahrgang, Peak+Minuten)"));
+  idBox.append(badges);
+  // Rating-Einordnung: Wert + Perzentil-Balken + Verbal-Label je Dimension
+  if(rat){
+    const b=ratBench(), tb2=el("tbody"); let nrows=0;
+    [["Offensiv","off",2,"Beitrag zu eigenen Toren"],
+     ["Defensiv","def",2,"Verhinderung von Gegentoren"],
+     ["Total","total",3,"Off + Def"],
+     ["Peak","peak",3,"aufs Leistungshoch projiziert"]].forEach(([lab,k,dec,hint])=>{
+      const v=+rat[k], p=pctIn(b[k],v);
+      if(p==null||isNaN(v))return;
+      nrows++;
+      tb2.append(el("tr",{},
+        el("td",{},lab),
+        el("td",{class:"num",style:"font-weight:600"},fmtPM(v,dec)),
+        el("td",{},el("div",{class:"barbg"},el("div",{class:"bar",style:`width:${Math.max(2,100-p)}%`}))),
+        el("td",{class:"num",style:p<=20?"color:var(--good);font-weight:600":""},"P"+p.toFixed(0)),
+        el("td",{class:"lab"+(p<=20?" good":"")},pctLabel(p)),
+        el("td",{class:"lab"},hint)));
+    });
+    if(nrows){
+      const panel=el("div",{class:"bench"},el("table",{},tb2),
+        el("div",{class:"expl"},`P = Perzentil unter allen ${b.n} Spielern mit ≥ 270 Min. im Datensatz (0 = bester). `+
+          `Off ≈ Beitrag zu eigenen Toren/90, Def ≈ Verhinderung von Gegentoren/90 — mitspieler- und gegner-adjustiert: `+
+          `ein starker Def-Wert bedeutet, mit ihm am Feld kassieren seine Teams deutlich weniger, als Mitspieler und Gegner erwarten ließen.`));
+      idBox.append(panel);
+    }
+  }
+  head.append(idBox);
+  const aiBtn=el("button",{class:"copybtn big",title:"Prompt mit allen Profildaten für eine KI-Zusammenfassung kopieren"},"🤖 KI-Prompt kopieren");
+  head.append(aiBtn);
+  wrap.append(head);
+
+  // --- Minuten-Split Nachwuchs / Erwachsene (+ Jahrgangs-Vergleich) ---
+  const minJ=games.filter(g=>g.cat==="Jugend").reduce((s,g)=>s+g.min,0);
+  const minE=games.filter(g=>g.cat==="Erwachsen").reduce((s,g)=>s+g.min,0);
+  const tot=minJ+minE;
+  const split=r0.birth_year?cohortMinSplit(r0.birth_year):[];
+  let subJ="",subE="",subG="";
+  if(split.length>=20){
+    const jg=r0.birth_year, n=split.length;
+    if(minE>0){
+      const fewer=split.filter(o=>o.e<minE).length;
+      subE=`mehr Herren-Minuten als <b>${(100*fewer/n).toFixed(0)} %</b> des Jg. ${jg}`;
+    } else {
+      const zero=split.filter(o=>o.e===0).length;
+      subE=`wie <b>${(100*zero/n).toFixed(0)} %</b> des Jg. ${jg}: noch 0′ bei den Erwachsenen`;
+    }
+    const fewerJ=split.filter(o=>o.j<minJ).length;
+    subJ=`mehr als <b>${(100*fewerJ/n).toFixed(0)} %</b> des Jahrgangs`;
+    subG=`Ø Jahrgang: <b>${(split.reduce((s,o)=>s+o.g,0)/n).toFixed(0)}</b> Einsätze`;
+  }
+  const card=(val,cls,label,sub)=>{const c=el("div",{class:"pf-card"},
+    el("div",{class:"v"+(cls?" "+cls:"")},val),el("div",{class:"l"},label));
+    if(sub)c.append(el("div",{class:"sub",html:sub})); return c;};
+  const cards=el("div",{class:"pf-cards"},
+    card(minJ+"′","cat-j","Minuten Nachwuchs",subJ),
+    card(minE+"′","cat-e","Minuten Erwachsene",subE),
+    card(String(games.length),"","Einsätze (im Datensatz)",subG),
+    card(String(games.reduce((s,g)=>s+g.goals,0)),"","Tore (im Datensatz)",""));
+  wrap.append(cards);
+  if(tot>0){
+    wrap.append(el("div",{class:"pf-splitbar"},
+      el("div",{style:`width:${100*minJ/tot}%;background:#d29922`}),
+      el("div",{style:`width:${100*minE/tot}%;background:#4c8bf5`})));
+    wrap.append(el("div",{class:"meta"},`Nachwuchs ${(100*minJ/tot).toFixed(0)} % · Erwachsene ${(100*minE/tot).toFixed(0)} % — Basis: gescrapte Bewerbe seit 2023/24`));
+  }
+
+  // --- Saison-Tabelle (Spiele ohne verlaessliche Tor-Timeline: nicht im +/-) ---
+  const vgames=games.filter(g=>g.pm!=null);
+  const nExcl=games.length-vgames.length;
+  wrap.append(el("h3",{},"Saisonen ",el("small",{},"(aus den gescrapten Bewerben; roh +/- = Tordifferenz während Einsatzzeit)")));
+  const bySea=new Map();
+  games.forEach(g=>{ if(!bySea.has(g.season))bySea.set(g.season,{games:0,min:0,goals:0,pm:0,pmMin:0,pmGames:0,teams:new Set(),comps:new Set()});
+    const o=bySea.get(g.season); o.games++;o.min+=g.min;o.goals+=g.goals;
+    if(g.pm!=null){o.pm+=g.pm;o.pmMin+=g.min;o.pmGames++;}
+    o.teams.add(g.team);o.comps.add(g.comp);});
+  const st=el("table"),stb=el("tbody");
+  st.append(el("thead",{},el("tr",{},...["Saison","Team","Bewerb","Spiele","Minuten","Tore","+/-","+/- pro 90"].map((h,i)=>el("th",{style:"position:static;"+(i>2?"text-align:right":"")},h)))));
+  const seaRow=(sea,o,bold)=>{
+    const pm90=o.pmMin?o.pm/o.pmMin*90:null;
+    return el("tr",{style:bold?"font-weight:600;border-top:2px solid var(--line)":""},
+      el("td",{},sea),el("td",{},bold?"":[...o.teams].join(", ")),
+      el("td",{},...(bold?[]:[...o.comps].map(c=>el("span",{class:"tag",style:"margin-right:4px"},c)))),
+      el("td",{class:"num"},String(o.games)),el("td",{class:"num"},o.min+"′"),
+      el("td",{class:"num"},String(o.goals)),
+      el("td",{class:"num "+(o.pmGames?pmClass(o.pm):"")},o.pmGames?fmtPM(o.pm):"—"),
+      el("td",{class:"num "+(pm90!=null?pmClass(pm90):"")},pm90!=null?fmtPM(pm90,2):"—"));
+  };
+  [...bySea.entries()].sort((a,b)=>a[0]<b[0]?1:-1).forEach(([sea,o])=>stb.append(seaRow(sea,o)));
+  // Gesamt-Zeile = identisch mit dem Endwert des Akkumulations-Charts
+  const tot0={games:games.length,min:games.reduce((s,g)=>s+g.min,0),
+    goals:games.reduce((s,g)=>s+g.goals,0),pm:vgames.reduce((s,g)=>s+g.pm,0),
+    pmMin:vgames.reduce((s,g)=>s+g.min,0),pmGames:vgames.length,teams:new Set(),comps:new Set()};
+  stb.append(seaRow("Gesamt",tot0,true));
+  st.append(stb); wrap.append(st);
+  if(nExcl>0)wrap.append(el("div",{class:"pf-empty"},
+    `${nExcl} Einsatz${nExcl>1?"e":""} ohne vollständige Tor-Minuten in der Quelle — nicht im +/- enthalten (Minuten/Tore zählen trotzdem).`));
+
+  // --- +/- akkumuliert (Haupt-Chart; Referenz = dominante Bewerbs-Kategorie) ---
+  const domCat=tot>0?(minE>=minJ?"Erwachsen":"Jugend"):null;
+  let cumPct=null;
+  wrap.append(el("h3",{},"Plus-Minus akkumuliert ",el("small",{},"— mit Top-20-%-Schwelle des Jahrgangs")));
+  if(vgames.length>=2){ const viz=el("div",{class:"viz"}); cumPct=drawCumChart(viz,vgames,r0.birth_year||null,domCat); wrap.append(viz);
+    wrap.append(el("div",{class:"note",html:"<b>Lesehilfe:</b> Die grüne Linie ist das <b>kumulierte rohe +/- pro 90</b> — sie stabilisiert sich mit wachsender Spielzeit. Die goldene Linie ist die <b>Top-20-%-Schwelle des Geburtsjahrgangs</b> (gleiche Roh-Metrik, nur Spieler mit ≥ 270 Min.): liegt die grüne Linie darüber, gehört der Spieler nach rohem +/- zu den Top 20 % seines Jahrgangs. Achtung: roh = <b>nicht</b> gegner-adjustiert — das Modell-Rating oben (Badge, inkl. Talent-Perzentil) adjustiert für Mit- und Gegenspieler. Weichen beide ab, lohnt der Blick in die Match-Tabelle (Gegner, Bewerb, Liga-Level)."}));
+  } else wrap.append(el("div",{class:"pf-empty"},"Zu wenige Einsätze für einen Verlauf."));
+
+  // --- Match-Kontext ---
+  wrap.append(el("h3",{},"Alle Einsätze ",el("small",{},`(${games.length})`)));
+  const mt=el("table"),mtb=el("tbody");
+  mt.append(el("thead",{},el("tr",{},...["Datum","Bewerb","Team","","Gegner","Ergebnis","Min.","Tore","+/-"].map((h,i)=>el("th",{style:"position:static;"+(i>5?"text-align:right":"")},h)))));
+  [...games].reverse().forEach(g=>{
+    mtb.append(el("tr",{},
+      el("td",{},g.date),el("td",{},el("span",{class:"tag "+(g.cat==="Jugend"?"cat-j":"cat-e")},g.comp)),
+      el("td",{},g.team),el("td",{style:"color:var(--muted)"},g.ha),
+      el("td",{},g.opp),
+      el("td",{class:"score",title:"Original (Heim:Gast): "+g.score},`${g.sf}:${g.sg}`,el("span",{class:"res res-"+g.res},g.res)),
+      el("td",{class:"num",title:g.on||g.off!=null?`${g.on||0}′–${g.off==null?90:g.off}′`:""},g.min+"′"),
+      el("td",{class:"num"},g.goals?String(g.goals):"·"),
+      el("td",{class:"num "+(g.pm!=null?pmClass(g.pm):""),
+        title:g.pm==null?"Tor-Minuten in der Quelle unvollständig":""},
+        g.pm!=null?fmtPM(g.pm):"—")));
+  });
+  mt.append(mtb); wrap.append(mt);
+
+  // --- Vereins-Historie & Erfolge (extras, lazy) ---
+  const ex=key.pid&&state.extras?state.extras[key.pid]:null;
+  if(ex&&(ex.v||[]).length){
+    wrap.append(el("h3",{},"Vereins-Historie ",el("small",{},"(ÖFB-Profil, gesamte Karriere)")));
+    const vt=el("table"),vtb=el("tbody");
+    vt.append(el("thead",{},el("tr",{},...["ab","Verein",""].map(h=>el("th",{style:"position:static"},h)))));
+    [...ex.v].sort((a,b)=>(b[1]||0)-(a[1]||0)).forEach(v=>{
+      const d=v[1]?new Date(v[1]).toLocaleDateString("de-AT",{year:"numeric",month:"short"}):"—";
+      vtb.append(el("tr",{},el("td",{class:"num",style:"white-space:nowrap"},d),el("td",{},esc(v[0])),
+        el("td",{style:"color:var(--muted)"},v[2]&&v[2]!=="at"?String(v[2]).toUpperCase():"")));
+    });
+    vt.append(vtb); wrap.append(vt);
+  }
+  if(ex&&(ex.e||[]).length){
+    wrap.append(el("h3",{},"Saison-Historie ",el("small",{},"(ÖFB-Profil: Kader & Platzierungen, gesamte Karriere)")));
+    const et=el("table"),etb=el("tbody");
+    et.append(el("thead",{},el("tr",{},...["Saison","Verein","Kategorie","Platzierung"].map(h=>el("th",{style:"position:static"},h)))));
+    [...ex.e].sort((a,b)=>String(b[0]).localeCompare(String(a[0]))).forEach(e2=>{
+      etb.append(el("tr",{},el("td",{},esc(e2[0])),el("td",{},esc(e2[1])),
+        el("td",{},el("span",{class:"tag"},esc(e2[2]))),el("td",{},esc(e2[3]))));
+    });
+    et.append(etb); wrap.append(et);
+  }
+  if(key.pid&&!state.extras&&!location.protocol.startsWith("file"))
+    wrap.append(el("div",{class:"pf-empty"},"Vereins-/Saison-Historie lädt…"));
+
+  // --- Detail-Chart (Rohwerte je Spiel) ganz am Ende ---
+  if(vgames.length>=2){
+    wrap.append(el("h3",{},"Detail: +/- je Spiel ",el("small",{},"(Rohwerte + Running Average)")));
+    const viz2=el("div",{class:"viz"}); drawPMChart(viz2,vgames); wrap.append(viz2);
+  }
+
+  // --- KI-Prompt: alle sichtbaren Profildaten als Scouting-Prompt ---
+  const strip=s=>String(s==null?"":s).replace(/<[^>]+>/g,"");
+  function buildProfilePrompt(){
+    const L=[];
+    L.push("Du bist ein erfahrener Fußball-Scout für den österreichischen Nachwuchs- und Amateurfußball.");
+    L.push("Erstelle aus den folgenden Daten eine prägnante Scouting-Einschätzung des Spielers:");
+    L.push("Stärken/Schwächen, Entwicklung über die Saisonen, Einordnung im Jahrgang, Kontext (Liga-Level, Team), und eine kurze Empfehlung. Weise auf Unsicherheiten hin (z. B. wenige Minuten).");
+    L.push("");
+    L.push("## Methodik (wichtig fürs Lesen der Zahlen)");
+    L.push("- Modell-Rating = Regularized Adjusted Plus-Minus (Tore/90): Beitrag des Spielers zur Tordifferenz, adjustiert für Mit- und Gegenspieler. 0 = Durchschnittsspieler. Off ≈ Beitrag zu eigenen Toren, Def ≈ Verhinderung von Gegentoren, Peak = aufs Leistungshoch (~26 J.) projiziert.");
+    L.push("- Perzentile: 0 = bester (P10 = Top 10 %).");
+    L.push("- Roh-+/- = Tordifferenz des TEAMS während der Einsatzzeit des Spielers (NICHT adjustiert — enthält Teamstärke/Liga-Kontext). Abweichung roh vs. Modell ist informativ.");
+    L.push("");
+    L.push("## Stammdaten");
+    L.push(`Name: ${r0.name}`);
+    if(r0.birth_year)L.push(`Jahrgang: ${r0.birth_year}${r0.age?` (${r0.age} J.)`:""}`);
+    if(r0.nationalitaet)L.push(`Nationalität: ${r0.nationalitaet}`);
+    if(r0.verband)L.push(`Landesverband: ${r0.verband}`);
+    if(r0.profil_verein)L.push(`Aktueller Verein: ${r0.profil_verein}`);
+    if(r0.erstes_spiel)L.push(`Erstes Spiel (ÖFB): ${r0.erstes_spiel}`);
+    if(r0.anzahl_vereine)L.push(`Anzahl Vereine: ${r0.anzahl_vereine}`);
+    if(+r0.karriere_spiele)L.push(`ÖFB-Karriere gesamt: ${r0.karriere_spiele} Spiele, ${r0.karriere_tore} Tore, ${r0.karriere_minuten} Minuten, ${r0.karriere_gelbe||0} Gelbe, ${(+r0.karriere_rote||0)+(+r0.karriere_gelbrote||0)} Rote`);
+    if(rat){
+      const bb=ratBench();
+      L.push("");
+      L.push(`## Modell-Rating (vs. alle ${bb.n} Spieler ≥ 270 Min. im Datensatz)`);
+      [["Offensiv","off",2],["Defensiv","def",2],["Total","total",3],["Peak","peak",3]].forEach(([lab,k,dec])=>{
+        const v=+rat[k],p=pctIn(bb[k],v);
+        if(p!=null&&!isNaN(v))L.push(`${lab}: ${fmtPM(v,dec)} — P${p.toFixed(0)} (${pctLabel(p)})`);
+      });
+      if(rat.pct_talent!==""&&!isNaN(+rat.pct_talent))
+        L.push(`Talent-Perzentil im Jahrgang (Peak+Minuten kombiniert): ${(+rat.pct_talent).toFixed(1)} %`);
+    }
+    L.push("");
+    L.push("## Minuten (im Datensatz, Saisonen 2023/24–2025/26)");
+    L.push(`Nachwuchs-Bewerbe: ${minJ}′${subJ?` (${strip(subJ)})`:""}`);
+    L.push(`Erwachsenen-Bewerbe: ${minE}′${subE?` (${strip(subE)})`:""}`);
+    L.push(`Einsätze: ${games.length}${subG?` (${strip(subG)})`:""} · Tore: ${games.reduce((s,g)=>s+g.goals,0)}`);
+    L.push("");
+    L.push("## Saisonen (roh +/- = Team-Tordifferenz während Einsatzzeit)");
+    L.push("Saison | Team | Bewerb | Spiele | Minuten | Tore | +/- | +/- pro 90");
+    [...bySea.entries()].sort((a,b)=>a[0]<b[0]?1:-1).forEach(([sea,o])=>{
+      const pm90=o.pmMin?(o.pm/o.pmMin*90):null;
+      L.push(`${sea} | ${[...o.teams].join(", ")} | ${[...o.comps].join(", ")} | ${o.games} | ${o.min}′ | ${o.goals} | ${o.pmGames?fmtPM(o.pm):"—"} | ${pm90!=null?fmtPM(pm90,2):"—"}`);
+    });
+    const g90=tot0.pmMin?tot0.pm/tot0.pmMin*90:null;
+    L.push(`GESAMT | | | ${tot0.games} | ${tot0.min}′ | ${tot0.goals} | ${tot0.pmGames?fmtPM(tot0.pm):"—"} | ${g90!=null?fmtPM(g90,2):"—"}`);
+    if(g90!=null)L.push(`Kumuliertes roh-+/- pro 90: ${fmtPM(g90,2)}${cumPct!=null?` — Perzentil P${cumPct.toFixed(0)} im Jahrgang${domCat?` (${domCat==="Jugend"?"Jugend":"Erwachsenen"}-Bewerbe, roh)`:""}`:""}`);
+    if(nExcl>0)L.push(`Hinweis: ${nExcl} Einsätze ohne vollständige Tor-Minuten in der Quelle — nicht im +/- enthalten.`);
+    L.push("");
+    L.push(`## Alle Einsätze (${games.length}, neueste zuerst; Ergebnis aus Team-Sicht, S/U/N)`);
+    L.push("Datum | Bewerb | H/A | Gegner | Ergebnis | Min | Tore | +/-");
+    [...games].reverse().forEach(g=>{
+      L.push(`${g.date} | ${g.comp} | ${g.ha} | ${g.opp} | ${g.sf}:${g.sg} ${g.res} | ${g.min}′ | ${g.goals||0} | ${g.pm!=null?fmtPM(g.pm):"—"}`);
+    });
+    if(ex&&(ex.v||[]).length){
+      L.push(""); L.push("## Vereins-Historie (gesamte Karriere)");
+      [...ex.v].sort((a,b)=>(b[1]||0)-(a[1]||0)).forEach(v=>{
+        const d=v[1]?new Date(v[1]).toLocaleDateString("de-AT",{year:"numeric",month:"short"}):"—";
+        L.push(`ab ${d}: ${v[0]}${v[2]&&v[2]!=="at"?" ("+String(v[2]).toUpperCase()+")":""}`);
+      });
+    }
+    if(ex&&(ex.e||[]).length){
+      L.push(""); L.push("## Saison-Historie (Kader & Platzierungen, gesamte Karriere)");
+      [...ex.e].sort((a,b)=>String(b[0]).localeCompare(String(a[0]))).forEach(e2=>{
+        L.push(`${e2[0]} | ${e2[1]} | ${e2[2]} | ${e2[3]}`);
+      });
+    }
+    return L.join("\n");
+  }
+  aiBtn.onclick=()=>copyText(buildProfilePrompt(),aiBtn);
+  state._promptFn=buildProfilePrompt;   // fuer Tests/Debugging
+}
+
+/* ---------- METHODIK / ERKLÄRUNG ---------- */
+const SVGNS="http://www.w3.org/2000/svg";
+function sv(t,a={},...k){const e=document.createElementNS(SVGNS,t);
+  for(const key in a)e.setAttribute(key,a[key]);
+  k.forEach(c=>e.append(c&&c.nodeType?c:document.createTextNode(c)));return e;}
+
+const AGE_CURVE=[[13,-0.42],[14,-0.36],[15,-0.31],[16,-0.26],[17,-0.20],[18,-0.15],
+  [19,-0.09],[20,-0.04],[21,-0.01],[22,0.01],[23,0.03],[24,0.05],[25,0.06],[26,0.06],
+  [27,0.06],[28,0.05],[29,0.03],[30,0.01],[31,-0.02],[32,-0.06],[33,-0.10],[34,-0.15],
+  [35,-0.21],[36,-0.27],[37,-0.34],[38,-0.40],[39,-0.46],[40,-0.52]];
+
+function drawTimeline(host){
+  const W=640,H=180,L=48,R=16,x=m=>L+m/90*(W-L-R);
+  const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Spiel in Segmente geteilt"});
+  const lanes=[{y:44,lab:"Heim",cls:"t-off"},{y:118,lab:"Gast",cls:"t-def"}];
+  // Segment-Hintergründe
+  [[0,60,"S1 (0–60′)"],[60,90,"S2 (60–90′)"]].forEach(([a,b,lab],i)=>{
+    s.append(sv("rect",{x:x(a),y:28,width:x(b)-x(a),height:130,rx:6,
+      fill:i%2?"#ffffff08":"#ffffff05",stroke:"#2a313d"}));
+    s.append(sv("text",{x:(x(a)+x(b))/2,y:20,"text-anchor":"middle",fill:"#9aa4b2","font-size":12},lab));
+  });
+  // Wechsel-Linie
+  s.append(sv("line",{x1:x(60),y1:26,x2:x(60),y2:160,stroke:"#b16286","stroke-width":1.5,"stroke-dasharray":"4 3"}));
+  s.append(sv("text",{x:x(60),y:172,"text-anchor":"middle",fill:"#b16286","font-size":11},"🔁 Wechsel 60′"));
+  // Lanes + Spieler
+  const chips={"Heim":[["A B C",30],["A B C₂",75]],"Gast":[["D E F",30],["D E F",75]]};
+  lanes.forEach(ln=>{
+    s.append(sv("text",{x:6,y:ln.y+4,fill:"#e6e9ef","font-size":12,"font-weight":600},ln.lab));
+    chips[ln.lab].forEach(([txt,mm])=>{
+      const cx=x(mm);
+      s.append(sv("rect",{x:cx-34,y:ln.y-14,width:68,height:26,rx:13,fill:"#1f242e",stroke:"#2a313d"}));
+      s.append(sv("text",{x:cx,y:ln.y+3,"text-anchor":"middle",fill:"#e6e9ef","font-size":12},txt));
+    });
+  });
+  // Tore
+  [[25,44,"⚽"],[72,118,"⚽"]].forEach(([m,y,ic])=>
+    s.append(sv("text",{x:x(m),y:y-20,"text-anchor":"middle","font-size":15},ic)));
+  // Achse
+  s.append(sv("line",{x1:L,y1:158,x2:W-R,y2:158,stroke:"#2a313d"}));
+  [0,45,90].forEach(t=>s.append(sv("text",{x:x(t),y:172,"text-anchor":"middle",fill:"#9aa4b2","font-size":10},t+"′")));
+  host.append(s);
+}
+
+function drawMatrix(host){
+  const PL=["A","B","C","C₂","D","E","F"], nP=PL.length;
+  const cs=24, x0=70, y0=44, rowH=26;
+  const cols=nP*2+2;                 // Off(7) + Def(7) + c + h
+  const W=x0+cols*cs+70, H=y0+4*rowH+16;
+  const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Design-Matrix"});
+  const cx=i=>x0+i*cs+cs/2;
+  // Gruppen-Header
+  const grp=(a,b,lab,col)=>{s.append(sv("text",{x:(cx(a)+cx(b))/2,y:14,"text-anchor":"middle",fill:col,"font-size":11},lab));};
+  grp(0,nP-1,"Offensiv βᴼ","#3fb950"); grp(nP,2*nP-1,"Defensiv βᴰ","#f0836b");
+  s.append(sv("text",{x:cx(2*nP)+cs/2,y:14,"text-anchor":"middle",fill:"#9aa4b2","font-size":11},"Zusatz"));
+  // Spalten-Labels
+  const labels=[...PL,...PL,"c","h"];
+  labels.forEach((l,i)=>s.append(sv("text",{x:cx(i),y:34,"text-anchor":"middle",fill:"#9aa4b2","font-size":11},l)));
+  s.append(sv("text",{x:x0+cols*cs+36,y:34,"text-anchor":"middle",fill:"#4c8bf5","font-size":11},"y"));
+  // Zeilen (Beobachtungen): [homeOff?, homeSet, awaySet, y, hfa]
+  const P={A:0,B:1,C:2,"C₂":3,D:4,E:5,F:6};
+  const rows=[
+    {lab:"S1·Heim ▶",off:["A","B","C"],opp:["D","E","F"],hfa:1,y:1},
+    {lab:"S1·Gast ▶",off:["D","E","F"],opp:["A","B","C"],hfa:0,y:0},
+    {lab:"S2·Heim ▶",off:["A","B","C₂"],opp:["D","E","F"],hfa:1,y:0},
+    {lab:"S2·Gast ▶",off:["D","E","F"],opp:["A","B","C₂"],hfa:0,y:1},
+  ];
+  rows.forEach((r,ri)=>{
+    const yy=y0+ri*rowH;
+    s.append(sv("text",{x:64,y:yy+rowH/2+4,"text-anchor":"end",fill:"#e6e9ef","font-size":11},r.lab));
+    const cell=(ci,val)=>{
+      const fill=val>0?"#3fb95033":val<0?"#f0836b33":"#ffffff06";
+      const stroke=val>0?"#3fb95088":val<0?"#f0836b88":"#2a313d";
+      s.append(sv("rect",{x:x0+ci*cs+1,y:yy+1,width:cs-2,height:rowH-2,rx:4,fill,stroke}));
+      if(val)s.append(sv("text",{x:cx(ci),y:yy+rowH/2+4,"text-anchor":"middle",
+        fill:val>0?"#3fb950":"#f0836b","font-size":12},val>0?"+1":"−1"));
+    };
+    for(let i=0;i<cols;i++)cell(i,0);
+    r.off.forEach(p=>cell(P[p],1));                 // eigener Angriff -> Offensiv +1
+    r.opp.forEach(p=>cell(nP+P[p],-1));             // Gegner -> Defensiv −1
+    cell(2*nP,1);                                   // c
+    if(r.hfa)cell(2*nP+1,1);                         // h nur für Heim
+    // y-Wert
+    s.append(sv("text",{x:x0+cols*cs+36,y:yy+rowH/2+4,"text-anchor":"middle",fill:"#4c8bf5","font-size":13,"font-weight":600},r.y));
+  });
+  host.append(s);
+}
+
+function drawAgeCurve(host){
+  const W=640,H=250,L=46,R=18,T=16,B=34;
+  const xs=13,xe=40,ymin=-0.56,ymax=0.12;
+  const X=a=>L+(a-xs)/(xe-xs)*(W-L-R), Y=v=>T+(ymax-v)/(ymax-ymin)*(H-T-B);
+  const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Alterskurve"});
+  // Achsen / Nulllinie
+  s.append(sv("line",{x1:L,y1:Y(0),x2:W-R,y2:Y(0),stroke:"#2a313d","stroke-dasharray":"4 3"}));
+  s.append(sv("text",{x:L-6,y:Y(0)+4,"text-anchor":"end",fill:"#9aa4b2","font-size":10},"0,0"));
+  [-0.2,-0.4].forEach(v=>{s.append(sv("line",{x1:L,y1:Y(v),x2:W-R,y2:Y(v),stroke:"#ffffff08"}));
+    s.append(sv("text",{x:L-6,y:Y(v)+4,"text-anchor":"end",fill:"#9aa4b2","font-size":10},String(v).replace(".",",")));});
+  [14,18,22,26,30,34,38].forEach(a=>s.append(sv("text",{x:X(a),y:H-14,"text-anchor":"middle",fill:"#9aa4b2","font-size":10},a+"J")));
+  // Kurve
+  const pts=AGE_CURVE.map(([a,v])=>`${X(a)},${Y(v)}`).join(" ");
+  s.append(sv("polyline",{points:pts,fill:"none",stroke:"#4c8bf5","stroke-width":2.5}));
+  // Peak
+  const peak=AGE_CURVE.reduce((m,p)=>p[1]>m[1]?p:m);
+  s.append(sv("circle",{cx:X(peak[0]),cy:Y(peak[1]),r:4,fill:"#3fb950"}));
+  s.append(sv("text",{x:X(peak[0]),y:Y(peak[1])-10,"text-anchor":"middle",fill:"#3fb950","font-size":11},"Leistungshoch ≈ "+peak[0]));
+  // Peak-Zuschlag-Pfeil bei Alter 17
+  const a0=17,v0=AGE_CURVE.find(p=>p[0]===a0)[1];
+  s.append(sv("line",{x1:X(a0),y1:Y(v0),x2:X(a0),y2:Y(peak[1]),stroke:"#d8a12a","stroke-width":1.5,"stroke-dasharray":"3 2"}));
+  s.append(sv("circle",{cx:X(a0),cy:Y(v0),r:3,fill:"#d8a12a"}));
+  s.append(sv("text",{x:X(a0)+6,y:(Y(v0)+Y(peak[1]))/2,fill:"#d8a12a","font-size":10},"Peak-Zuschlag"));
+  s.append(sv("text",{x:X(16),y:Y(-0.5),"text-anchor":"middle",fill:"#9aa4b2","font-size":10},"jung → verbessert sich"));
+  s.append(sv("text",{x:X(36),y:Y(0.08),"text-anchor":"middle",fill:"#9aa4b2","font-size":10},"älter → lässt nach"));
+  host.append(s);
+}
+
+function drawFunnel(host){
+  const W=640,H=120,N=20,L=20,R=20,gap=(W-L-R)/(N-1);
+  const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Talent-Filter"});
+  s.append(sv("text",{x:L,y:16,fill:"#9aa4b2","font-size":11},"Ein Jahrgang – nach Peak-Rating sortiert (bester links)"));
+  const cut=Math.round(N*0.2);
+  for(let i=0;i<N;i++){
+    const cxp=L+i*gap, top=i<cut;
+    s.append(sv("circle",{cx:cxp,cy:60,r:top?9:6,fill:top?"#3fb950":"#1f242e",stroke:top?"#3fb950":"#2a313d","stroke-width":1.5}));
+  }
+  // Klammer über Top 20 %
+  const x1=L-9,x2=L+(cut-1)*gap+9;
+  s.append(sv("path",{d:`M${x1} 40 v-6 h${x2-x1} v6`,fill:"none",stroke:"#3fb950","stroke-width":1.5}));
+  s.append(sv("text",{x:(x1+x2)/2,y:26,"text-anchor":"middle",fill:"#3fb950","font-size":11,"font-weight":600},"Top 20 % → Shortlist"));
+  s.append(sv("text",{x:L,y:96,fill:"#9aa4b2","font-size":11},"+ Mindestminuten-Schwelle: dämpft Zufall bei Spielern mit wenig Einsatzzeit"));
+  host.append(s);
+}
+
+function renderExplain(){
+  const sec=$("#tab-explain");
+  sec.innerHTML=`
+  <div class="explain">
+    <p class="lead"><b>Plus-Minus (PM)</b> ist ein Top-down-Rating: Man beobachtet nur das
+      Teamergebnis (Tore) und verteilt Verdienst/Schuld auf die Spieler auf dem Feld –
+      <b>adjustiert für Mit- und Gegenspieler</b>. Jeder Spieler bekommt ein Offensiv- und ein
+      Defensiv-Rating; ihre Summe ist das <b>Total-Rating</b>.</p>
+    <p class="cite">Methodik: Hvattum (2020, <i>Applied Sciences</i>) &amp; Hvattum, Kriegl &amp; Čulík (2021),
+      „Identifying talent in association football through plus-minus ratings".</p>
+
+    <div class="step"><div class="n">1</div><div class="body">
+      <h3>Vom Spiel zu Segmenten</h3>
+      <p>Jedes Spiel wird an jeder <b>Ein-/Auswechslung</b> und jeder <b>Roten Karte</b> in
+        <b>Segmente</b> mit unveränderter Aufstellung geschnitten. Pro Segment kennt man Dauer,
+        die anwesenden Spieler und die Tore je Team.</p>
+      <div class="viz"><div id="viz-timeline"></div>
+        <div class="legend">
+          <span><span class="sw" style="background:#1f242e;border:1px solid #2a313d"></span>Spieler auf dem Feld</span>
+          <span>⚽ Tor</span><span>🔁 Wechsel = neue Segmentgrenze</span></div></div>
+    </div></div>
+
+    <div class="step"><div class="n">2</div><div class="body">
+      <h3>Zwei Perspektiven je Segment <span style="color:var(--muted);font-weight:400;font-size:13px">(Ilardi 2007)</span></h3>
+      <p>Jedes Segment liefert <b>zwei Beobachtungen</b>: einmal <span class="t-off">Heim in der
+        Offensive</span> (wie viele Tore erzielt Heim?) und einmal <span class="t-def">Gast in der
+        Offensive</span>. Dadurch lassen sich Angriff und Abwehr <b>getrennt</b> schätzen.</p>
+    </div></div>
+
+    <div class="step"><div class="n">3</div><div class="body">
+      <h3>Die Grundgleichung</h3>
+      <p>Die erwarteten Tore eines Teams im Segment ≈ Summe der eigenen Offensiv-Ratings minus
+        Summe der gegnerischen Defensiv-Ratings, skaliert mit der Segmentdauer:</p>
+      <div class="eq">
+        g<sup>H</sup> ≈ <span class="frac"><span>d</span><span class="den">90</span></span>
+        · ( c + <span class="t-hfa">h</span>
+        + <span class="t-off"><span class="big">Σ</span><sub>i∈Heim</sub> β<sup>O</sup><sub>i</sub></span>
+        − <span class="t-def"><span class="big">Σ</span><sub>j∈Gast</sub> β<sup>D</sup><sub>j</sub></span>
+        + <span class="t-man">μ·(n<sub>H</sub>−n<sub>A</sub>)</span> )
+        <small>für die Gasttore symmetrisch – mit den Gast-Offensiv- und Heim-Defensiv-Ratings, ohne Heimvorteil <span class="t-hfa">h</span>.</small>
+      </div>
+      <table class="symtab">
+        <tr><td>β<sup>O</sup><sub>i</sub>, β<sup>D</sup><sub>i</sub></td><td>Offensiv- / Defensiv-Rating von Spieler i (Tore pro 90 min)</td></tr>
+        <tr><td>d</td><td>Segmentdauer in Minuten</td></tr>
+        <tr><td>c</td><td>Grund-Torrate (Basiswert)</td></tr>
+        <tr><td class="t-hfa">h</td><td>Heimvorteil</td></tr>
+        <tr><td class="t-man">μ, n<sub>H</sub>/n<sub>A</sub></td><td>Über-/Unterzahl-Effekt bzw. Spielerzahl je Team (Rote Karten)</td></tr>
+      </table>
+    </div></div>
+
+    <div class="step"><div class="n">4</div><div class="body">
+      <h3>Die Design-Matrix</h3>
+      <p>Alle Beobachtungen ergeben ein Gleichungssystem <span class="eq" style="display:inline-block;padding:2px 8px;font-size:15px">y = X·β + ε</span>.
+        Zeilen = Beobachtungen, Spalten = alle Spieler (ein <span class="t-off">Offensiv-</span> und ein
+        <span class="t-def">Defensiv-Block</span>) plus Zusatzterme. <span class="t-off">+1</span> = Spieler im
+        eigenen Angriff, <span class="t-def">−1</span> = Gegenspieler in der Abwehr. Die Matrix ist
+        <b>dünn besetzt</b> (Beispiel: Heim A,B,C – Gast D,E,F, Wechsel C→C₂ bei 60′).</p>
+      <div class="viz"><div id="viz-matrix"></div>
+        <div class="legend">
+          <span><span class="sw" style="background:#3fb95033;border:1px solid #3fb950"></span>+1 eigener Angriff</span>
+          <span><span class="sw" style="background:#f0836b33;border:1px solid #f0836b"></span>−1 Gegner (Abwehr)</span>
+          <span><span class="sw" style="background:#4c8bf5"></span>y = erzielte Tore</span></div>
+        <p style="font-size:12px;color:var(--muted);margin:10px 0 0">Werte zusätzlich mit d/90 skaliert; der Über-/Unterzahl-Term μ ist hier 0 (keine Rote Karte).</p></div>
+    </div></div>
+
+    <div class="step"><div class="n">5</div><div class="body">
+      <h3>Regularisierte Schätzung (Ridge)</h3>
+      <p>Die Ratings β minimieren die gewichtete quadratische Abweichung zwischen beobachteten und
+        modellierten Toren – plus einen <b>Strafterm</b>, der Ratings gegen 0 (Durchschnittsspieler) zieht:</p>
+      <div class="eq">
+        min<sub>β</sub> &nbsp;<span class="big">Σ</span><sub>m,s</sub>
+        w·( <span class="t-off">f<sup>H</sup></span> − g<sup>H</sup> )²
+        + w·( <span class="t-def">f<sup>A</sup></span> − g<sup>A</sup> )²
+        + <span class="t-reg">λ <span class="big">Σ</span><sub>k</sub> β<sub>k</sub>²</span>
+      </div>
+      <div class="eq">
+        β = ( X<sup>T</sup>W X + <span class="t-reg">λ</span> I )<sup>−1</sup> X<sup>T</sup>W y
+      </div>
+      <div class="note"><b>Warum die Regularisierung?</b> Ein Spieler mit wenigen Minuten hat kaum
+        Datenpunkte – <b>λ</b> hält sein Rating dann nahe 0, statt ihm ein zufälliges Extrem
+        zuzuweisen. w gewichtet Segmente (Dauer, Aktualität, Spielstand). λ wird per
+        Cross-Validation gewählt (im Datensatz: λ≈30).</div>
+    </div></div>
+
+    <div class="step"><div class="n">6</div><div class="body">
+      <h3>Alterskurve &amp; Peak-Rating</h3>
+      <p>Ratings sind <b>keine Konstante</b>, sondern altersabhängig: junge Spieler verbessern sich,
+        erreichen ein Hoch und lassen später nach. Aus dem aktuellen Total-Rating und der Alterskurve
+        wird ein <b>Peak-Rating</b> projiziert – so werden junge und reife Spieler vergleichbar.</p>
+      <div class="viz"><div id="viz-agecurve"></div></div>
+      <div class="eq">
+        peak = total + ( c<sub>max</sub> − c(Alter) ),
+        &nbsp; total = <span class="t-off">β<sup>O</sup></span> + <span class="t-def">β<sup>D</sup></span>
+        <small>c(·) ist die Alterskurve; c<sub>max</sub> ihr Wert im Leistungshoch (≈ 26 J.).</small>
+      </div>
+    </div></div>
+
+    <div class="step"><div class="n">7</div><div class="body">
+      <h3>Vom Rating zum Talent-Filter</h3>
+      <p>Spieler werden <b>je Geburtsjahrgang</b> in Perzentile gerankt. Ein Cut-off (z. B. Top 20 %)
+        bildet die Scouting-Shortlist. Da junge Spieler mit wenig Minuten verrauschte Ratings haben,
+        wird zusätzlich die <b>Spielzeit</b> einbezogen (Peak-Rating + Minuten).</p>
+      <div class="viz"><div id="viz-funnel"></div></div>
+      <div class="note">Kategorien: <b>Early developer</b> (&lt;17 erkannt), <b>Late developer</b> (17–20),
+        <b>Grassroots</b> (erst &gt;20 in den Daten). Ergebnis im Paper: mit „Peak + Minuten, Top 20 %"
+        werden ~<b>80 %</b> der später wertvollsten Spieler früh erkannt. → siehe Tab <b>Ratings</b>
+        (Spalte „Talent %").</div>
+    </div></div>
+  </div>`;
+  drawTimeline($("#viz-timeline"));
+  drawMatrix($("#viz-matrix"));
+  drawAgeCurve($("#viz-agecurve"));
+  drawFunnel($("#viz-funnel"));
+}
+
 function emptyMsg(what,html){ return el("div",{class:"empty"},
   el("div",{style:"font-size:34px;margin-bottom:8px"},"📂"),
   el("div",{html:html}),
@@ -549,11 +1541,13 @@ function emptyMsg(what,html){ return el("div",{class:"empty"},
     "Per Knopf oben oder Drag & Drop laden."));}
 
 /* init */
-renderMatches(); renderPlayers(); renderStats();
+renderMatches(); renderPlayers(); renderProfile(); renderRatings(); renderExplain(); renderStats();
 tryAuto("data/matches.json",t=>{try{state.matches=JSON.parse(t);
-  $("#pillM").textContent=state.matches.length+" Matches";$("#pillM").classList.add("on");renderMatches();renderPlayers();renderStats();}catch(e){}});
+  $("#pillM").textContent=state.matches.length+" Matches";$("#pillM").classList.add("on");renderMatches();renderPlayers();renderStats();renderProfile();}catch(e){}});
 tryAuto("data/players.csv",t=>{state.players=parseCSV(t);
-  $("#pillP").textContent=state.players.length+" Spieler-Zeilen";$("#pillP").classList.add("on");renderPlayers();renderMatches();renderStats();});
+  $("#pillP").textContent=state.players.length+" Spieler-Zeilen";$("#pillP").classList.add("on");renderPlayers();renderMatches();renderStats();renderProfile();});
+tryAuto("data/ratings.csv",t=>{state.ratings=parseCSV(t);
+  $("#pillR").textContent=state.ratings.length+" Ratings";$("#pillR").classList.add("on");renderRatings();});
 </script>
 </body>
 </html>

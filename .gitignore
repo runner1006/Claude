@@ -27,3 +27,18 @@ data/html/
 #   data/matches.json, data/players.csv, data/players_profiles.json,
 #   data/all_ids.txt, dashboard.html, index.html, histogram-range.js,
 #   *.py, render.yaml
+
+# Secrets & lokale DB-Artefakte
+/.env
+/data/oefb.sqlite
+/data/*.gz
+/data_inc/
+
+# Rohdaten: leben lokal + auf der Server-Disk (Upload via update_all.py), nicht im Repo
+/data/players.csv
+/data/players_profiles.json
+/data/matches.json
+/data/events.csv
+/data/lineups.csv
+/data/player_extras.json
+/data/fix_events_work.jsonl

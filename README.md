@@ -33,7 +33,14 @@ python3 -m http.server 8000      # im Repo-Verzeichnis
 - **Matches** — filter-/sortierbare Spielliste; aufklappbares Detail mit beiden
   Aufstellungen (Alter + Spielminuten pro Spieler), Toren, Karten, Wechseln.
 - **Spieler** — pro Spieler aggregiert (Gesamt-Minuten/-Tore/-Spiele), Alter,
-  Verein, Bewerb; Profil-Verlinkung.
+  Verein, Bewerb; Klick auf den Namen öffnet das Profil.
+- **Profil** — Einzelspieler-Seite (Suche oder Klick aus Spieler/Ratings):
+  Foto, Nationalität, Karriere-Summen, Rating-Badges; Minuten-Split
+  **Nachwuchs vs. Erwachsene**; Saison-Tabelle (Team, Minuten, Tore, roh +/-);
+  **Plus-Minus-Verlauf** Match für Match mit minutengewichtetem Running Average
+  (Kontext, um dem Modell-Rating zu vertrauen); alle Einsätze mit Gegner/Ergebnis;
+  Vereins- & Saison-Historie aus dem ÖFB-Profil (`data/player_extras.json`,
+  erzeugt via `python build_extras.py` nach `player_ages.py`).
 - **Statistik** — Ø Alter & Ø Minuten je Verein / Bewerb / Kategorie / Position /
   Rolle / Jahrgang, sortierbar, mit Balken.
 - **Filter** in einer Sidebar (Tabelle immer sichtbar): Multiselect-Dropdowns,
@@ -71,6 +78,21 @@ python player_ages.py --ids-file data/all_ids.txt -o data/players.csv \
 | `collect_all.py` | Sammelt die **volle Saison** aller 7 aktuell enthaltenen Ligen (feste Bewerb-IDs) dedupliziert in eine ID-Datei. |
 | `oefb_scraper.py` | Scrapt Spielberichte (löst den Anubis-Bot-Schutz per Proof-of-Work, parst die eingebettete Aufstellung/Events). Schreibt `matches.json` + CSVs. |
 | `player_ages.py` | Holt je Spieler das **volle Profil** (`parse_profile`) → Alter, Nationalität, Verein, Größe/Gewicht, Karriere-Vereine, Karriere-Statistik, Erfolge, Foto … und berechnet Spielminuten aus der Wechsel-Timeline. Skalare Felder → `players.csv`, reiche Rohdaten → `players_profiles.json`. Cacht ganze Profile, sodass nur neue Spieler geladen werden. |
+| `plusminus.py` | Berechnet **Regularized-Adjusted-Plus-Minus-Ratings** (offensiv/defensiv/total + Peak) nach Hvattum/Kriegl/Čulík. Zerlegt Spiele in Segmente konstanter Aufstellung, löst ein ridge-regularisiertes Kleinste-Quadrate-System (`scipy.sparse` + `lsqr`) und rankt Spieler je Geburtsjahrgang in Perzentile (Talent-Filter). → `data/ratings.csv`. |
+
+### Plus-Minus-Ratings (Talent-Identifikation)
+
+```bash
+pip install -r requirements.txt   # inkl. numpy/scipy
+python plusminus.py               # nutzt data/*.csv -> data/ratings.csv (Lambda per CV)
+```
+
+`ratings.csv` je Spieler: `off`, `def`, `total`, `peak` (auf Leistungshoch
+projiziert via fixer Alterskurve), sowie Perzentil-Ränge je Jahrgang
+(`pct_total`, `pct_peak`, `pct_talent` = Peak+Minuten kombiniert, 0 = bester).
+Methodik-Grundlage: Hvattum (2020); Hvattum, Kriegl & Čulík (2021).
+**Hinweis:** aktuell nur eine Saison → Ratings sind verrauscht; die Alterskurve
+ist fest übernommen, nicht geschätzt. Für robuste Werte mehr Saisons scrapen.
 
 ### Spieler-Profilfelder (neu in `players.csv`)
 
