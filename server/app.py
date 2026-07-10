@@ -114,6 +114,10 @@ def data_file(name: str, request: Request):
 
 @app.get("/api/health")
 def health():
+    # Wichtig: auch OHNE Daten 200 liefern - sonst kommt der Service nie live,
+    # und der erste Daten-Upload (der die DB erst bringt) waere unmoeglich.
+    if not os.path.exists(oefb_mcp.DB):
+        return {"status": "empty", "detail": "Noch keine Daten - Upload via update_all.py"}
     try:
         n = {t: oefb_mcp._rows(f"SELECT COUNT(*) n FROM {t}")[0]["n"]
              for t in ("matches", "players", "appearances", "ratings")}
