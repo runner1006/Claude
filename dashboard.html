@@ -216,9 +216,9 @@
 </header>
 <nav>
   <button data-tab="scout" class="active">Scouting</button>
+  <button data-tab="profile">Profil</button>
   <button data-tab="stats">Statistik</button>
   <button data-tab="explain">Methodik</button>
-  <button data-tab="profile">Profil</button>
   <button data-tab="matches">Matches</button>
 </nav>
 <main>
@@ -261,7 +261,7 @@ async function tryAuto(url,onText){
   try{const r=await fetch(url); if(r.ok)onText(await r.text());}catch(e){} }
 
 /* ---------- tabs ---------- */
-const TABS=["scout","stats","explain","profile","matches"];
+const TABS=["scout","profile","stats","explain","matches"];
 function switchTab(tab){
   document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("active",x.dataset.tab===tab));
   for(const t of TABS) $("#tab-"+t).hidden = (t!==tab);
@@ -531,11 +531,10 @@ function aggregatePlayers(players,compMap){
 const SCOUT_COLS=[
   {k:"name",l:"Name",always:true},
   {k:"nationality",l:"Nat."},
-  {k:"birth_year",l:"Jg.",num:1},
-  {k:"age",l:"Alter",num:1},
   {k:"team",l:"Verein"},
   {k:"comp",l:"Bewerb"},
-  {k:"position",l:"Pos."},
+  {k:"birth_year",l:"Jg.",num:1},
+  {k:"age",l:"Alter",num:1},
   {k:"minutes",l:"Min.",num:1},
   {k:"matches",l:"Sp.",num:1},
   {k:"goals",l:"Tore",num:1},
@@ -544,7 +543,8 @@ const SCOUT_COLS=[
   {k:"total",l:"Total",num:1,rat:1},
   {k:"peak",l:"Peak",num:1,rat:1},
   {k:"pct_talent",l:"Talent%",num:1,rat:1},
-  {k:"role",l:"Rolle"},
+  {k:"position",l:"Pos.",hide:1},   // standardmäßig ausgeblendet
+  {k:"role",l:"Rolle",hide:1},      // standardmäßig ausgeblendet
 ];
 let _scoutSig=null,_scoutCache=null;
 function scoutRows(){                              // 1 Zeile je Spieler: Aggregat + Rating
@@ -565,7 +565,7 @@ function renderScout(){
   if(!state.players.length){ sec.append(emptyMsg("Daten","Die Spielerdaten werden automatisch geladen…")); return; }
   const {side,content}=tabScaffold(sec);
   const rowsAll=scoutRows();
-  if(!state.scoutCols)state.scoutCols=new Set(SCOUT_COLS.map(c=>c.k));
+  if(!state.scoutCols)state.scoutCols=new Set(SCOUT_COLS.filter(c=>!c.hide).map(c=>c.k));
   const splitComma=s=>esc(s).split(", ").filter(Boolean);
   const compOpts=[...new Set(rowsAll.flatMap(p=>splitComma(p.comp)))].sort((a,b)=>a.localeCompare(b,"de"));
   const teamOpts=[...new Set(rowsAll.flatMap(p=>splitComma(p.team)))].sort((a,b)=>a.localeCompare(b,"de"));
