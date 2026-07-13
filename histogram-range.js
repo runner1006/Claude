@@ -67,13 +67,19 @@
     var step = opts.step || 1;
     var bins = opts.bins || 32;
     var fmt = opts.format || function (v) { return String(Math.round(v)); };
-    var scale = (opts.scale === "quantile" && n > 1) ? "quantile" : "linear";
+    // "log" spreizt Long-Tail-Verteilungen (Minuten, Tore) sichtbar auf.
+    var scale = (opts.scale === "quantile" && n > 1) ? "quantile"
+              : (opts.scale === "log" ? "log" : "linear");
+    var logMax = scale === "log" ? Math.log(dmax - dmin + 1) : 1;
+    if (scale === "log" && !(logMax > 0)) scale = "linear";
+    var showHisto = opts.histo !== false;   // false => nur Slider (z.B. gleichverteilte Perzentile)
     var withInputs = opts.inputs !== false;
     var lo = dmin, hi = dmax;
 
     // ---- Achsen-Mapping Position<->Wert ----
     function toPos(v) {
       if (scale === "linear") return (v - dmin) / (dmax - dmin);
+      if (scale === "log") return clamp(Math.log(Math.max(v - dmin, 0) + 1) / logMax, 0, 1);
       if (v <= values[0]) return 0;
       if (v >= values[n - 1]) return 1;
       var a = 0, b = n;
@@ -84,18 +90,22 @@
     function toVal(p) {
       p = clamp(p, 0, 1);
       if (scale === "linear") return dmin + p * (dmax - dmin);
+      if (scale === "log") return dmin + Math.exp(p * logMax) - 1;
       var idx = p * (n - 1), i = Math.floor(idx), f = idx - i;
       return values[i] + ((values[Math.min(i + 1, n - 1)]) - values[i]) * f;
     }
 
-    // ---- Histogramm-Bins (im Positionsraum; Höhe = Dichte je Wert-Einheit) ----
+    // ---- Histogramm-Bins (im Positionsraum) ----
+    // Balken-Höhe: bei log = reine Anzahl je Bin (zeigt die Verteilungsform),
+    // sonst Dichte je Wert-Einheit (bei linear proportional zur Anzahl).
+    var useCount = (scale === "log");
     var dens = new Array(bins), centers = new Array(bins);
     for (var i = 0; i < bins; i++) {
       var vLo = toVal(i / bins), vHi = toVal((i + 1) / bins);
       if (vHi <= vLo) vHi = vLo + step;
       var c = 0, last = (i === bins - 1);
       for (var j = 0; j < n; j++) { var x = values[j]; if (x >= vLo && (x < vHi || (last && x <= vHi))) c++; }
-      dens[i] = c / Math.max(vHi - vLo, step);
+      dens[i] = useCount ? c : c / Math.max(vHi - vLo, step);
       centers[i] = (vLo + vHi) / 2;
     }
     var maxDens = Math.max.apply(null, dens.concat([1e-9]));
@@ -107,8 +117,11 @@
       var ts = document.createElement("span"); ts.textContent = opts.title; top.appendChild(ts);
       if (opts.avg != null) { var as = document.createElement("span"); as.innerHTML = opts.avg; top.appendChild(as); }
     }
-    var histo = elem("hr-histo", root);
-    var bars = dens.map(function (dv) { var b = elem("hr-bar", histo); b.style.height = (dv / maxDens * 100) + "%"; return b; });
+    var bars = [];
+    if (showHisto) {
+      var histo = elem("hr-histo", root);
+      bars = dens.map(function (dv) { var b = elem("hr-bar", histo); b.style.height = (dv / maxDens * 100) + "%"; return b; });
+    }
     var track = elem("hr-track", root);
     elem("hr-rail", track);
     var fill = elem("hr-fill", track);

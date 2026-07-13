@@ -85,6 +85,8 @@
   .fbtn{background:var(--panel2);border:1px solid var(--line);color:var(--muted);
         padding:6px 11px;border-radius:8px;cursor:pointer;font-size:12px;white-space:nowrap}
   .fbtn:hover{border-color:var(--accent2);color:var(--text)}
+  .presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .preset{font-size:11px;padding:4px 9px}
   .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
   .chips:empty{display:none}
   .chip{display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--accent);
@@ -203,36 +205,31 @@
 </head>
 <body>
 <header>
-  <h1>⚽ ÖFB Dashboard <small>lokale Auswertung</small></h1>
-  <label class="drop" id="dropM">📄 <b>matches.json</b> laden<input type="file" accept=".json" hidden id="fileM"></label>
-  <label class="drop" id="dropP">👥 <b>players.csv</b> laden<input type="file" accept=".csv" hidden id="fileP"></label>
-  <label class="drop" id="dropR">📊 <b>ratings.csv</b> laden<input type="file" accept=".csv" hidden id="fileR"></label>
-  <span class="pill" id="pillM">keine Matches</span>
-  <span class="pill" id="pillP">keine Spieler</span>
-  <span class="pill" id="pillR">keine Ratings</span>
+  <h1>⚽ ÖFB Scouting <small>Spieler-Datenbank</small></h1>
+  <span class="pill" id="pillP">lädt…</span>
+  <span class="pill" id="pillR">Ratings</span>
+  <span class="pill" id="pillM">Matches</span>
 </header>
 <nav>
-  <button data-tab="matches" class="active">Matches</button>
-  <button data-tab="players">Spieler</button>
-  <button data-tab="profile">Profil</button>
-  <button data-tab="ratings">Ratings</button>
-  <button data-tab="explain">Methodik</button>
+  <button data-tab="scout" class="active">Scouting</button>
   <button data-tab="stats">Statistik</button>
+  <button data-tab="explain">Methodik</button>
+  <button data-tab="profile">Profil</button>
+  <button data-tab="matches">Matches</button>
 </nav>
 <main>
-  <section id="tab-matches"></section>
-  <section id="tab-players" hidden></section>
-  <section id="tab-profile" hidden></section>
-  <section id="tab-ratings" hidden></section>
-  <section id="tab-explain" hidden></section>
+  <section id="tab-scout"></section>
   <section id="tab-stats" hidden></section>
+  <section id="tab-explain" hidden></section>
+  <section id="tab-profile" hidden></section>
+  <section id="tab-matches" hidden></section>
 </main>
 
 <script src="histogram-range.js"></script>
 <script>
 "use strict";
-const state = { matches: [], players: [], ratings: [], sortM:{k:"date",dir:1}, sortP:{k:"age",dir:-1}, sortS:{k:"avg",dir:-1}, sortR:{k:"total",dir:-1}, open:null,
-  profileKey:null, extras:null, extrasLoading:false };
+const state = { matches: [], players: [], ratings: [], sortM:{k:"date",dir:1}, sortS:{k:"avg",dir:-1}, sortSc:{k:"total",dir:-1}, open:null,
+  profileKey:null, extras:null, extrasLoading:false, scoutCols:null };
 
 /* ---------- helpers ---------- */
 const $ = s => document.querySelector(s);
@@ -255,31 +252,12 @@ function parseCSV(text){
   return rows.filter(r=>r.length>1||r[0]).map(r=>Object.fromEntries(head.map((h,j)=>[h,r[j]??""])));
 }
 
-/* ---------- file loading ---------- */
-function wireDrop(dropId,inputId,onText){
-  const drop=$("#"+dropId), inp=$("#"+inputId);
-  drop.addEventListener("click",()=>inp.click());
-  inp.addEventListener("change",e=>{const f=e.target.files[0]; if(f)f.text().then(onText);});
-  ["dragover","dragenter"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("over");}));
-  ["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("over");}));
-  drop.addEventListener("drop",e=>{const f=e.dataTransfer.files[0]; if(f)f.text().then(onText);});
-}
-wireDrop("dropM","fileM",txt=>{ try{ state.matches=JSON.parse(txt);
-  $("#pillM").textContent=state.matches.length+" Matches"; $("#pillM").classList.add("on");
-  renderMatches(); renderPlayers(); renderStats(); }catch(err){alert("matches.json: "+err.message);} });
-wireDrop("dropP","fileP",txt=>{ state.players=parseCSV(txt);
-  $("#pillP").textContent=state.players.length+" Spieler-Zeilen"; $("#pillP").classList.add("on");
-  renderPlayers(); renderMatches(); renderStats(); });
-wireDrop("dropR","fileR",txt=>{ state.ratings=parseCSV(txt);
-  $("#pillR").textContent=state.ratings.length+" Ratings"; $("#pillR").classList.add("on");
-  renderRatings(); });
-
-/* auto-load if served over http(s) from same dir */
-async function tryAuto(url,onText){ if(location.protocol==="file:")return;
+/* Daten werden automatisch geladen (Server/Pipeline); kein manueller Upload mehr. */
+async function tryAuto(url,onText){
   try{const r=await fetch(url); if(r.ok)onText(await r.text());}catch(e){} }
 
 /* ---------- tabs ---------- */
-const TABS=["matches","players","profile","ratings","explain","stats"];
+const TABS=["scout","stats","explain","profile","matches"];
 function switchTab(tab){
   document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("active",x.dataset.tab===tab));
   for(const t of TABS) $("#tab-"+t).hidden = (t!==tab);
@@ -372,9 +350,21 @@ function makeFilterBar(host,rows,defs,onChange){
       if(def.min!=null)vals=vals.filter(v=>v>=def.min);   // unsinnige Kleinstwerte ausblenden
       if(def.max!=null)vals=vals.filter(v=>v<=def.max);
       const hr=HistogramRange({values:vals,step:def.step||1,format:def.format,
-        scale:def.scale||"linear",min:def.min,max:def.max,inputs:true,onChange:r=>set(def,r)});
+        scale:def.scale||"linear",histo:def.histo!==false,min:def.min,max:def.max,
+        inputs:true,onChange:r=>set(def,r)});
       ctl[def.key]=()=>hr.reset();
       inp=hr.element;
+      field.append(inp);
+      if(def.presets){                          // Schnellauswahl-Buttons (z.B. Top 20%)
+        const pr=el("div",{class:"presets"});
+        def.presets.forEach(([lab,rng])=>{
+          const b=el("button",{class:"fbtn preset",type:"button"},lab);
+          b.onclick=()=>{hr.setRange(rng[0]===""?null:rng[0],rng[1]===""?null:rng[1]);set(def,rng);};
+          pr.append(b);
+        });
+        field.append(pr);
+      }
+      fields.append(field); return;
     }
     field.append(inp); fields.append(field);
   });
@@ -515,73 +505,144 @@ function aggregatePlayers(players,compMap){
     const key=p.player_id||p.name+"|"+p.team, c=compMap[String(p.match_id)]||"";
     if(!by.has(key))by.set(key,{player_id:p.player_id,name:p.name,team:p.team,
       age:p.age?+p.age:"",birth_year:p.birth_year,position:p.position,role:p.role,
+      nationality:p.nationalitaet||"",verband:p.verband||"",
       captain:truthy(p.captain),minutes:+p.minutes||0,goals:+p.goals||0,matches:1,
-      _teams:new Set([p.team]),_comps:new Set([c])});
+      _teams:new Set([p.team]),_comps:new Set([c]),_pos:{}});
     else{const o=by.get(key); o.matches++; o.minutes+=+p.minutes||0; o.goals+=+p.goals||0;
       o._teams.add(p.team); o._comps.add(c); if(truthy(p.captain))o.captain=true;
       if(p.role==="starter")o.role="starter";
+      if(!o.nationality&&p.nationalitaet)o.nationality=p.nationalitaet;
+      if(!o.verband&&p.verband)o.verband=p.verband;
       if(o.age===""&&p.age)o.age=+p.age; if(!o.birth_year&&p.birth_year)o.birth_year=p.birth_year;}
+    const o=by.get(key); if(p.position)o._pos[p.position]=(o._pos[p.position]||0)+1;
   });
-  return [...by.values()].map(o=>({...o,
-    team:[...o._teams].filter(Boolean).join(", "),
-    comp:[...o._comps].filter(Boolean).join(", ")}));
+  return [...by.values()].map(o=>{
+    const pos=Object.entries(o._pos).sort((a,b)=>b[1]-a[1])[0];
+    return {...o, position:pos?pos[0]:(o.position||""),
+      team:[...o._teams].filter(Boolean).join(", "),
+      comp:[...o._comps].filter(Boolean).join(", ")};
+  });
 }
-function renderPlayers(){
-  const sec=$("#tab-players"); sec.innerHTML="";
-  if(!state.players.length){ sec.append(emptyMsg("players.csv","Lade deine <code>players.csv</code> (aus <code>player_ages.py</code>).")); return; }
+/* ---------- SCOUTING (Spieler + Ratings zusammengeführt) ---------- */
+const SCOUT_COLS=[
+  {k:"name",l:"Name",always:true},
+  {k:"nationality",l:"Nat."},
+  {k:"birth_year",l:"Jg.",num:1},
+  {k:"age",l:"Alter",num:1},
+  {k:"team",l:"Verein"},
+  {k:"comp",l:"Bewerb"},
+  {k:"position",l:"Pos."},
+  {k:"minutes",l:"Min.",num:1},
+  {k:"matches",l:"Sp.",num:1},
+  {k:"goals",l:"Tore",num:1},
+  {k:"off",l:"Off",num:1,rat:1},
+  {k:"def",l:"Def",num:1,rat:1},
+  {k:"total",l:"Total",num:1,rat:1},
+  {k:"peak",l:"Peak",num:1,rat:1},
+  {k:"pct_talent",l:"Talent%",num:1,rat:1},
+  {k:"role",l:"Rolle"},
+];
+let _scoutSig=null,_scoutCache=null;
+function scoutRows(){                              // 1 Zeile je Spieler: Aggregat + Rating
+  const sig=state.players.length+"|"+state.ratings.length+"|"+state.matches.length;
+  if(_scoutSig===sig&&_scoutCache)return _scoutCache;
+  const agg=aggregatePlayers(state.players,compMapFromMatches());
+  const rmap=new Map(state.ratings.map(r=>[String(r.player_id),r]));
+  const num=v=>(v===""||v==null||isNaN(+v))?"":+v;
+  _scoutCache=agg.map(p=>{
+    const r=p.player_id?rmap.get(String(p.player_id)):null;
+    return {...p, off:r?num(r.off):"", def:r?num(r.def):"", total:r?num(r.total):"",
+            peak:r?num(r.peak):"", pct_talent:r?num(r.pct_talent):""};
+  });
+  _scoutSig=sig; return _scoutCache;
+}
+function renderScout(){
+  const sec=$("#tab-scout"); sec.innerHTML="";
+  if(!state.players.length){ sec.append(emptyMsg("Daten","Die Spielerdaten werden automatisch geladen…")); return; }
   const {side,content}=tabScaffold(sec);
-  const rowsAll=aggregatePlayers(state.players,compMapFromMatches());  // 1 Zeile je Spieler
-  const min=v=>v+"'";
+  const rowsAll=scoutRows();
+  if(!state.scoutCols)state.scoutCols=new Set(SCOUT_COLS.map(c=>c.k));
+  const splitComma=s=>esc(s).split(", ").filter(Boolean);
+  const compOpts=[...new Set(rowsAll.flatMap(p=>splitComma(p.comp)))].sort((a,b)=>a.localeCompare(b,"de"));
+  const teamOpts=[...new Set(rowsAll.flatMap(p=>splitComma(p.team)))].sort((a,b)=>a.localeCompare(b,"de"));
+  const anyIn=(v,set)=>(Array.isArray(v)?v:[v]).some(x=>set.includes(x));
+  const min=v=>v+"'", r2=v=>(+v).toFixed(2);
   const fb=makeFilterBar(side,rowsAll,[
     {key:"name",type:"text",label:"Name",placeholder:"Spieler suchen…",get:p=>p.name},
     {key:"cat",type:"select",label:"Kategorie",options:["Erwachsen","Jugend"],get:p=>leagueCat(p.comp)},
-    {key:"comp",type:"select",label:"Bewerb",get:p=>p.comp},
-    {key:"team",type:"select",label:"Verein",get:p=>p.team},
+    {key:"comp",type:"select",label:"Bewerb",options:compOpts,test:(p,v)=>anyIn(v,splitComma(p.comp))},
+    {key:"team",type:"select",label:"Verein",options:teamOpts,test:(p,v)=>anyIn(v,splitComma(p.team))},
     {key:"pos",type:"select",label:"Position",get:p=>p.position},
-    {key:"role",type:"select",label:"Rolle",get:p=>p.role},
+    {key:"nat",type:"select",label:"Nationalität",get:p=>p.nationality},
+    {key:"jg",type:"range",label:"Jahrgang",get:p=>p.birth_year===""?NaN:+p.birth_year,scale:"quantile"},
+    {key:"age",type:"range",label:"Alter",get:p=>p.age===""?NaN:+p.age,min:10},
+    {key:"min",type:"range",label:"Minuten (gesamt)",get:p=>p.minutes,format:min,scale:"log"},
+    {key:"goals",type:"range",label:"Tore (gesamt)",get:p=>p.goals,scale:"log"},
+    {key:"off",type:"range",label:"Offensiv-Rating",get:p=>p.off===""?NaN:+p.off,step:0.01,format:r2},
+    {key:"def",type:"range",label:"Defensiv-Rating",get:p=>p.def===""?NaN:+p.def,step:0.01,format:r2},
+    {key:"total",type:"range",label:"Total-Rating",get:p=>p.total===""?NaN:+p.total,step:0.01,format:r2},
+    {key:"peak",type:"range",label:"Peak-Rating",get:p=>p.peak===""?NaN:+p.peak,step:0.01,format:r2},
+    {key:"tal",type:"range",label:"Talent-Perzentil (0=Top)",get:p=>p.pct_talent===""?NaN:+p.pct_talent,
+      min:0,max:100,histo:false,format:v=>(+v).toFixed(0)+"%",
+      presets:[["Top 10%",["","10"]],["Top 20%",["","20"]],["Top 30%",["","30"]],["alle",["",""]]]},
     {key:"cap",type:"bool",label:"Kapitän",get:p=>p.captain},
-    {key:"age",type:"range",label:"Alter",get:p=>p.age,min:10},
-    {key:"jg",type:"range",label:"Jahrgang",get:p=>p.birth_year,scale:"quantile"},
-    {key:"min",type:"range",label:"Minuten (gesamt)",get:p=>p.minutes,format:min,scale:"quantile"},
-    {key:"goals",type:"range",label:"Tore (gesamt)",get:p=>p.goals},
+    {key:"role",type:"select",label:"Rolle",get:p=>p.role},
   ],draw);
 
-  const cols=[["name","Name"],["team","Verein"],["comp","Bewerb"],["age","Alter"],["birth_year","Jg."],
-              ["position","Position"],["minutes","Minuten"],["goals","Tore"],["matches","Spiele"]];
-  const table=el("table"),thead=el("tr");
-  cols.forEach(([k,l])=>{const th=el("th",{},l);
-    th.onclick=()=>{state.sortP.dir=state.sortP.k===k?-state.sortP.dir:1;state.sortP.k=k;draw();};thead.append(th);});
-  table.append(el("thead",{},thead)); const tb=el("tbody"); table.append(tb);
-  content.append(el("div",{class:"content-head"},fb.count),table);
+  // Spalten-Auswahl (alle sichtbar per Default, abwählbar)
+  const colPop=el("div",{class:"ms-pop"});
+  SCOUT_COLS.filter(c=>!c.always).forEach(c=>{
+    const row=el("label",{class:"ms-opt"});
+    const cb=el("input",{type:"checkbox"}); cb.checked=state.scoutCols.has(c.k);
+    cb.onchange=()=>{cb.checked?state.scoutCols.add(c.k):state.scoutCols.delete(c.k); build();};
+    row.append(cb,document.createTextNode(c.l)); colPop.append(row);
+  });
+  const colBtn=el("button",{class:"ms-btn",type:"button",style:"width:auto"},"⚙ Spalten",el("span",{class:"ms-caret"},"▾"));
+  colBtn.onclick=()=>colPop.classList.toggle("open");
+  const colWrap=el("div",{class:"ms",style:"width:auto"},colBtn,colPop);
 
-  function draw(){
-    let rows=fb.apply(rowsAll);
-    const k=state.sortP.k,d=state.sortP.dir,nums=new Set(["age","birth_year","goals","matches","minutes"]);
-    rows.sort((a,b)=>{
-      if(nums.has(k)){ let va=(a[k]===""||a[k]==null)?NaN:+a[k], vb=(b[k]===""||b[k]==null)?NaN:+b[k];
-        const an=isNaN(va),bn=isNaN(vb);
-        if(an&&bn)return 0; if(an)return 1; if(bn)return -1;   // Unbekannte immer ans Ende
-        return (va-vb)*d; }
-      const va=norm(a[k]),vb=norm(b[k]); return (va>vb?1:va<vb?-1:0)*d;});
-    const unknown=rows.filter(p=>p.age==="").length;
-    fb.count.textContent=`${rows.length} Spieler${unknown?` · ${unknown} ohne Alter`:""}`;
-    tb.innerHTML="";
-    for(const p of rows){
-      const nameEl=el("span",{class:"plink",title:"Profil öffnen"},esc(p.name));
-      nameEl.onclick=()=>openProfile(p.player_id,p.name);
-      tb.append(el("tr",{},
-        el("td",{},nameEl,p.captain?el("span",{class:"cap"}," ©"):""),
-        el("td",{},esc(p.team)),
-        el("td",{},el("span",{class:"tag"},esc(p.comp))),
-        el("td",{class:"num"},p.age!==""?p.age+"J":"—"),
-        el("td",{class:"num"},esc(p.birth_year)),
-        el("td",{},el("span",{class:"tag"},esc(p.position))),
-        el("td",{class:"num"},p.minutes+"'"),
-        el("td",{class:"num"},String(p.goals)),
-        el("td",{class:"num"},String(p.matches))));
-    }
+  const tableWrap=el("div",{style:"overflow-x:auto"});
+  content.append(el("div",{class:"content-head"},fb.count,colWrap),tableWrap);
+
+  const numKeys=new Set(SCOUT_COLS.filter(c=>c.num).map(c=>c.k));
+  function cell(p,c){
+    if(c.k==="name"){const a=el("span",{class:"plink",title:"Profil öffnen"},esc(p.name));
+      a.onclick=()=>openProfile(p.player_id,p.name);
+      return el("td",{},a,p.captain?el("span",{class:"cap"}," ©"):"");}
+    if(c.k==="comp")return el("td",{},p.comp?el("span",{class:"tag"},esc(p.comp)):"");
+    if(c.k==="position")return el("td",{},p.position?el("span",{class:"tag"},esc(p.position)):"");
+    if(c.k==="pct_talent"){const tal=p.pct_talent!==""&&!isNaN(+p.pct_talent);
+      return el("td",{class:"num",style:tal&&+p.pct_talent<=20?"color:var(--good);font-weight:600":""},
+        tal?(+p.pct_talent).toFixed(1):"—");}
+    if(c.rat)return el("td",{class:"num",style:c.k==="total"?"font-weight:600":""},fmtRat(p[c.k]));
+    if(c.k==="minutes")return el("td",{class:"num"},(+p.minutes||0)+"'");
+    if(c.k==="age")return el("td",{class:"num"},p.age!==""?p.age+"J":"—");
+    if(c.num)return el("td",{class:"num"},esc(p[c.k]));
+    return el("td",{},esc(p[c.k]));
   }
-  draw();
+  function build(){                               // Kopf neu aufbauen (Spaltenänderung), dann draw
+    const cols=SCOUT_COLS.filter(c=>c.always||state.scoutCols.has(c.k));
+    const table=el("table"),thead=el("tr");
+    cols.forEach(c=>{const th=el("th",{},c.l);
+      th.onclick=()=>{state.sortSc.dir=state.sortSc.k===c.k?-state.sortSc.dir:1;state.sortSc.k=c.k;draw();};
+      thead.append(th);});
+    table.append(el("thead",{},thead)); const tb=el("tbody"); table.append(tb);
+    tableWrap.innerHTML=""; tableWrap.append(table);
+    build._cols=cols; build._tb=tb; draw();
+  }
+  function draw(){
+    const cols=build._cols,tb=build._tb; if(!tb)return;
+    let rows=fb.apply(rowsAll);
+    const k=state.sortSc.k,d=state.sortSc.dir;
+    rows.sort((a,b)=>{
+      if(numKeys.has(k)){let va=(a[k]===""||a[k]==null)?NaN:+a[k],vb=(b[k]===""||b[k]==null)?NaN:+b[k];
+        const an=isNaN(va),bn=isNaN(vb); if(an&&bn)return 0; if(an)return 1; if(bn)return -1; return (va-vb)*d;}
+      const va=norm(a[k]),vb=norm(b[k]); return (va>vb?1:va<vb?-1:0)*d;});
+    fb.count.textContent=`${rows.length} / ${rowsAll.length} Spieler`;
+    tb.innerHTML="";
+    for(const p of rows) tb.append(el("tr",{},...cols.map(c=>cell(p,c))));
+  }
+  build();
 }
 
 /* ---------- STATS ---------- */
@@ -646,73 +707,8 @@ function renderStats(){
   draw();
 }
 
-/* ---------- RATINGS (Plus-Minus / Talent) ---------- */
-const splitList=s=>esc(s).split(" / ").filter(Boolean);
+/* fmtRat: Rating-Zahl mit Vorzeichen/3 Nachkommastellen; "—" wenn leer */
 const fmtRat=v=>(v===""||v==null||isNaN(+v))?"—":((+v>=0?"+":"")+(+v).toFixed(3));
-function renderRatings(){
-  const sec=$("#tab-ratings"); sec.innerHTML="";
-  if(!state.ratings.length){ sec.append(emptyMsg("ratings.csv",
-    "Lade deine <code>ratings.csv</code> (aus <code>plusminus.py</code>).")); return; }
-  const {side,content}=tabScaffold(sec);
-  const rowsAll=state.ratings;                       // ratings.csv ist schon 1 Zeile je Spieler
-  const compOpts=[...new Set(rowsAll.flatMap(p=>splitList(p.competitions)))].sort((a,b)=>a.localeCompare(b,"de"));
-  const teamOpts=[...new Set(rowsAll.flatMap(p=>splitList(p.teams)))].sort((a,b)=>a.localeCompare(b,"de"));
-  const anyIn=(v,set)=>(Array.isArray(v)?v:[v]).some(x=>set.includes(x));
-  const fb=makeFilterBar(side,rowsAll,[
-    {key:"name",type:"text",label:"Name",placeholder:"Spieler suchen…",get:p=>p.name},
-    {key:"cat",type:"select",label:"Kategorie",options:["Erwachsen","Jugend"],get:p=>leagueCat(p.competitions)},
-    {key:"comp",type:"select",label:"Bewerb",options:compOpts,test:(p,v)=>anyIn(v,splitList(p.competitions))},
-    {key:"team",type:"select",label:"Verein",options:teamOpts,test:(p,v)=>anyIn(v,splitList(p.teams))},
-    {key:"jg",type:"range",label:"Jahrgang",get:p=>p.birth_year===""?NaN:+p.birth_year,scale:"quantile"},
-    {key:"age",type:"range",label:"Alter",get:p=>p.age===""?NaN:+p.age,min:10},
-    {key:"min",type:"range",label:"Minuten",get:p=>+p.minutes||0,format:v=>v+"'",scale:"quantile"},
-    {key:"total",type:"range",label:"Total-Rating",get:p=>+p.total,step:0.01,format:v=>(+v).toFixed(2)},
-    {key:"peak",type:"range",label:"Peak-Rating",get:p=>+p.peak,step:0.01,format:v=>(+v).toFixed(2)},
-    {key:"tal",type:"range",label:"Talent-Perzentil (0=Top)",get:p=>p.pct_talent===""?NaN:+p.pct_talent,format:v=>(+v).toFixed(0)+"%"},
-  ],draw);
-
-  const cols=[["name","Name"],["birth_year","Jg."],["teams","Verein"],["competitions","Bewerb"],
-              ["minutes","Min."],["matches","Sp."],["off","Off"],["def","Def"],
-              ["total","Total"],["peak","Peak"],["pct_talent","Talent %"]];
-  const nums=new Set(["birth_year","minutes","matches","off","def","total","peak","pct_talent","age"]);
-  const table=el("table"),thead=el("tr");
-  cols.forEach(([k,l])=>{const th=el("th",{},l);
-    th.onclick=()=>{state.sortR.dir=state.sortR.k===k?-state.sortR.dir:1;state.sortR.k=k;draw();};thead.append(th);});
-  table.append(el("thead",{},thead)); const tb=el("tbody"); table.append(tb);
-  content.append(el("div",{class:"content-head"},fb.count),table);
-
-  function draw(){
-    let rows=fb.apply(rowsAll);
-    const k=state.sortR.k,d=state.sortR.dir;
-    rows.sort((a,b)=>{
-      if(nums.has(k)){ let va=(a[k]===""||a[k]==null)?NaN:+a[k], vb=(b[k]===""||b[k]==null)?NaN:+b[k];
-        const an=isNaN(va),bn=isNaN(vb);
-        if(an&&bn)return 0; if(an)return 1; if(bn)return -1;   // Unbekannte ans Ende
-        return (va-vb)*d; }
-      const va=norm(a[k]),vb=norm(b[k]); return (va>vb?1:va<vb?-1:0)*d;});
-    fb.count.textContent=`${rows.length} / ${rowsAll.length} Spieler`;
-    tb.innerHTML="";
-    for(const p of rows){
-      const tal=p.pct_talent!==""&&!isNaN(+p.pct_talent);
-      const nameEl=el("span",{class:"plink",title:"Profil öffnen"},esc(p.name));
-      nameEl.onclick=()=>openProfile(p.player_id,p.name);
-      tb.append(el("tr",{},
-        el("td",{},nameEl),
-        el("td",{class:"num"},esc(p.birth_year)),
-        el("td",{},esc(p.teams)),
-        el("td",{},el("span",{class:"tag"},esc(p.competitions))),
-        el("td",{class:"num"},(+p.minutes||0)+"'"),
-        el("td",{class:"num"},esc(p.matches)),
-        el("td",{class:"num"},fmtRat(p.off)),
-        el("td",{class:"num"},fmtRat(p.def)),
-        el("td",{class:"num",style:"font-weight:600"},fmtRat(p.total)),
-        el("td",{class:"num"},fmtRat(p.peak)),
-        el("td",{class:"num",style:tal&&+p.pct_talent<=20?"color:var(--good);font-weight:600":""},
-          tal?(+p.pct_talent).toFixed(1):"—")));
-    }
-  }
-  draw();
-}
 
 /* ---------- SPIELERPROFIL ---------- */
 let _aggCache=null,_aggN=-1,_matchMap=null,_matchN=-1;
@@ -1541,13 +1537,16 @@ function emptyMsg(what,html){ return el("div",{class:"empty"},
     "Per Knopf oben oder Drag & Drop laden."));}
 
 /* init */
-renderMatches(); renderPlayers(); renderProfile(); renderRatings(); renderExplain(); renderStats();
+const safe=fn=>{try{fn();}catch(e){console.error(e);}};
+safe(renderScout); safe(renderStats); safe(renderExplain); safe(renderProfile); safe(renderMatches);
 tryAuto("data/matches.json",t=>{try{state.matches=JSON.parse(t);
-  $("#pillM").textContent=state.matches.length+" Matches";$("#pillM").classList.add("on");renderMatches();renderPlayers();renderStats();renderProfile();}catch(e){}});
+  $("#pillM").textContent=state.matches.length+" Matches";$("#pillM").classList.add("on");
+  safe(renderScout);safe(renderStats);safe(renderProfile);safe(renderMatches);}catch(e){}});
 tryAuto("data/players.csv",t=>{state.players=parseCSV(t);
-  $("#pillP").textContent=state.players.length+" Spieler-Zeilen";$("#pillP").classList.add("on");renderPlayers();renderMatches();renderStats();renderProfile();});
+  $("#pillP").textContent=(new Set(state.players.map(p=>p.player_id).filter(Boolean)).size)+" Spieler";$("#pillP").classList.add("on");
+  safe(renderScout);safe(renderStats);safe(renderProfile);});
 tryAuto("data/ratings.csv",t=>{state.ratings=parseCSV(t);
-  $("#pillR").textContent=state.ratings.length+" Ratings";$("#pillR").classList.add("on");renderRatings();});
+  $("#pillR").textContent=state.ratings.length+" Ratings";$("#pillR").classList.add("on");safe(renderScout);});
 </script>
 </body>
 </html>
