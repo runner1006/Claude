@@ -87,6 +87,10 @@
   .fbtn:hover{border-color:var(--accent2);color:var(--text)}
   .presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
   .preset{font-size:11px;padding:4px 9px}
+  /* Scroll-Container für die breite Scouting-Tabelle: eigener Scroll (beide
+     Achsen), Kopfzeile klebt an dessen Oberkante statt am Viewport. */
+  .tblscroll{overflow:auto;max-height:calc(100vh - 150px);border:1px solid var(--line);border-radius:10px}
+  .tblscroll thead th{position:sticky;top:0;z-index:2;background:var(--panel)}
   .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
   .chips:empty{display:none}
   .chip{display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--accent);
@@ -601,7 +605,7 @@ function renderScout(){
   colBtn.onclick=()=>colPop.classList.toggle("open");
   const colWrap=el("div",{class:"ms",style:"width:auto"},colBtn,colPop);
 
-  const tableWrap=el("div",{style:"overflow-x:auto"});
+  const tableWrap=el("div",{class:"tblscroll"});
   content.append(el("div",{class:"content-head"},fb.count,colWrap),tableWrap);
 
   const numKeys=new Set(SCOUT_COLS.filter(c=>c.num).map(c=>c.k));
