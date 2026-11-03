@@ -89,18 +89,31 @@ _ALLOWED_STATIC = {"dashboard.html", "index.html", "histogram-range.js"}
 _NOCACHE = {"Cache-Control": "no-cache"}   # Browser fragt mit ETag nach -> 304 wenn unveraendert
 
 
+def _file_etag(path: str) -> str:
+    return f'W/"{int(os.path.getmtime(path))}-{os.path.getsize(path)}"'
+
+
+def _static(path: str, mt: str, request: Request):
+    """Statische Datei mit ETag aus mtime+Groesse; If-None-Match-Treffer -> 304."""
+    if not os.path.exists(path):
+        raise HTTPException(404)
+    etag = _file_etag(path)
+    if request.headers.get("if-none-match") == etag:
+        return Response(status_code=304)
+    return FileResponse(path, media_type=mt, headers={"ETag": etag, **_NOCACHE})
+
+
 @app.get("/")
-def root():
-    return FileResponse(os.path.join(ROOT, "dashboard.html"), media_type="text/html",
-                        headers=_NOCACHE)
+def root(request: Request):
+    return _static(os.path.join(ROOT, "dashboard.html"), "text/html", request)
 
 
 @app.get("/{name}")
-def static_file(name: str):
+def static_file(name: str, request: Request):
     if name not in _ALLOWED_STATIC:
         raise HTTPException(404)
     mt = "application/javascript" if name.endswith(".js") else "text/html"
-    return FileResponse(os.path.join(ROOT, name), media_type=mt, headers=_NOCACHE)
+    return _static(os.path.join(ROOT, name), mt, request)
 
 
 @app.get("/data/{name}")
@@ -112,14 +125,19 @@ def data_file(name: str, request: Request):
     mt = _MIME.get(ext, "application/octet-stream")
     gz = base + ".gz"
     if os.path.exists(gz):                       # vor-gezippt -> transparent
-        etag = f'W/"{int(os.path.getmtime(gz))}-{os.path.getsize(gz)}"'
+        etag = _file_etag(gz)
         if request.headers.get("if-none-match") == etag:
             return Response(status_code=304)
-        return FileResponse(gz, media_type=mt, headers={
-            "Content-Encoding": "gzip", "ETag": etag, "Vary": "Accept-Encoding",
-            "Cache-Control": "no-cache"})
+        headers = {"ETag": etag, "Vary": "Accept-Encoding", "Cache-Control": "no-cache"}
+        if "gzip" in request.headers.get("accept-encoding", ""):
+            headers["Content-Encoding"] = "gzip"
+            return FileResponse(gz, media_type=mt, headers=headers)
+        if os.path.exists(base):                 # Client ohne gzip (curl/Skripte): Rohdatei
+            return FileResponse(base, media_type=mt, headers=headers)
+        with open(gz, "rb") as f:
+            return Response(content=gzip.decompress(f.read()), media_type=mt, headers=headers)
     if os.path.exists(base):
-        return FileResponse(base, media_type=mt, headers=_NOCACHE)
+        return _static(base, mt, request)
     raise HTTPException(404)
 
 

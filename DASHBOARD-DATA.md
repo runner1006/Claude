@@ -12,9 +12,14 @@ Das Dashboard (`dashboard.html`) lädt **nicht mehr** `players.csv` (118 MB), `m
 | `GET /api/match/{match_id}` | Aufstellungen (mit Minuten, Jahrgang) + Events eines Spiels | ~5 KB | beim Aufklappen eines Spiels |
 | `GET /api/health` | Zähler + `dashboard.built` | – | optional (Pill "Stand") |
 
-Alle Antworten tragen `ETag` + `Cache-Control: no-cache` (Browser fragt nach, bekommt 304 wenn
-unverändert). JSON der API wird per GZip-Middleware komprimiert; `/data/*.json` wird als
-vor-gezipptes `.gz` mit `Content-Encoding: gzip` ausgeliefert (transparent für `fetch`).
+Alle Antworten – auch `/`, `/dashboard.html`, `/histogram-range.js` – tragen `ETag` +
+`Cache-Control: no-cache` (Browser fragt nach, bekommt 304 wenn unverändert). JSON der API wird per
+GZip-Middleware komprimiert; `/data/*.json` wird als vor-gezipptes `.gz` mit `Content-Encoding: gzip`
+ausgeliefert (transparent für `fetch`); Clients ohne `Accept-Encoding: gzip` bekommen die Rohdatei.
+
+Das Dashboard lädt alles über einen Helfer (`fetchJSON`) mit einfachen URLs (kein Cache-Busting) und
+zeigt Fehler sichtbar an (HTTP-Status + `detail`, „Erneut versuchen“). Tabs und Profile sind per
+URL-Hash erreichbar: `#scout`, `#profile`, `#profile=<id>`, `#stats`, `#explain`, `#matches`.
 
 ## scout.json
 
@@ -59,8 +64,15 @@ Kategorie Jugend/Erwachsen eines Bewerbs wie bisher per `/\bU\s?\d|jugend/i`.
  "rows":[["3839463","2025-08-03","03.08.2025","17:00",17,"2025/26","1. Runde",412,733,"1:3",1,3,"1:1",null,200,"Philip Gillesberger",14,"Marcel Thallinger","Andreas Wieland , MA","https://…"], ...]}
 ```
 `comp`, `home`, `away` sind Indizes in `competitions`/`teams`. `nev` = Anzahl Events (wie bisher die
-Spalte „Events“). Spielberichte ohne Datum und Teams (59 leere Seiten) sind nicht enthalten.
+Spalte „Events“). Spielberichte ohne Datum und Teams (52 leere Seiten) sind nicht enthalten; 7 Spiele
+mit Datum, aber ohne Teams/Score bleiben enthalten (`home`/`away`/`sh`/`sa` = `null`, Anzeige leer/0).
 Sortiert nach Datum aufsteigend.
+
+Bewusste Abweichungen zum alten Dashboard: die Spalte „Datum“ und die Datum-Filteroptionen sortieren
+nach `iso` (alt: lexikografisch über `dd.mm.yyyy`); Team-/Bewerbsoptionen werden im Browser mit
+`localeCompare("de")` sortiert (die Wörterbücher selbst sind Python-`casefold`-sortiert, Ö/Ü hinten).
+`teams` von `scout.json` und `matches_index.json` sind **verschiedene** Wörterbücher (Einsatz- vs.
+Spielbericht-Schreibweise) – Indizes nie tab-übergreifend verwenden.
 
 ## /api/profile/{player_id}
 
@@ -113,8 +125,14 @@ Semantik (identisch zur bisherigen Browser-Berechnung in `dashboard.html`):
  "events":[{"type":"goal","minute":"21","team":"away","player":"…","player_out":"","detail":"Strafstoß"}, …]}
 ```
 `role` `starter`/`bench`, Reihenfolge wie im Spielbericht. Trainer stehen in `matches_index.json`
-(`coach_h`/`coach_a`). Alter im Aufstellungsblock: aus `birth_year` (Jahr − Jahrgang) statt wie bisher
-aus der CSV. `minute` ist der Rohtext (z. B. `"90+2"`, `"(Elfm.)"`), Anzeige wie bisher.
+(`coach_h`/`coach_a`); das Dashboard reicht sie aus der Index-Zeile in den Detailblock. Alter im
+Aufstellungsblock: exaktes Alter aus `scout.json` (`age` am `ref_date`, über `player_id`), sonst
+Jahr des `ref_date` − `birth_year`, sonst leer. `minute` ist der Rohtext (z. B. `"90+2"`,
+`"(Elfm.)"`), Anzeige wie bisher; Events kommen in Tabellen-Reihenfolge (typ-gruppiert wie `events.csv`).
+
+Spieler ohne ÖFB-ID (`scout.json` `id` = `""`, 20 Bank-Zeilen mit 0 Minuten) haben kein Profil: im
+Scouting ohne Link, in der Profil-Suche nicht angeboten. `games[].season` ist `"?"` und `date` `""`,
+wenn das Spiel kein parsebares Datum hat.
 
 ## Lokaler Testserver
 
