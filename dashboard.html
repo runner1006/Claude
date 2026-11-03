@@ -230,7 +230,7 @@
   .vt.r2>thead th{padding:8px 5px}
   .vt.r2>tbody>tr.sp>td{height:0;line-height:0}
   .c2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;
-      overflow-wrap:anywhere;max-height:34px}
+      hyphens:auto;overflow-wrap:anywhere;max-height:34px}
   .c2 .tag{display:inline;line-height:17px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
   /* Erste Spalte (Name) klebt links, damit die Zeile beim horizontalen Scrollen (schmale Fenster) zuordenbar bleibt */
   .vt.stick1>thead th:first-child{position:sticky;left:0;z-index:3}
@@ -615,19 +615,19 @@ function shortComp(x){                           // Anzeige-Kurzform (Filter/Too
     .replace(/^Regionalliga/,"RL").replace(/^Oberliga/,"OL");
 }
 const SCOUT_COLS=[
-  {k:"name",l:"Name",always:true,s:"nname",flex:1.2,min:122,wrap:1},
+  {k:"name",l:"Name",always:true,s:"nname",flex:1.2,min:110,wrap:1},
   {k:"nat",l:"Nat.",s:"nnat",flex:0.6,min:84,wrap:1},
-  {k:"team",l:"Verein",s:"nteam",flex:1.5,min:156,wrap:1},
-  {k:"comp",l:"Bewerb",s:"ncomp",flex:1.1,min:116,wrap:1,t:COMP_LEGEND},
-  {k:"by",l:"Jg.",num:1,w:40},
+  {k:"team",l:"Verein",s:"nteam",flex:1.5,min:140,wrap:1},
+  {k:"comp",l:"Bewerb",s:"ncomp",flex:1.1,min:104,wrap:1,t:COMP_LEGEND},
+  {k:"by",l:"Jg.",num:1,w:44},
   {k:"age",l:"Alter",num:1,w:44},
-  {k:"min",l:"Min.",num:1,w:50},
+  {k:"min",l:"Min.",num:1,w:54},
   {k:"matches",l:"Sp.",num:1,w:36},
-  {k:"goals",l:"Tore",num:1,w:38},
-  {k:"off",l:"Off",num:1,rat:1,w:50},
-  {k:"def",l:"Def",num:1,rat:1,w:50},
-  {k:"total",l:"Total",num:1,rat:1,w:54},
-  {k:"peak",l:"Peak",num:1,rat:1,w:50},
+  {k:"goals",l:"Tore",num:1,w:40},
+  {k:"off",l:"Off",num:1,rat:1,w:58},
+  {k:"def",l:"Def",num:1,rat:1,w:58},
+  {k:"total",l:"Total",num:1,rat:1,w:60},
+  {k:"peak",l:"Peak",num:1,rat:1,w:58},
   {k:"pct_talent",l:"Talent%",num:1,rat:1,w:62},
   {k:"pos",l:"Pos.",hide:1,s:"npos",w:80},   // standardmäßig ausgeblendet
   {k:"role",l:"Rolle",hide:1,s:"nrole",w:68},  // standardmäßig ausgeblendet
