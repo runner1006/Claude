@@ -84,6 +84,10 @@ def mcp_no_slash():
 _MIME = {".json": "application/json", ".csv": "text/csv; charset=utf-8",
          ".sqlite": "application/octet-stream", ".txt": "text/plain"}
 _ALLOWED_STATIC = {"dashboard.html", "index.html", "histogram-range.js"}
+# /data/* liefert nur die vorberechneten Dashboard-Dateien. Alles andere im Datenordner (oefb.sqlite,
+# grosse Roh-Exporte) bleibt privat - sonst wuerde die GZip-Middleware z. B. die 160-MB-DB je Request
+# komplett komprimieren (~10 s CPU) und jeder koennte sie herunterladen.
+_ALLOWED_DATA = {"scout.json", "matches_index.json"}
 
 
 _NOCACHE = {"Cache-Control": "no-cache"}   # Browser fragt mit ETag nach -> 304 wenn unveraendert
@@ -119,7 +123,7 @@ def static_file(name: str, request: Request):
 
 @app.get("/data/{name}")
 def data_file(name: str, request: Request):
-    if "/" in name or ".." in name:
+    if name not in _ALLOWED_DATA:
         raise HTTPException(404)
     base = os.path.join(DATA_DIR, name)
     ext = os.path.splitext(name)[1]

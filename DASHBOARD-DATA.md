@@ -132,3 +132,27 @@ aus der CSV. `minute` ist der Rohtext (z. B. `"90+2"`, `"(Elfm.)"`), Anzeige wie
 * Erstes sichtbares Scouting-Ergebnis < 1,5 s bei 10 Mbit/s (ein Request à 0,63 MB), Wiederbesuch per 304 sofort.
 * Filter/Sortierung über 13 000 Zeilen < 50 ms; es werden nie alle 13 000 Zeilen als DOM gerendert.
 * Profil öffnen < 300 ms (ein Request, 2–6 KB). Speicher im Browser < 100 MB (bisher > 500 MB).
+
+## Browser (dashboard.html)
+
+* URL-Hash-Routing: `#scout`, `#profile`, `#profile=<id>`, `#stats`, `#explain`, `#matches` – Tabs und
+  Profile sind verlinkbar; das Öffnen eines Profils setzt `#profile=<id>` (`history.replaceState`).
+  `#profile=<id>` wird sofort aufgelöst (das Profil hängt nicht an `scout.json`).
+* Scouting, Statistik und Matches rendern **virtualisiert** (`VirtualTable`): nur sichtbare Zeilen + 20 Zeilen
+  Puffer im DOM, zwei Spacer-Zeilen halten die Scrollhöhe (Scrollbalken/End-Taste springen direkt ans
+  Listenende), Zeilenhöhe fix (nowrap + Ellipsis, voller Text im `title`), Filter/Sortierung setzen den
+  Scroll auf Zeile 1; leeres Ergebnis zeigt „Keine Spieler/Spiele für diese Filter.“. Im Matches-Tab
+  lebt das aufgeklappte Spiel als Detailzeile im virtuellen Fenster (Höhe gemessen).
+* Spaltenbreiten: Zahlenspalten fest (px), Textspalten teilen sich den Rest der Containerbreite
+  (Gewicht + Mindestbreite). Alle 14 Standard-Spalten des Scoutings passen ab 950 px Containerbreite
+  (1280er-Fenster mit Sidebar) ohne horizontalen Scroll; darunter scrollt `.tblscroll` horizontal
+  (Kopfzeile klebt oben). Unter 880 px steht die Filter-Sidebar über der Tabelle, die Seite selbst
+  scrollt nie horizontal.
+* Multiselect-Optionslisten (Bewerb/Verein, bis 2 500 Einträge) werden erst beim Öffnen gebaut.
+* `innerHTML`-Kontexte (Fehlertexte, Profil-Metadaten aus der API) laufen durch `hesc()`.
+* Pill „Spieler“ = `stats.players_with_id` (Fallback: Zeilen mit ID), „Ratings“ = Zeilen mit `total != null`,
+  „Matches“ = `stats.matches`, „Stand“ = `built` (de-AT).
+* Messwerte für Tests: `<span id="perf" data-fetch data-decode data-boot data-filter data-profile>` (ms);
+  `boot` = Zeit bis zur ersten gezeichneten Scouting-Tabelle.
+* `/data/{name}` liefert nur `scout.json` und `matches_index.json` (Allowlist); andere Dateien im
+  Datenordner (`oefb.sqlite`, Roh-Exporte) sind nicht abrufbar.
