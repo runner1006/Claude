@@ -1,32 +1,48 @@
 # ÖFB Daten-Dashboard & Scraper
 
-Toolkit, um Spielberichte des österreichischen Fußballbundes (oefb.at / STFV) zu
-scrapen und in einem interaktiven, eigenständigen HTML-Dashboard auszuwerten —
-inklusive Spieler-Alter, Spielminuten und Filtern. Online deploybar als Static
-Site (z. B. render.com).
+Toolkit, um Spielberichte des österreichischen Fußballbundes (oefb.at / Landesverbände)
+zu scrapen, zu einer SQLite-Datenbank mit Plus-Minus-Ratings (RAPM) aufzubereiten und
+über drei Kanäle auszuliefern: ein Scouting-Dashboard (HTML), eine JSON-API und einen
+MCP-Server. Läuft als FastAPI-Webservice auf render.com (`render.yaml`).
 
 ## Live-Dashboard (Deployment)
 
-Das Dashboard ist eine **einzelne HTML-Datei** ohne Backend. Es lädt
-`data/matches.json` und `data/players.csv` per `fetch` von derselben Origin.
+Der Service `server/app.py` liefert `dashboard.html`, die Daten unter `/data/…`, die
+API unter `/api/…` und den MCP-Server unter `/mcp`. Deploy = Push auf den in Render
+konfigurierten Branch (Auto-Deploy); Code und Daten sind getrennt:
 
-### render.com (Blueprint)
+* **Code** kommt aus dem Git-Repo (Render baut `pip install -r requirements-server.txt`).
+* **Daten** liegen auf der Render-Disk (`/var/data`) und werden von `update_all.py`
+  per `POST /admin/upload` (Bearer `ADMIN_TOKEN`) hochgeladen: `oefb.sqlite`,
+  `scout.json.gz`, `matches_index.json.gz`.
 
-1. Repo auf GitHub pushen (siehe unten).
-2. In render.com: **New +** → **Blueprint** → dieses Repo wählen.
-3. `render.yaml` wird erkannt → Static Site ohne Build, `/` zeigt das Dashboard.
-
-Alternativ manuell als **Static Site**: Build Command leer, Publish Directory `.`.
-
-> Funktioniert genauso auf GitHub Pages, Netlify oder Cloudflare Pages — es sind
-> reine statische Dateien.
+Das Dashboard lädt beim Start nur `scout.json` (~0,6 MB gzip, eine Zeile je Spieler),
+die Spielliste erst beim Öffnen des Matches-Tabs, Profile und Spieldetails einzeln per
+API. Die Daten werden von `build_dashboard.py` vorberechnet — Details und das genaue
+Format stehen in [`DASHBOARD-DATA.md`](DASHBOARD-DATA.md).
 
 ### Lokal ansehen
 
 ```bash
-python3 -m http.server 8000      # im Repo-Verzeichnis
-# -> http://localhost:8000/dashboard.html
+./serve_local.sh                 # Python 3.12 via uv, wie auf Render; Default: ./data, Port 8010
+./serve_local.sh data 8010       # explizit: Datenordner + Port
+# -> http://localhost:8010/
 ```
+
+Der Datenordner braucht `oefb.sqlite` (nach `build_db.py` **und** `build_dashboard.py`)
+sowie `scout.json(.gz)` und `matches_index.json(.gz)`.
+
+### Komplettes Daten-Update
+
+```bash
+python3 update_all.py            # IDs -> Scrape -> Profile -> Merge -> Events -> Ratings -> DB -> Dashboard-Daten -> Upload
+python3 update_all.py --skip-scrape   # nur DB + Dashboard-Daten neu bauen und hochladen
+python3 update_all.py --skip-upload   # alles lokal, ohne Upload
+```
+
+Die laufenden Bewerbe (Bewerb-IDs der aktuellen Saison) stehen in `collect_all.py`;
+sie müssen zu jedem Saisonwechsel aktualisiert werden (IDs: `collect_ids.py --list`
+bzw. die `saisonen`-Liste auf der Bewerbsseite des Vorjahres).
 
 ## Dashboard-Funktionen
 
@@ -39,8 +55,8 @@ python3 -m http.server 8000      # im Repo-Verzeichnis
   **Nachwuchs vs. Erwachsene**; Saison-Tabelle (Team, Minuten, Tore, roh +/-);
   **Plus-Minus-Verlauf** Match für Match mit minutengewichtetem Running Average
   (Kontext, um dem Modell-Rating zu vertrauen); alle Einsätze mit Gegner/Ergebnis;
-  Vereins- & Saison-Historie aus dem ÖFB-Profil (`data/player_extras.json`,
-  erzeugt via `python build_extras.py` nach `player_ages.py`).
+  Vereins- & Saison-Historie aus dem ÖFB-Profil (kommt mit dem Profil aus
+  `/api/profile/{id}`).
 - **Statistik** — Ø Alter & Ø Minuten je Verein / Bewerb / Kategorie / Position /
   Rolle / Jahrgang, sortierbar, mit Balken.
 - **Filter** in einer Sidebar (Tabelle immer sichtbar): Multiselect-Dropdowns,

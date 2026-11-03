@@ -9,7 +9,8 @@ Kette (jede Stufe nur bei Erfolg der vorherigen):
   5. fix_events: fehlende Tor-Minuten nachladen
   6. plusminus: ratings.csv neu
   7. build_extras + build_db: player_extras.json + oefb.sqlite
-  8. gzip der Dashboard-Dateien + Upload zum Server (ADMIN_TOKEN)
+  8. build_dashboard: scout.json/matches_index.json (gz) + dash_profile in oefb.sqlite
+  9. Upload zum Server (ADMIN_TOKEN): oefb.sqlite, scout.json.gz, matches_index.json.gz
 
 Konfiguration via .env (nicht committen): SERVER_URL, ADMIN_TOKEN.
 Aufruf: python3 update_all.py [--skip-upload] [--bewerbe ID ...]
@@ -17,9 +18,7 @@ Aufruf: python3 update_all.py [--skip-upload] [--bewerbe ID ...]
 from __future__ import annotations
 
 import argparse
-import gzip
 import os
-import shutil
 import subprocess
 import sys
 
@@ -46,21 +45,14 @@ def run(label: str, args: list[str]) -> None:
         sys.exit(f"ABBRUCH: {label} endete mit Exit {rc}")
 
 
-def gz(name: str) -> None:
-    src = os.path.join(ROOT, "data", name)
-    if not os.path.exists(src):
-        return
-    with open(src, "rb") as fi, gzip.open(src + ".gz", "wb", compresslevel=6) as fo:
-        shutil.copyfileobj(fi, fo)
-    print(f"gzip: {name} -> {os.path.getsize(src+'.gz')/1e6:.1f} MB")
 
 
 def upload(env: dict) -> None:
     url, tok = env.get("SERVER_URL", "").rstrip("/"), env.get("ADMIN_TOKEN", "")
     if not url or not tok:
         sys.exit("SERVER_URL/ADMIN_TOKEN fehlen (.env) — Upload nicht möglich.")
-    files = ["oefb.sqlite", "matches.json.gz", "players.csv.gz",
-             "ratings.csv.gz", "player_extras.json.gz"]
+    # Reihenfolge: erst DB (Profile), dann die Startdateien des Dashboards
+    files = ["oefb.sqlite", "scout.json.gz", "matches_index.json.gz"]
     for name in files:
         p = os.path.join(ROOT, "data", name)
         if not os.path.exists(p):
@@ -87,12 +79,19 @@ def main() -> int:
     os.environ.update({k: env[k] for k in ("SERVER_URL", "ADMIN_TOKEN") if k in env})
 
     if not args.skip_scrape:
+        # all_ids.txt ist die historische Gesamtliste; collect_all schreibt nur die
+        # laufenden Bewerbe -> danach wieder vereinigen (alte zuerst, neue hinten).
+        old_ids = [l.strip() for l in open("data/all_ids.txt", encoding="utf-8")
+                   if l.strip()] if os.path.exists("data/all_ids.txt") else []
         run("IDs sammeln (laufende Bewerbe)", ["collect_all.py", "-o", "data/all_ids.txt"])
-        # neue IDs = all_ids minus bereits vorhandene matches
+        cur_ids = [l.strip() for l in open("data/all_ids.txt", encoding="utf-8") if l.strip()]
+        seen = set(old_ids)
+        with open("data/all_ids.txt", "w", encoding="utf-8") as f:
+            f.write("\n".join(old_ids + [i for i in cur_ids if not (i in seen or seen.add(i))]) + "\n")
+        # neue IDs = laufende Bewerbe minus bereits vorhandene matches
         import csv as _csv
         have = {r["match_id"] for r in _csv.DictReader(open("data/matches.csv", encoding="utf-8"))}
-        new = [l.strip() for l in open("data/all_ids.txt", encoding="utf-8")
-               if l.strip() and l.strip() not in have]
+        new = [i for i in cur_ids if i not in have]
         print(f"Neue Spiele: {len(new)}")
         if new:
             os.makedirs("data_inc", exist_ok=True)
@@ -113,8 +112,7 @@ def main() -> int:
 
     run("Extras", ["build_extras.py"])
     run("SQLite-DB", ["build_db.py"])
-    for name in ("matches.json", "players.csv", "ratings.csv", "player_extras.json"):
-        gz(name)
+    run("Dashboard-Daten", ["build_dashboard.py"])     # schreibt scout.json(.gz) etc. selbst
     if not args.skip_upload:
         upload(env)
     print("\nFERTIG.")
