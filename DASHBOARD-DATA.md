@@ -12,15 +12,16 @@ Das Dashboard (`dashboard.html`) lädt **nicht mehr** `players.csv` (118 MB), `m
 | `GET /api/match/{match_id}` | Aufstellungen (mit Minuten, Jahrgang) + Events eines Spiels | ~5 KB | beim Aufklappen eines Spiels |
 | `GET /api/health` | Zähler + `dashboard.built` | – | optional (Pill "Stand") |
 
-Alle Antworten tragen `ETag` + `Cache-Control: no-cache` (Browser fragt nach, bekommt 304 wenn
-unverändert). JSON der API wird per GZip-Middleware komprimiert; `/data/*.json` wird als
+Alle Antworten – auch `/`, `/dashboard.html`, `/histogram-range.js` – tragen `ETag` +
+`Cache-Control: no-cache` (Browser fragt nach, bekommt 304 wenn unverändert). `clubs`/`achievements`
+kommen in der Reihenfolge des ÖFB-Profils (Browser sortiert wie bisher stabil). JSON der API wird per GZip-Middleware komprimiert; `/data/*.json` wird als
 vor-gezipptes `.gz` mit `Content-Encoding: gzip` ausgeliefert (transparent für `fetch`).
 
 ## scout.json
 
 ```json
 {"v":1,"built":"2026-11-03T01:52:10","ref_date":"2026-11-03",
- "stats":{"players":13167,"matches":11074,"appearances":371488,"ratings":11882,"bench_n":9076,"latest_match":"2026-10-31"},
+ "stats":{"players":13167,"players_with_id":13147,"matches":11074,"appearances":371488,"ratings":11882,"bench_n":9076,"latest_match":"2026-10-31"},
  "teams":["ASK Ebreichsdorf", ...],          // Namens-Wörterbuch (Index -> Name)
  "competitions":["11teamsports 1. Landesliga", ...],
  "cols":["id","name","teams","comps","by","age","pos","role","nat","verband","cap","min","matches","goals",
@@ -33,7 +34,7 @@ Spalten je Zeile (Reihenfolge = `cols`):
 
 | Spalte | Bedeutung |
 |---|---|
-| `id` | ÖFB-Spieler-ID (String). `""` bei 20 Einsatzzeilen ohne ID (Bank, 0 Minuten) – dann kein Profil |
+| `id` | ÖFB-Spieler-ID (String). `""` bei 20 Einsatzzeilen ohne ID (Bank, 0 Minuten) – dann kein Profil. Pill „Spieler“ = `stats.players_with_id` |
 | `name` | Name |
 | `teams` | Indizes in `teams`, **zuletzt gespielt zuerst** (bisher: Reihenfolge der CSV) |
 | `comps` | Indizes in `competitions`, zuletzt gespielt zuerst |
@@ -58,7 +59,9 @@ Kategorie Jugend/Erwachsen eines Bewerbs wie bisher per `/\bU\s?\d|jugend/i`.
  "cols":["id","iso","date","time","comp","season","round","home","away","score","sh","sa","ht","venue","spect","ref","nev","coach_h","coach_a","url"],
  "rows":[["3839463","2025-08-03","03.08.2025","17:00",17,"2025/26","1. Runde",412,733,"1:3",1,3,"1:1",null,200,"Philip Gillesberger",14,"Marcel Thallinger","Andreas Wieland , MA","https://…"], ...]}
 ```
-`comp`, `home`, `away` sind Indizes in `competitions`/`teams`. `nev` = Anzahl Events (wie bisher die
+`comp`, `home`, `away` sind Indizes in `competitions`/`teams` **dieser Datei** (eigenes Wörterbuch,
+nicht kompatibel mit `scout.teams`: Aufstellungs- und Spielplan-Teamnamen unterscheiden sich teils).
+Datum im Browser über `iso` sortieren (bisher wurde `dd.mm.yyyy` als Text sortiert). `nev` = Anzahl Events (wie bisher die
 Spalte „Events“). Spielberichte ohne Datum und Teams (59 leere Seiten) sind nicht enthalten.
 Sortiert nach Datum aufsteigend.
 
@@ -84,7 +87,7 @@ Sortiert nach Datum aufsteigend.
 Semantik (identisch zur bisherigen Browser-Berechnung in `dashboard.html`):
 
 * `games`: nur Einsätze mit `min > 0`, chronologisch (`iso` aufsteigend; Einsätze ohne Datum stehen
-  vorne, `iso` = `""`). `cat` `"J"` = Jugend, `"E"` = Erwachsen. `off` = Auswechselminute oder `null`
+  vorne mit `iso` = `""`, `date` = `""`, `season` = `"?"` wie bisher). `cat` `"J"` = Jugend, `"E"` = Erwachsen. `off` = Auswechselminute oder `null`
   (= bis Schluss). `gf`/`ga`/`pm` = Tore für/gegen während der Einsatzzeit; **`pm = null`**, wenn die
   Tor-Timeline unvollständig ist (weniger Tor-Events mit Minute als der Spielstand verlangt) – solche
   Spiele zählen in keinem +/-, aber in Minuten/Toren. Nachspielzeit wie bisher: „90+2“ → 90.

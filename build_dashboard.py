@@ -186,13 +186,14 @@ def build(data_dir: str, ref: dt.date) -> None:
     # ---- Einsaetze -> Aggregat je Spieler + Spiele je Spieler --------------------
     agg: dict[str, dict] = {}
     games: dict[str, list[dict]] = defaultdict(list)
-    n_app = 0
+    n_app = n_skipped = 0
     for r in con.execute("SELECT match_id, player_id, name, side, team, role, position, "
                          "minutes, on_min, off_min, captain, goals FROM appearances ORDER BY rowid"):
         n_app += 1
         mid = r["match_id"]
         m = M.get(mid)
         if m is None:
+            n_skipped += 1            # Einsatz ohne Spiel in matches (sollte 0 sein)
             continue
         pid = r["player_id"] or ""
         key = pid or f"name::{r['name']}|{r['team']}"
@@ -230,7 +231,7 @@ def build(data_dir: str, ref: dt.date) -> None:
         sh, sa = m["sh"], m["sa"]
         sf, sg = (sh, sa) if r["side"] == "home" else (sa, sh)
         games[pid].append({
-            "mid": mid, "iso": iso, "date": m["date"], "season": m["season"],
+            "mid": mid, "iso": iso, "date": m["date"] or "", "season": m["season"] or "?",
             "comp": comp, "cat": "J" if league_cat(comp) == "Jugend" else "E",
             "team": r["team"], "opp": m["away_team"] if r["side"] == "home" else m["home_team"],
             "ha": "H" if r["side"] == "home" else "A", "score": m["score"] or "",
@@ -240,7 +241,8 @@ def build(data_dir: str, ref: dt.date) -> None:
         })
     for g in games.values():
         g.sort(key=lambda x: x["iso"])      # stabil, wie im Browser
-    log(f"appearances: {n_app} | Spieler-Aggregate: {len(agg)} | Spieler mit Einsatz: {len(games)}")
+    log(f"appearances: {n_app} (ohne Spiel: {n_skipped}) | Spieler-Aggregate: {len(agg)} | "
+        f"Spieler mit Einsatz: {len(games)}")
 
     # ---- scout.json --------------------------------------------------------------
     cols = ["id", "name", "teams", "comps", "by", "age", "pos", "role", "nat", "verband",
@@ -275,7 +277,8 @@ def build(data_dir: str, ref: dt.date) -> None:
         r[2] = [tix[t] for t in r[2]]
         r[3] = [cix[c] for c in r[3]]
     scout = {"v": VERSION, "built": built, "ref_date": ref.isoformat(),
-             "stats": {"players": len(rows), "matches": len(M), "appearances": n_app,
+             "stats": {"players": len(rows), "players_with_id": len(P), "matches": len(M),
+                       "appearances": n_app,
                        "ratings": len(R), "bench_n": BENCH_N,
                        "latest_match": max((m["iso_date"] or "" for m in M.values()), default=None)},
              "teams": team_names, "competitions": comp_names, "cols": cols, "rows": rows}
@@ -370,10 +373,11 @@ def build(data_dir: str, ref: dt.date) -> None:
 
     # ---- Vereins-/Saison-Historie -----------------------------------------------
     clubs: dict[str, list] = defaultdict(list)
-    for r in con.execute("SELECT player_id, club, from_ms, land FROM player_clubs"):
+    for r in con.execute("SELECT player_id, club, from_ms, land FROM player_clubs ORDER BY rowid"):
         clubs[r["player_id"]].append([r["club"], r["from_ms"], r["land"]])
     achv: dict[str, list] = defaultdict(list)
-    for r in con.execute("SELECT player_id, saison, club, kategorie, platzierung FROM achievements"):
+    for r in con.execute("SELECT player_id, saison, club, kategorie, platzierung FROM achievements "
+                         "ORDER BY rowid"):
         achv[r["player_id"]].append([r["saison"], r["club"], r["kategorie"], r["platzierung"]])
 
     # ---- Profile ----------------------------------------------------------------
