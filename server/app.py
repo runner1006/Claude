@@ -84,21 +84,26 @@ def mcp_no_slash():
 _MIME = {".json": "application/json", ".csv": "text/csv; charset=utf-8",
          ".sqlite": "application/octet-stream", ".txt": "text/plain"}
 _ALLOWED_STATIC = {"dashboard.html", "index.html", "histogram-range.js"}
+# /data/* liefert nur die vorberechneten Dashboard-Dateien. Alles andere im Datenordner (oefb.sqlite,
+# grosse Roh-Exporte) bleibt privat - sonst wuerde die GZip-Middleware z. B. die 160-MB-DB je Request
+# komplett komprimieren (~10 s CPU) und jeder koennte sie herunterladen.
+_ALLOWED_DATA = {"scout.json", "matches_index.json"}
 
 
 _NOCACHE = {"Cache-Control": "no-cache"}   # Browser fragt mit ETag nach -> 304 wenn unveraendert
 
 
 def _file_etag(path: str) -> str:
-    return f'W/"{int(os.path.getmtime(path))}-{os.path.getsize(path)}"'
+    st = os.stat(path)
+    return f'W/"{int(st.st_mtime)}-{st.st_size}"'
 
 
 def _static(path: str, mt: str, request: Request):
-    """Statische Datei mit ETag aus mtime+Groesse; If-None-Match-Treffer -> 304."""
+    """Statische Datei mit ETag; If-None-Match-Treffer -> 304 (Wiederbesuch laedt nichts)."""
     if not os.path.exists(path):
         raise HTTPException(404)
     etag = _file_etag(path)
-    if request.headers.get("if-none-match") == etag:          # 304 traegt ETag + Cache-Control (RFC 9110)
+    if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers={"ETag": etag, **_NOCACHE})
     return FileResponse(path, media_type=mt, headers={"ETag": etag, **_NOCACHE})
 
@@ -118,7 +123,7 @@ def static_file(name: str, request: Request):
 
 @app.get("/data/{name}")
 def data_file(name: str, request: Request):
-    if "/" in name or ".." in name:
+    if name not in _ALLOWED_DATA:
         raise HTTPException(404)
     base = os.path.join(DATA_DIR, name)
     ext = os.path.splitext(name)[1]
@@ -126,16 +131,15 @@ def data_file(name: str, request: Request):
     gz = base + ".gz"
     if os.path.exists(gz):                       # vor-gezippt -> transparent
         etag = _file_etag(gz)
-        headers = {"ETag": etag, "Vary": "Accept-Encoding", "Cache-Control": "no-cache"}
+        headers = {"ETag": etag, "Vary": "Accept-Encoding", **_NOCACHE}
         if request.headers.get("if-none-match") == etag:
             return Response(status_code=304, headers=headers)
         if "gzip" in request.headers.get("accept-encoding", ""):
-            headers["Content-Encoding"] = "gzip"
-            return FileResponse(gz, media_type=mt, headers=headers)
-        if os.path.exists(base):                 # Client ohne gzip (curl/Skripte): Rohdatei
+            return FileResponse(gz, media_type=mt, headers={"Content-Encoding": "gzip", **headers})
+        if os.path.exists(base):                 # Client ohne gzip: Rohdatei ...
             return FileResponse(base, media_type=mt, headers=headers)
-        with open(gz, "rb") as f:
-            return Response(content=gzip.decompress(f.read()), media_type=mt, headers=headers)
+        with gzip.open(gz, "rb") as f:           # ... oder entpackt aus der .gz
+            return Response(content=f.read(), media_type=mt, headers=headers)
     if os.path.exists(base):
         return _static(base, mt, request)
     raise HTTPException(404)
@@ -193,7 +197,7 @@ def api_profile(player_id: str, request: Request):
         raise HTTPException(404)
     etag = _db_etag()
     if request.headers.get("if-none-match") == etag:
-        return Response(status_code=304, headers={"ETag": etag, **_NOCACHE})
+        return Response(status_code=304)
     try:
         rows = oefb_mcp._rows("SELECT gz FROM dash_profile WHERE player_id=?", (player_id,))
     except Exception as e:  # noqa: BLE001
@@ -215,7 +219,7 @@ def api_match(match_id: str, request: Request):
         raise HTTPException(404)
     etag = _db_etag()
     if request.headers.get("if-none-match") == etag:
-        return Response(status_code=304, headers={"ETag": etag, **_NOCACHE})
+        return Response(status_code=304)
     m = oefb_mcp._rows("SELECT * FROM matches WHERE match_id=?", (match_id,))
     if not m:
         raise HTTPException(404, "Spiel nicht gefunden")

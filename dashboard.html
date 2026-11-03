@@ -20,10 +20,11 @@
   .pill{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--panel2);color:var(--muted);
         border:1px solid var(--line)}
   .pill.on{color:var(--good);border-color:var(--good)}
-  nav{display:flex;gap:4px;padding:0 20px;background:var(--panel);border-bottom:1px solid var(--line);
-      position:sticky;top:53px;z-index:5}
+  /* --hdrh = gemessene Header-Hoehe (JS, ResizeObserver): der Header bricht auf schmalen Screens um */
+  nav{display:flex;flex-wrap:wrap;gap:4px;padding:0 20px;background:var(--panel);border-bottom:1px solid var(--line);
+      position:sticky;top:var(--hdrh,53px);z-index:5}
   nav button{background:none;border:none;color:var(--muted);padding:12px 16px;cursor:pointer;
-             font-size:14px;border-bottom:2px solid transparent}
+             font-size:14px;border-bottom:2px solid transparent;white-space:nowrap}
   nav button.active{color:var(--text);border-bottom-color:var(--accent)}
   main{padding:18px 20px;max-width:1500px;margin:0 auto}
   .controls{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;align-items:center}
@@ -63,13 +64,19 @@
   select{cursor:pointer}
   /* ---- Layout: Sidebar-Filter + Tabelle nebeneinander ---- */
   .tabwrap{display:flex;gap:22px;align-items:flex-start}
-  .sidebar{width:300px;flex:none;position:sticky;top:104px;max-height:calc(100vh - 120px);overflow:auto;
+  .sidebar{width:300px;flex:none;position:sticky;top:calc(var(--hdrh,53px) + 51px);max-height:calc(100vh - 120px);overflow:auto;
         background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
   .content{flex:1;min-width:0}
   .content-head{display:flex;align-items:center;gap:12px;margin-bottom:10px;min-height:24px}
   .content-head h3{margin:0;font-size:15px}
+  /* Schmal: Filter oben, Tabelle darunter. .content braucht width:100%, sonst waechst es in der
+     Spaltenrichtung auf die Tabellenbreite (shrink-to-fit) und die ganze Seite scrollt horizontal. */
+  @media(max-width:1300px){.sidebar{width:260px}}
   @media(max-width:880px){.tabwrap{flex-direction:column}
-    .sidebar{width:100%;position:static;max-height:none}}
+    .sidebar{width:100%;position:static;max-height:none}
+    .content{width:100%}}
+  @media(max-width:600px){main{padding:14px 16px} nav{padding:0 8px} nav button{padding:10px 10px}
+    .tblscroll{max-height:none}}
   .sb-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
   .sb-title{font-size:15px;font-weight:600}
   .sb-fields{display:flex;flex-direction:column;gap:15px;margin-top:14px}
@@ -177,6 +184,7 @@
   .pf h3 small{color:var(--muted);font-weight:400;font-size:12px}
   .cat-j{color:#d29922}.cat-e{color:#4c8bf5}
   .pf-empty{color:var(--muted);font-size:13px;padding:8px 0}
+  .tscroll{overflow-x:auto}             /* breite Profil-Tabellen scrollen auf schmalen Screens intern */
   .pm-pos{color:var(--good)}.pm-neg{color:#f0836b}
   .res{display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;border-radius:5px;
        font-size:11px;font-weight:700;margin-left:7px;vertical-align:1px}
@@ -184,7 +192,7 @@
   .res-N{background:#3d1f1c;color:#f0836b}
   .res-U{background:var(--panel2);color:var(--muted)}
   .bench{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;
-        padding:10px 14px;margin-top:12px}
+        padding:10px 14px;margin-top:12px;overflow-x:auto}
   .bench table{font-size:12px;border-collapse:collapse;width:auto;min-width:340px}
   .bench td{padding:3px 12px 3px 0;border:none;vertical-align:middle}
   .bench .barbg{width:110px}
@@ -206,8 +214,8 @@
   /* ---- Virtuelle Tabelle (Scouting/Statistik/Matches): feste Zeilenhoehe (nowrap + Ellipsis,
      voller Text im title), zwei Spacer-Zeilen halten die Scrollhoehe ---- */
   .vt{table-layout:fixed}
-  .vt>thead th{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .vt>tbody>tr>td{height:36px;padding:0 10px;line-height:36px;white-space:nowrap;overflow:hidden;
+  .vt>thead th{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:8px 6px}
+  .vt>tbody>tr>td{height:36px;padding:0 6px;line-height:36px;white-space:nowrap;overflow:hidden;
         text-overflow:ellipsis;vertical-align:middle}
   .vt>tbody>tr.sp>td{height:0;padding:0;border:0;line-height:0}
   .vt>tbody>tr.sp:hover{background:none}
@@ -314,6 +322,11 @@ function emptyMsg(kind,html,retry){
   if(retry){const b=el("button",{class:"fbtn",style:"margin-top:12px"},"Erneut versuchen"); b.onclick=retry; box.append(b);}
   return box;
 }
+
+/* Header-Hoehe (bricht auf schmalen Screens um) als CSS-Variable: nav und Sidebar kleben darunter */
+(function(){ const hdr=document.querySelector("header"); if(!hdr)return;
+  const set=()=>document.documentElement.style.setProperty("--hdrh",hdr.offsetHeight+"px");
+  set(); if(typeof ResizeObserver!=="undefined")new ResizeObserver(set).observe(hdr); else window.addEventListener("resize",set); })();
 
 /* ---------- tabs + URL-Hash (#scout, #profile=<id>, #stats, #explain, #matches) ---------- */
 const TABS=["scout","profile","stats","explain","matches"];
@@ -480,18 +493,30 @@ function tabScaffold(sec){
    Scrollhoehe, damit Scrollbalken, End-Taste und Sprung ans Listenende direkt funktionieren.
    Zeilenhoehe wird einmal gemessen (CSS .vt: nowrap + Ellipsis, voller Text im title). Neu gerendert
    wird per requestAnimationFrame, sobald der halbe Puffer aufgebraucht ist. setRows() springt an den
-   Anfang (Filter/Sortierung). Optional eine aufgeklappte Detailzeile mit gemessener Hoehe (Matches). */
+   Anfang (Filter/Sortierung). Optional eine aufgeklappte Detailzeile mit gemessener Hoehe (Matches).
+   Spaltenbreiten (table-layout:fixed): w = feste Pixel; flex = Gewicht fuer den Rest der Containerbreite,
+   min = Untergrenze dafuer. Passt die Summe nicht in den Container, scrollt .tblscroll horizontal. */
 function VirtualTable(wrap,opts){
   const BUF=20;
   const table=el("table",{class:"vt"}),colg=el("colgroup"),thead=el("thead"),tb=el("tbody");
   table.append(colg,thead,tb); wrap.innerHTML=""; wrap.append(table);
   const topSp=el("tr",{class:"sp"},el("td")), botSp=el("tr",{class:"sp"},el("td"));
-  let rows=[],rowH=36,measured=false,start=0,end=0,open=null,openH=0,detail=null,ncols=1,raf=0;
+  let rows=[],rowH=36,measured=false,start=0,end=0,open=null,openH=0,detail=null,ncols=1,raf=0,colDefs=[],lastW=-1;
+  function layout(force){                          // Spaltenbreiten an die Containerbreite anpassen
+    const cw=wrap.clientWidth; if(!cw||(!force&&cw===lastW))return; lastW=cw;
+    let fixed=0,fw=0; colDefs.forEach(c=>{ if(c.flex)fw+=c.flex; else fixed+=c.w||80; });
+    let pool=Math.max(0,cw-fixed-1); const atMin=new Map();   // flex-Spalten unter ihrer Mindestbreite: auf min
+    for(let pass=0,changed=true;changed&&pass<colDefs.length;pass++){ changed=false;   // festnageln, Rest neu verteilen
+      colDefs.forEach(c=>{ if(!c.flex||atMin.has(c))return; const m=c.min||80;
+        if(Math.floor(pool*c.flex/fw)<m){atMin.set(c,m); pool-=m; fw-=c.flex; changed=true;} }); }
+    colDefs.forEach((c,i)=>{ const w=c.flex?(atMin.get(c)||Math.floor(Math.max(0,pool)*c.flex/fw)):(c.w||80);
+      colg.children[i].style.width=w+"px"; });
+  }
   function setCols(cols){
-    ncols=cols.length; colg.innerHTML=""; thead.innerHTML=""; const tr=el("tr");
-    cols.forEach(c=>{colg.append(el("col",{style:c.w?`width:${c.w}px`:""}));
+    colDefs=cols; ncols=cols.length; colg.innerHTML=""; thead.innerHTML=""; const tr=el("tr");
+    cols.forEach(c=>{colg.append(el("col"));
       const th=el("th",{},c.l); if(opts.onSort&&c.sortable!==false)th.onclick=()=>opts.onSort(c); tr.append(th);});
-    thead.append(tr); topSp.firstChild.colSpan=botSp.firstChild.colSpan=ncols;
+    thead.append(tr); topSp.firstChild.colSpan=botSp.firstChild.colSpan=ncols; layout(true);
   }
   function setRows(r,openIdx,detailEl){ rows=r; open=openIdx==null||openIdx<0?null:openIdx; detail=detailEl||null; openH=0;
     wrap.scrollTop=0; render(0); }
@@ -503,6 +528,7 @@ function VirtualTable(wrap,opts){
     return Math.max(0,Math.min(s,rows.length));
   }
   function render(s){
+    layout(false);                                 // Containerbreite geaendert (Resize, Tab eingeblendet)?
     const n=rows.length, vh=wrap.clientHeight||600, vis=Math.ceil(vh/rowH)+1;
     start=Math.max(0,s-BUF); end=Math.min(n,s+vis+BUF);
     tb.innerHTML="";
@@ -552,23 +578,26 @@ function decodeScout(d){
 }
 
 /* ---------- SCOUTING ---------- */
-const SCOUT_COLS=[                 // w = Spaltenbreite (px) der virtuellen Tabelle (table-layout:fixed)
-  {k:"name",l:"Name",always:true,s:"nname",w:200},
-  {k:"nat",l:"Nat.",s:"nnat",w:104},
-  {k:"team",l:"Verein",s:"nteam",w:220},
-  {k:"comp",l:"Bewerb",s:"ncomp",w:210},
-  {k:"by",l:"Jg.",num:1,w:58},
-  {k:"age",l:"Alter",num:1,w:62},
-  {k:"min",l:"Min.",num:1,w:72},
-  {k:"matches",l:"Sp.",num:1,w:54},
-  {k:"goals",l:"Tore",num:1,w:56},
-  {k:"off",l:"Off",num:1,rat:1,w:70},
-  {k:"def",l:"Def",num:1,rat:1,w:70},
-  {k:"total",l:"Total",num:1,rat:1,w:74},
-  {k:"peak",l:"Peak",num:1,rat:1,w:70},
-  {k:"pct_talent",l:"Talent%",num:1,rat:1,w:76},
-  {k:"pos",l:"Pos.",hide:1,s:"npos",w:90},   // standardmäßig ausgeblendet
-  {k:"role",l:"Rolle",hide:1,s:"nrole",w:80},  // standardmäßig ausgeblendet
+/* Spaltenbreiten: Zahlen fest (w, px), Textspalten teilen sich den Rest (flex-Gewicht, min-Breite; Ellipsis +
+   voller Text im title). Alle 14 Standardspalten passen so ab 950 px Containerbreite ohne horizontalen Scroll
+   (1280er-Fenster mit Sidebar), d. h. Off/Def/Total/Peak/Talent% stehen im ersten Viewport. */
+const SCOUT_COLS=[
+  {k:"name",l:"Name",always:true,s:"nname",flex:1.4,min:120},
+  {k:"nat",l:"Nat.",s:"nnat",w:84},
+  {k:"team",l:"Verein",s:"nteam",flex:1,min:100},
+  {k:"comp",l:"Bewerb",s:"ncomp",flex:0.85,min:96},
+  {k:"by",l:"Jg.",num:1,w:50},
+  {k:"age",l:"Alter",num:1,w:50},
+  {k:"min",l:"Min.",num:1,w:56},
+  {k:"matches",l:"Sp.",num:1,w:40},
+  {k:"goals",l:"Tore",num:1,w:42},
+  {k:"off",l:"Off",num:1,rat:1,w:62},
+  {k:"def",l:"Def",num:1,rat:1,w:62},
+  {k:"total",l:"Total",num:1,rat:1,w:64},
+  {k:"peak",l:"Peak",num:1,rat:1,w:62},
+  {k:"pct_talent",l:"Talent%",num:1,rat:1,w:64},
+  {k:"pos",l:"Pos.",hide:1,s:"npos",w:80},   // standardmäßig ausgeblendet
+  {k:"role",l:"Rolle",hide:1,s:"nrole",w:68},  // standardmäßig ausgeblendet
 ];
 const deSort=a=>[...a].sort((x,y)=>String(x).localeCompare(String(y),"de"));
 const setPred=field=>v=>{const s=new Set(Array.isArray(v)?v:[v]); return p=>p[field].some(x=>s.has(x));};
@@ -693,8 +722,8 @@ function renderStats(){
   ],()=>scheduleDraw());
   grpSel.onchange=draw;
   const head=el("h3",{style:"margin:8px 0 10px"});
-  const cols=[{k:"g",l:"Gruppe",w:300},{k:"avg",l:"Ø Alter",w:80},{k:"bar",l:"",sortable:false},
-              {k:"span",l:"Spanne",w:90},{k:"avgMin",l:"Ø Min.",w:90},{k:"n",l:"Spieler",w:80}];
+  const cols=[{k:"g",l:"Gruppe",flex:1.4,min:170},{k:"avg",l:"Ø Alter",w:76},{k:"bar",l:"",sortable:false,flex:1,min:110},
+              {k:"span",l:"Spanne",w:80},{k:"avgMin",l:"Ø Min.",w:80},{k:"n",l:"Spieler",w:74}];
   const tableWrap=el("div",{class:"tblscroll"});
   content.append(el("div",{class:"content-head"},el("span",{class:"flabel"},"Gruppieren nach"),grpSel,fb.count),head,tableWrap);
   let maxAvg=1;
@@ -1032,7 +1061,7 @@ function renderProfile(wrap,data){
     goals:games.reduce((s,g)=>s+g.goals,0),pm:vgames.reduce((s,g)=>s+g.pm,0),
     pmMin:vgames.reduce((s,g)=>s+g.min,0),pmGames:vgames.length,teams:new Set(),comps:new Set()};
   stb.append(seaRow("Gesamt",tot0,true));
-  st.append(stb); wrap.append(st);
+  st.append(stb); wrap.append(el("div",{class:"tscroll"},st));
   if(nExcl>0)wrap.append(el("div",{class:"pf-empty"},
     `${nExcl} Einsatz${nExcl>1?"e":""} ohne vollständige Tor-Minuten in der Quelle — nicht im +/- enthalten (Minuten/Tore zählen trotzdem).`));
 
@@ -1062,7 +1091,7 @@ function renderProfile(wrap,data){
         title:g.pm==null?"Tor-Minuten in der Quelle unvollständig":""},
         g.pm!=null?fmtPM(g.pm):"—")));
   });
-  mt.append(mtb); wrap.append(mt);
+  mt.append(mtb); wrap.append(el("div",{class:"tscroll"},mt));
 
   // --- Vereins-Historie & Erfolge (clubs = [Verein, ab_ms, Land], achievements = [Saison, Verein, Kategorie, Platzierung]) ---
   const clubs=data.clubs||[], ach=data.achievements||[];
@@ -1077,7 +1106,7 @@ function renderProfile(wrap,data){
       vtb.append(el("tr",{},el("td",{class:"num",style:"white-space:nowrap"},clubDate(v)),el("td",{},esc(v[0])),
         el("td",{style:"color:var(--muted)"},v[2]&&v[2]!=="at"?String(v[2]).toUpperCase():"")));
     });
-    vt.append(vtb); wrap.append(vt);
+    vt.append(vtb); wrap.append(el("div",{class:"tscroll"},vt));
   }
   if(ach.length){
     wrap.append(el("h3",{},"Saison-Historie ",el("small",{},"(ÖFB-Profil: Kader & Platzierungen, gesamte Karriere)")));
@@ -1087,7 +1116,7 @@ function renderProfile(wrap,data){
       etb.append(el("tr",{},el("td",{},esc(e2[0])),el("td",{},esc(e2[1])),
         el("td",{},el("span",{class:"tag"},esc(e2[2]))),el("td",{},esc(e2[3]))));
     });
-    et.append(etb); wrap.append(et);
+    et.append(etb); wrap.append(el("div",{class:"tscroll"},et));
   }
 
   // --- Detail-Chart (Rohwerte je Spiel) ganz am Ende ---
@@ -1216,8 +1245,8 @@ function renderMatches(){
     {key:"ref",type:"text",label:"Schiedsrichter",get:m=>m.ref,nget:m=>m.nref},
   ],()=>scheduleDraw());
 
-  const cols=[{k:"date",l:"Datum",w:100},{k:"time",l:"Zeit",w:60},{k:"home",l:"Heim",w:240},{k:"score",l:"Stand",w:64},
-              {k:"away",l:"Gast",w:240},{k:"comp",l:"Bewerb",w:230},{k:"nev",l:"Events",w:70}];
+  const cols=[{k:"date",l:"Datum",w:96},{k:"time",l:"Zeit",w:56},{k:"home",l:"Heim",flex:1,min:150},{k:"score",l:"Stand",w:60},
+              {k:"away",l:"Gast",flex:1,min:150},{k:"comp",l:"Bewerb",flex:0.9,min:140},{k:"nev",l:"Events",w:66}];
   const tableWrap=el("div",{class:"tblscroll"});           // eigener Scroll-Container wie im Scouting
   content.append(el("div",{class:"content-head"},fb.count),tableWrap);
   let cur=[];
@@ -1569,7 +1598,7 @@ function renderExplain(){
 
 /* ---------- init: Tabs leer rendern, EIN fetch (scout.json), dann Hash-Route ---------- */
 function setPills(d){
-  const pills=[["#pillP",`${state.rows.filter(r=>r.id).length} Spieler`],
+  const pills=[["#pillP",`${(d.stats&&d.stats.players_with_id)||state.rows.filter(r=>r.id).length} Spieler`],
                ["#pillR",`${state.rows.filter(r=>r.total!=null).length} Ratings`],
                ["#pillM",`${(d.stats&&d.stats.matches)||0} Matches`],
                ["#pillD",`Stand ${fmtBuilt(d.built)}`]];

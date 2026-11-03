@@ -13,19 +13,15 @@ Das Dashboard (`dashboard.html`) lädt **nicht mehr** `players.csv` (118 MB), `m
 | `GET /api/health` | Zähler + `dashboard.built` | – | optional (Pill "Stand") |
 
 Alle Antworten – auch `/`, `/dashboard.html`, `/histogram-range.js` – tragen `ETag` +
-`Cache-Control: no-cache` (Browser fragt nach, bekommt 304 wenn unverändert). JSON der API wird per
-GZip-Middleware komprimiert; `/data/*.json` wird als vor-gezipptes `.gz` mit `Content-Encoding: gzip`
-ausgeliefert (transparent für `fetch`); Clients ohne `Accept-Encoding: gzip` bekommen die Rohdatei.
-
-Das Dashboard lädt alles über einen Helfer (`fetchJSON`) mit einfachen URLs (kein Cache-Busting) und
-zeigt Fehler sichtbar an (HTTP-Status + `detail`, „Erneut versuchen“). Tabs und Profile sind per
-URL-Hash erreichbar: `#scout`, `#profile`, `#profile=<id>`, `#stats`, `#explain`, `#matches`.
+`Cache-Control: no-cache` (Browser fragt nach, bekommt 304 wenn unverändert). `clubs`/`achievements`
+kommen in der Reihenfolge des ÖFB-Profils (Browser sortiert wie bisher stabil). JSON der API wird per GZip-Middleware komprimiert; `/data/*.json` wird als
+vor-gezipptes `.gz` mit `Content-Encoding: gzip` ausgeliefert (transparent für `fetch`).
 
 ## scout.json
 
 ```json
 {"v":1,"built":"2026-11-03T01:52:10","ref_date":"2026-11-03",
- "stats":{"players":13167,"matches":11074,"appearances":371488,"ratings":11882,"bench_n":9076,"latest_match":"2026-10-31"},
+ "stats":{"players":13167,"players_with_id":13147,"matches":11074,"appearances":371488,"ratings":11882,"bench_n":9076,"latest_match":"2026-10-31"},
  "teams":["ASK Ebreichsdorf", ...],          // Namens-Wörterbuch (Index -> Name)
  "competitions":["11teamsports 1. Landesliga", ...],
  "cols":["id","name","teams","comps","by","age","pos","role","nat","verband","cap","min","matches","goals",
@@ -38,7 +34,7 @@ Spalten je Zeile (Reihenfolge = `cols`):
 
 | Spalte | Bedeutung |
 |---|---|
-| `id` | ÖFB-Spieler-ID (String). `""` bei 20 Einsatzzeilen ohne ID (Bank, 0 Minuten) – dann kein Profil |
+| `id` | ÖFB-Spieler-ID (String). `""` bei 20 Einsatzzeilen ohne ID (Bank, 0 Minuten) – dann kein Profil. Pill „Spieler“ = `stats.players_with_id` |
 | `name` | Name |
 | `teams` | Indizes in `teams`, **zuletzt gespielt zuerst** (bisher: Reihenfolge der CSV) |
 | `comps` | Indizes in `competitions`, zuletzt gespielt zuerst |
@@ -63,17 +59,11 @@ Kategorie Jugend/Erwachsen eines Bewerbs wie bisher per `/\bU\s?\d|jugend/i`.
  "cols":["id","iso","date","time","comp","season","round","home","away","score","sh","sa","ht","venue","spect","ref","nev","coach_h","coach_a","url"],
  "rows":[["3839463","2025-08-03","03.08.2025","17:00",17,"2025/26","1. Runde",412,733,"1:3",1,3,"1:1",null,200,"Philip Gillesberger",14,"Marcel Thallinger","Andreas Wieland , MA","https://…"], ...]}
 ```
-`comp`, `home`, `away` sind Indizes in `competitions`/`teams`. `nev` = Anzahl Events (wie bisher die
-Spalte „Events“). Spielberichte ohne Datum und Teams (52 leere Seiten) sind nicht enthalten; 7 Spiele
-mit Datum, aber ohne Teams/Score bleiben enthalten (`home`/`away`/`sh`/`sa` = `null`, Anzeige leer/0).
+`comp`, `home`, `away` sind Indizes in `competitions`/`teams` **dieser Datei** (eigenes Wörterbuch,
+nicht kompatibel mit `scout.teams`: Aufstellungs- und Spielplan-Teamnamen unterscheiden sich teils).
+Datum im Browser über `iso` sortieren (bisher wurde `dd.mm.yyyy` als Text sortiert). `nev` = Anzahl Events (wie bisher die
+Spalte „Events“). Spielberichte ohne Datum und Teams (59 leere Seiten) sind nicht enthalten.
 Sortiert nach Datum aufsteigend.
-
-Bewusste Abweichungen zum alten Dashboard: die Spalte „Datum“ und die Datum-Filteroptionen sortieren
-nach `iso` (alt: lexikografisch über `dd.mm.yyyy`; Gleichstand behält die Grundreihenfolge der Datei –
-stabiler Sort, kein zusätzlicher Tie-Break); Team-/Bewerbsoptionen werden im Browser mit
-`localeCompare("de")` sortiert (die Wörterbücher selbst sind Python-`casefold`-sortiert, Ö/Ü hinten).
-`teams` von `scout.json` und `matches_index.json` sind **verschiedene** Wörterbücher (Einsatz- vs.
-Spielbericht-Schreibweise) – Indizes nie tab-übergreifend verwenden.
 
 ## /api/profile/{player_id}
 
@@ -97,7 +87,7 @@ Spielbericht-Schreibweise) – Indizes nie tab-übergreifend verwenden.
 Semantik (identisch zur bisherigen Browser-Berechnung in `dashboard.html`):
 
 * `games`: nur Einsätze mit `min > 0`, chronologisch (`iso` aufsteigend; Einsätze ohne Datum stehen
-  vorne, `iso` = `""`). `cat` `"J"` = Jugend, `"E"` = Erwachsen. `off` = Auswechselminute oder `null`
+  vorne mit `iso` = `""`, `date` = `""`, `season` = `"?"` wie bisher). `cat` `"J"` = Jugend, `"E"` = Erwachsen. `off` = Auswechselminute oder `null`
   (= bis Schluss). `gf`/`ga`/`pm` = Tore für/gegen während der Einsatzzeit; **`pm = null`**, wenn die
   Tor-Timeline unvollständig ist (weniger Tor-Events mit Minute als der Spielstand verlangt) – solche
   Spiele zählen in keinem +/-, aber in Minuten/Toren. Nachspielzeit wie bisher: „90+2“ → 90.
@@ -126,34 +116,8 @@ Semantik (identisch zur bisherigen Browser-Berechnung in `dashboard.html`):
  "events":[{"type":"goal","minute":"21","team":"away","player":"…","player_out":"","detail":"Strafstoß"}, …]}
 ```
 `role` `starter`/`bench`, Reihenfolge wie im Spielbericht. Trainer stehen in `matches_index.json`
-(`coach_h`/`coach_a`); das Dashboard reicht sie aus der Index-Zeile in den Detailblock. Alter im
-Aufstellungsblock: exaktes Alter aus `scout.json` (`age` am `ref_date`, über `player_id`), sonst
-Jahr des `ref_date` − `birth_year`, sonst leer. `minute` ist der Rohtext (z. B. `"90+2"`,
-`"(Elfm.)"`), Anzeige wie bisher; Events kommen in Tabellen-Reihenfolge (typ-gruppiert wie `events.csv`).
-
-Spieler ohne ÖFB-ID (`scout.json` `id` = `""`, 20 Bank-Zeilen mit 0 Minuten) haben kein Profil: im
-Scouting ohne Link, in der Profil-Suche nicht angeboten. `games[].season` ist `"?"` und `date` `""`,
-wenn das Spiel kein parsebares Datum hat.
-
-## Browser (dashboard.html)
-
-* URL-Hash-Routing: `#scout`, `#profile`, `#profile=<id>`, `#stats`, `#explain`, `#matches` – Tabs und
-  Profile sind verlinkbar; das Öffnen eines Profils setzt `#profile=<id>` (`history.replaceState`).
-  `#profile=<id>` wird sofort aufgelöst (das Profil hängt nicht an `scout.json`).
-* Scouting, Statistik und Matches rendern **virtualisiert** (`VirtualTable`): nur sichtbare Zeilen + 20 Zeilen
-  Puffer im DOM, zwei Spacer-Zeilen halten die Scrollhöhe (Scrollbalken/End-Taste springen direkt ans
-  Listenende), Zeilenhöhe fix (nowrap + Ellipsis, voller Text im `title`), Filter/Sortierung setzen den
-  Scroll auf Zeile 1; leeres Ergebnis zeigt „Keine Spieler/Spiele für diese Filter.“. Im Matches-Tab
-  lebt das aufgeklappte Spiel als Detailzeile im virtuellen Fenster (Höhe gemessen).
-* Multiselect-Optionslisten (Bewerb/Verein, bis 2 500 Einträge) werden erst beim Öffnen gebaut.
-* `innerHTML`-Kontexte (Fehlertexte, Profil-Metadaten aus der API) laufen durch `hesc()`.
-* Pill „Spieler“ = Zeilen mit ID, „Ratings“ = Zeilen mit `total != null`, „Matches“ = `stats.matches`,
-  „Stand“ = `built` (de-AT).
-* Messwerte für Tests: `<span id="perf" data-fetch data-decode data-boot data-filter data-profile>` (ms);
-  `boot` = Zeit bis zur ersten gezeichneten Scouting-Tabelle.
-* Statische Dateien (`/`, `/dashboard.html`, `/histogram-range.js`) tragen ETag + `no-cache` und werden
-  (ab 1 KB) per GZip-Middleware komprimiert, wenn der Client `Accept-Encoding: gzip` schickt; 304-Antworten
-  wiederholen ETag + `Cache-Control`.
+(`coach_h`/`coach_a`). Alter im Aufstellungsblock: aus `birth_year` (Jahr − Jahrgang) statt wie bisher
+aus der CSV. `minute` ist der Rohtext (z. B. `"90+2"`, `"(Elfm.)"`), Anzeige wie bisher.
 
 ## Lokaler Testserver
 
@@ -168,3 +132,27 @@ wenn das Spiel kein parsebares Datum hat.
 * Erstes sichtbares Scouting-Ergebnis < 1,5 s bei 10 Mbit/s (ein Request à 0,63 MB), Wiederbesuch per 304 sofort.
 * Filter/Sortierung über 13 000 Zeilen < 50 ms; es werden nie alle 13 000 Zeilen als DOM gerendert.
 * Profil öffnen < 300 ms (ein Request, 2–6 KB). Speicher im Browser < 100 MB (bisher > 500 MB).
+
+## Browser (dashboard.html)
+
+* URL-Hash-Routing: `#scout`, `#profile`, `#profile=<id>`, `#stats`, `#explain`, `#matches` – Tabs und
+  Profile sind verlinkbar; das Öffnen eines Profils setzt `#profile=<id>` (`history.replaceState`).
+  `#profile=<id>` wird sofort aufgelöst (das Profil hängt nicht an `scout.json`).
+* Scouting, Statistik und Matches rendern **virtualisiert** (`VirtualTable`): nur sichtbare Zeilen + 20 Zeilen
+  Puffer im DOM, zwei Spacer-Zeilen halten die Scrollhöhe (Scrollbalken/End-Taste springen direkt ans
+  Listenende), Zeilenhöhe fix (nowrap + Ellipsis, voller Text im `title`), Filter/Sortierung setzen den
+  Scroll auf Zeile 1; leeres Ergebnis zeigt „Keine Spieler/Spiele für diese Filter.“. Im Matches-Tab
+  lebt das aufgeklappte Spiel als Detailzeile im virtuellen Fenster (Höhe gemessen).
+* Spaltenbreiten: Zahlenspalten fest (px), Textspalten teilen sich den Rest der Containerbreite
+  (Gewicht + Mindestbreite). Alle 14 Standard-Spalten des Scoutings passen ab 950 px Containerbreite
+  (1280er-Fenster mit Sidebar) ohne horizontalen Scroll; darunter scrollt `.tblscroll` horizontal
+  (Kopfzeile klebt oben). Unter 880 px steht die Filter-Sidebar über der Tabelle, die Seite selbst
+  scrollt nie horizontal.
+* Multiselect-Optionslisten (Bewerb/Verein, bis 2 500 Einträge) werden erst beim Öffnen gebaut.
+* `innerHTML`-Kontexte (Fehlertexte, Profil-Metadaten aus der API) laufen durch `hesc()`.
+* Pill „Spieler“ = `stats.players_with_id` (Fallback: Zeilen mit ID), „Ratings“ = Zeilen mit `total != null`,
+  „Matches“ = `stats.matches`, „Stand“ = `built` (de-AT).
+* Messwerte für Tests: `<span id="perf" data-fetch data-decode data-boot data-filter data-profile>` (ms);
+  `boot` = Zeit bis zur ersten gezeichneten Scouting-Tabelle.
+* `/data/{name}` liefert nur `scout.json` und `matches_index.json` (Allowlist); andere Dateien im
+  Datenordner (`oefb.sqlite`, Roh-Exporte) sind nicht abrufbar.
