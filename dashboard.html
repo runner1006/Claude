@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ÖFB Daten-Dashboard</title>
+<link rel="icon" href="data:,">
 <style>
   :root{
     --bg:#0f1115; --panel:#171a21; --panel2:#1f242e; --line:#2a313d;
@@ -356,7 +357,7 @@ function switchTab(tab){
 }
 function setHash(h){ if(location.hash!=="#"+h) history.replaceState(null,"","#"+h); }
 function route(){
-  const h=decodeURIComponent(location.hash.replace(/^#/,""));
+  let h=location.hash.replace(/^#/,""); try{h=decodeURIComponent(h);}catch(e){}   // kaputtes %-Encoding ignorieren
   const m=/^profile=(\d+)$/.exec(h);
   if(m){ openProfile(m[1]); return; }
   switchTab(h||"scout");
@@ -532,7 +533,7 @@ function VirtualTable(wrap,opts){
   function setCols(cols){
     colDefs=cols; ncols=cols.length; colg.innerHTML=""; thead.innerHTML=""; const tr=el("tr");
     cols.forEach(c=>{colg.append(el("col"));
-      const th=el("th",{},c.l); if(opts.onSort&&c.sortable!==false)th.onclick=()=>opts.onSort(c); tr.append(th);});
+      const th=el("th",{},c.l); if(c.t)th.title=c.t; if(opts.onSort&&c.sortable!==false)th.onclick=()=>opts.onSort(c); tr.append(th);});
     thead.append(tr); topSp.firstChild.colSpan=botSp.firstChild.colSpan=ncols; layout(true);
   }
   function setRows(r,openIdx,detailEl){ rows=r; open=openIdx==null||openIdx<0?null:openIdx; detail=detailEl||null; openH=0;
@@ -597,23 +598,36 @@ function decodeScout(d){
 
 /* ---------- SCOUTING ---------- */
 /* Spaltenbreiten: Zahlen fest (w, px), Textspalten teilen sich den Rest (flex-Gewicht, min-Breite). Nat./Verein/
-   Bewerb brechen auf 2 Zeilen um (.c2) und tragen den vollen Text im title. Die Mindestbreiten sind so gewaehlt,
-   dass Verein(e)/Bewerb(e) lesbar sind: alle 14 Standardspalten passen ab ~1030 px Containerbreite (1400er-Fenster
-   mit Sidebar) ohne horizontalen Scroll; schmaler scrollt .tblscroll horizontal, die Name-Spalte klebt links. */
+   Bewerb brechen auf 2 Zeilen um (.c2) und tragen den vollen Text im title; Bewerbe stehen in der Tabelle als
+   Kurzform (COMP_SHORT, z. B. "JRL U18"), damit auch 3 Bewerbe in 2 Zeilen lesbar sind. Die Mindestbreiten sind
+   so gewaehlt, dass alle 14 Standardspalten ab 950 px Containerbreite (1280er-Fenster mit Sidebar) ohne
+   horizontalen Scroll passen; schmaler scrollt .tblscroll horizontal, die Name-Spalte klebt links. */
+const COMP_LEGEND="Kurzformen: RL = Regionalliga, LL = Landesliga, OL = Oberliga, JL = ÖFB Jugendliga, JRL = ÖFB Jugendregionalliga. Voller Name per Mauszeiger.";
+const COMP_SHORT={
+  "1. HYPO TIROL Landesliga Ost":"LL Tirol Ost","HYPO TIROL Liga":"Tirol Liga",
+  "11teamsports 1. Landesliga":"1. LL NÖ","Burgenland Energie Landesliga":"LL Burgenland",
+  "LT1 OÖ Liga":"OÖ Liga","VOL.AT-Eliteliga":"Eliteliga Vbg","VN.at-Eliteliga":"Eliteliga Vbg",
+  "Wiener Stadtliga":"Wr. Stadtliga","Regionalliga Süd Kärnten":"RL Süd Ktn",
+};
+function shortComp(x){                           // Anzeige-Kurzform (Filter/Tooltips behalten den vollen Namen)
+  if(COMP_SHORT[x])return COMP_SHORT[x];
+  return String(x).replace(/^ÖFB Jugendregionalliga/,"JRL").replace(/^ÖFB Jugendliga/,"JL")
+    .replace(/^Regionalliga/,"RL").replace(/^Oberliga/,"OL");
+}
 const SCOUT_COLS=[
-  {k:"name",l:"Name",always:true,s:"nname",flex:1.2,min:128,wrap:1},
-  {k:"nat",l:"Nat.",s:"nnat",flex:0.6,min:88,wrap:1},
-  {k:"team",l:"Verein",s:"nteam",flex:1.5,min:168,wrap:1},
-  {k:"comp",l:"Bewerb",s:"ncomp",flex:1.1,min:130,wrap:1},
-  {k:"by",l:"Jg.",num:1,w:44},
-  {k:"age",l:"Alter",num:1,w:48},
-  {k:"min",l:"Min.",num:1,w:54},
-  {k:"matches",l:"Sp.",num:1,w:38},
-  {k:"goals",l:"Tore",num:1,w:40},
-  {k:"off",l:"Off",num:1,rat:1,w:58},
-  {k:"def",l:"Def",num:1,rat:1,w:58},
-  {k:"total",l:"Total",num:1,rat:1,w:60},
-  {k:"peak",l:"Peak",num:1,rat:1,w:58},
+  {k:"name",l:"Name",always:true,s:"nname",flex:1.2,min:122,wrap:1},
+  {k:"nat",l:"Nat.",s:"nnat",flex:0.6,min:84,wrap:1},
+  {k:"team",l:"Verein",s:"nteam",flex:1.5,min:156,wrap:1},
+  {k:"comp",l:"Bewerb",s:"ncomp",flex:1.1,min:116,wrap:1,t:COMP_LEGEND},
+  {k:"by",l:"Jg.",num:1,w:40},
+  {k:"age",l:"Alter",num:1,w:44},
+  {k:"min",l:"Min.",num:1,w:50},
+  {k:"matches",l:"Sp.",num:1,w:36},
+  {k:"goals",l:"Tore",num:1,w:38},
+  {k:"off",l:"Off",num:1,rat:1,w:50},
+  {k:"def",l:"Def",num:1,rat:1,w:50},
+  {k:"total",l:"Total",num:1,rat:1,w:54},
+  {k:"peak",l:"Peak",num:1,rat:1,w:50},
   {k:"pct_talent",l:"Talent%",num:1,rat:1,w:62},
   {k:"pos",l:"Pos.",hide:1,s:"npos",w:80},   // standardmäßig ausgeblendet
   {k:"role",l:"Rolle",hide:1,s:"nrole",w:68},  // standardmäßig ausgeblendet
@@ -679,7 +693,7 @@ function renderScout(){
     // Textspalten: bis zu 2 Zeilen sichtbar (.c2), voller Text im title
     if(c.k==="team")return el("td",{title:p.team},el("div",{class:"c2"},p.team));
     if(c.k==="comp"){const d=el("div",{class:"c2"});
-      p.compsArr.forEach((x,i)=>{ if(i)d.append(" "); d.append(el("span",{class:"tag"},x)); });
+      [...new Set(p.compsArr.map(shortComp))].forEach((x,i)=>{ if(i)d.append(" "); d.append(el("span",{class:"tag"},x)); });
       return el("td",{title:p.comp},d);}
     if(c.k==="nat")return el("td",{title:p.nat},el("div",{class:"c2"},p.nat));
     if(c.k==="pos")return el("td",{},p.pos?el("span",{class:"tag"},p.pos):"");
@@ -1035,7 +1049,7 @@ function renderProfile(wrap,data){
   const sp=data.split||null;
   let subJ="",subE="",subG="";
   if(sp){
-    const jg=pl.birth_year;
+    const jg=hesc(pl.birth_year);
     if(minE>0)subE=`mehr Herren-Minuten als <b>${(+sp.e_fewer||0).toFixed(0)} %</b> des Jg. ${jg}`;
     else subE=`wie <b>${(+sp.e_zero||0).toFixed(0)} %</b> des Jg. ${jg}: noch 0′ bei den Erwachsenen`;
     subJ=`mehr als <b>${(+sp.j_fewer||0).toFixed(0)} %</b> des Jahrgangs`;
@@ -1269,7 +1283,7 @@ function renderMatches(){
   ],()=>scheduleDraw());
 
   const cols=[{k:"date",l:"Datum",w:96},{k:"time",l:"Zeit",w:56},{k:"home",l:"Heim",flex:1,min:150},{k:"score",l:"Stand",w:60},
-              {k:"away",l:"Gast",flex:1,min:150},{k:"comp",l:"Bewerb",flex:0.9,min:140},{k:"nev",l:"Events",w:66}];
+              {k:"away",l:"Gast",flex:1,min:150},{k:"comp",l:"Bewerb",flex:0.9,min:124,t:COMP_LEGEND},{k:"nev",l:"Events",w:66}];
   const tableWrap=el("div",{class:"tblscroll"});           // eigener Scroll-Container wie im Scouting
   content.append(el("div",{class:"content-head"},fb.count),tableWrap);
   let cur=[];
@@ -1279,7 +1293,7 @@ function renderMatches(){
       const tr=el("tr",{class:"mrow","data-id":m.id});
       tr.append(el("td",{},m.date),el("td",{},m.time),
         el("td",{title:m.home},m.home),el("td",{class:"score"},m.score),
-        el("td",{title:m.away},m.away),el("td",{title:m.comp},m.comp?el("span",{class:"tag"},m.comp):""),
+        el("td",{title:m.away},m.away),el("td",{title:m.comp},m.comp?el("span",{class:"tag"},shortComp(m.comp)):""),
         el("td",{class:"num"},String(m.nev)));
       return tr;
     }});

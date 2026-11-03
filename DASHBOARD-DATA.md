@@ -146,8 +146,12 @@ aus der CSV. `minute` ist der Rohtext (z. B. `"90+2"`, `"(Elfm.)"`), Anzeige wie
 * Spaltenbreiten: Zahlenspalten fest (px), Textspalten teilen sich den Rest der Containerbreite
   (Gewicht + Mindestbreite). Alle 14 Standard-Spalten des Scoutings passen ab 950 px Containerbreite
   (1280er-Fenster mit Sidebar) ohne horizontalen Scroll; darunter scrollt `.tblscroll` horizontal
-  (Kopfzeile klebt oben). Unter 880 px steht die Filter-Sidebar über der Tabelle, die Seite selbst
-  scrollt nie horizontal.
+  (Kopfzeile klebt oben, Name-Spalte links). Unter 880 px steht die Filter-Sidebar über der Tabelle,
+  die Seite selbst scrollt nie horizontal.
+* Bewerbe stehen in den Tabellen (Scouting, Matches) als Kurzform (`COMP_SHORT`/`shortComp()`: „RL Ost“,
+  „JRL U18“, „LL Burgenland“ …; alte und neue Sponsor-Namen derselben Liga fallen zusammen). Filter,
+  Tooltips (`title`), Profile und der KI-Prompt behalten den vollen Namen; die Legende hängt als
+  Tooltip am Spaltenkopf „Bewerb“.
 * Multiselect-Optionslisten (Bewerb/Verein, bis 2 500 Einträge) werden erst beim Öffnen gebaut.
 * `innerHTML`-Kontexte (Fehlertexte, Profil-Metadaten aus der API) laufen durch `hesc()`.
 * Pill „Spieler“ = `stats.players_with_id` (Fallback: Zeilen mit ID), „Ratings“ = Zeilen mit `total != null`,

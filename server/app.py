@@ -196,8 +196,9 @@ def api_profile(player_id: str, request: Request):
     if not player_id.isdigit():
         raise HTTPException(404)
     etag = _db_etag()
+    headers = {"ETag": etag, "Cache-Control": "no-cache", "Vary": "Accept-Encoding"}
     if request.headers.get("if-none-match") == etag:
-        return Response(status_code=304)
+        return Response(status_code=304, headers=headers)
     try:
         rows = oefb_mcp._rows("SELECT gz FROM dash_profile WHERE player_id=?", (player_id,))
     except Exception as e:  # noqa: BLE001
@@ -205,7 +206,6 @@ def api_profile(player_id: str, request: Request):
     if not rows:
         raise HTTPException(404, "Spieler nicht gefunden")
     blob = rows[0]["gz"]
-    headers = {"ETag": etag, "Cache-Control": "no-cache", "Vary": "Accept-Encoding"}
     if "gzip" in request.headers.get("accept-encoding", ""):
         headers["Content-Encoding"] = "gzip"
         return Response(content=blob, media_type="application/json", headers=headers)
@@ -218,8 +218,9 @@ def api_match(match_id: str, request: Request):
     if not match_id.isdigit():
         raise HTTPException(404)
     etag = _db_etag()
+    headers = {"ETag": etag, "Cache-Control": "no-cache"}
     if request.headers.get("if-none-match") == etag:
-        return Response(status_code=304)
+        return Response(status_code=304, headers=headers)
     m = oefb_mcp._rows("SELECT * FROM matches WHERE match_id=?", (match_id,))
     if not m:
         raise HTTPException(404, "Spiel nicht gefunden")
@@ -235,7 +236,7 @@ def api_match(match_id: str, request: Request):
     for a in lineup:
         if a["side"] in out["lineup"]:
             out["lineup"][a["side"]].append(a)
-    return JSONResponse(out, headers={"ETag": etag, "Cache-Control": "no-cache"})
+    return JSONResponse(out, headers=headers)
 
 
 @app.post("/admin/upload")
