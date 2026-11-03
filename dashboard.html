@@ -75,8 +75,7 @@
   @media(max-width:880px){.tabwrap{flex-direction:column}
     .sidebar{width:100%;position:static;max-height:none}
     .content{width:100%}}
-  @media(max-width:600px){main{padding:14px 16px} nav{padding:0 8px} nav button{padding:10px 10px}
-    .tblscroll{max-height:none}}
+  @media(max-width:600px){main{padding:14px 16px} nav{padding:0 8px} nav button{padding:10px 10px}}
   .sb-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
   .sb-title{font-size:15px;font-weight:600}
   .sb-fields{display:flex;flex-direction:column;gap:15px;margin-top:14px}
@@ -91,7 +90,9 @@
   .presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
   .preset{font-size:11px;padding:4px 9px}
   /* Scroll-Container für die breite Scouting-Tabelle: eigener Scroll (beide
-     Achsen), Kopfzeile klebt an dessen Oberkante statt am Viewport. */
+     Achsen), Kopfzeile klebt an dessen Oberkante statt am Viewport. Die max-height gilt auf JEDER
+     Breite (auch Handy): die virtuelle Tabelle braucht einen hoehenbegrenzten Container, sonst
+     muesste sie alle Zeilen rendern (zusaetzlich per MAXVIS in VirtualTable abgesichert). */
   .tblscroll{overflow:auto;max-height:calc(100vh - 150px);border:1px solid var(--line);border-radius:10px}
   .tblscroll thead th{position:sticky;top:0;z-index:2;background:var(--panel)}
   .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
@@ -221,6 +222,20 @@
   .vt>tbody>tr.sp:hover{background:none}
   .vt>tbody>tr>td.dt{height:auto;padding:8px 10px;line-height:1.5;white-space:normal;overflow:visible}
   .vt>tbody>tr>td.none{color:var(--muted);text-align:center;height:60px;line-height:60px}
+  /* Scouting: Textzellen (Nat./Verein/Bewerb) duerfen auf 2 Zeilen umbrechen (feste Zeilenhoehe 46 px,
+     Rest per Ellipsis + voller Text im title); so sind Verein(e) und Bewerb(e) wie im alten Dashboard
+     lesbar, ohne dass die virtuelle Tabelle variable Zeilenhoehen braucht. */
+  .vt.r2>tbody>tr>td{height:46px;line-height:17px;vertical-align:middle;padding:0 5px}
+  .vt.r2>thead th{padding:8px 5px}
+  .vt.r2>tbody>tr.sp>td{height:0;line-height:0}
+  .c2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;
+      overflow-wrap:anywhere;max-height:34px}
+  .c2 .tag{display:inline;line-height:17px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+  /* Erste Spalte (Name) klebt links, damit die Zeile beim horizontalen Scrollen (schmale Fenster) zuordenbar bleibt */
+  .vt.stick1>thead th:first-child{position:sticky;left:0;z-index:3}
+  .vt.stick1>tbody>tr>td:first-child{position:sticky;left:0;z-index:1;background:var(--bg);box-shadow:1px 0 0 var(--line)}
+  .vt.stick1>tbody>tr:hover>td:first-child{background:var(--panel)}
+  .vt.stick1>tbody>tr.sp>td:first-child{position:static}
   .pf-load{color:var(--muted);padding:30px 0;text-align:center}
   .pill.err{color:#f0836b;border-color:#f0836b}
 </style>
@@ -497,11 +512,13 @@ function tabScaffold(sec){
    Spaltenbreiten (table-layout:fixed): w = feste Pixel; flex = Gewicht fuer den Rest der Containerbreite,
    min = Untergrenze dafuer. Passt die Summe nicht in den Container, scrollt .tblscroll horizontal. */
 function VirtualTable(wrap,opts){
-  const BUF=20;
-  const table=el("table",{class:"vt"}),colg=el("colgroup"),thead=el("thead"),tb=el("tbody");
+  const BUF=20, MAXVIS=80;   // MAXVIS: Obergrenze fuer das sichtbare Fenster – auch ein Container ohne Hoehenbegrenzung
+                             // (max-height:none) bekommt nie alle Zeilen ins DOM, sondern hoechstens MAXVIS+2*BUF
+  const table=el("table",{class:"vt"+(opts.tableClass?" "+opts.tableClass:"")}),colg=el("colgroup"),thead=el("thead"),tb=el("tbody");
   table.append(colg,thead,tb); wrap.innerHTML=""; wrap.append(table);
   const topSp=el("tr",{class:"sp"},el("td")), botSp=el("tr",{class:"sp"},el("td"));
-  let rows=[],rowH=36,measured=false,start=0,end=0,open=null,openH=0,detail=null,ncols=1,raf=0,colDefs=[],lastW=-1;
+  let rows=[],rowH=36,measured=false,start=0,end=0,open=null,openH=0,detail=null,ncols=1,raf=0,colDefs=[],lastW=-1,regrow=false;
+  const visCount=()=>Math.min(MAXVIS,Math.ceil((wrap.clientHeight||600)/rowH)+1);
   function layout(force){                          // Spaltenbreiten an die Containerbreite anpassen
     const cw=wrap.clientWidth; if(!cw||(!force&&cw===lastW))return; lastW=cw;
     let fixed=0,fw=0; colDefs.forEach(c=>{ if(c.flex)fw+=c.flex; else fixed+=c.w||80; });
@@ -529,7 +546,7 @@ function VirtualTable(wrap,opts){
   }
   function render(s){
     layout(false);                                 // Containerbreite geaendert (Resize, Tab eingeblendet)?
-    const n=rows.length, vh=wrap.clientHeight||600, vis=Math.ceil(vh/rowH)+1;
+    const n=rows.length, vh=wrap.clientHeight||600, vis=visCount();
     start=Math.max(0,s-BUF); end=Math.min(n,s+vis+BUF);
     tb.innerHTML="";
     const frag=document.createDocumentFragment();
@@ -538,14 +555,15 @@ function VirtualTable(wrap,opts){
     for(let i=start;i<end;i++){ frag.append(opts.renderRow(rows[i],i)); if(i===open&&detail)frag.append(detail); }
     botSp.firstChild.style.height=Math.max(0,(n-end)*rowH)+"px"; frag.append(botSp);
     tb.append(frag);
-    if(end<n&&wrap.clientHeight>vh+rowH){render(s);return;}   // Container ist mitgewachsen (z. B. nach leerem Ergebnis): Fenster nachziehen
+    if(end<n&&vis<MAXVIS&&!regrow&&wrap.clientHeight>vh+rowH){   // Container ist mitgewachsen (z. B. nach leerem Ergebnis):
+      regrow=true; try{render(s);}finally{regrow=false;} return; }    // Fenster genau einmal nachziehen (kein Wachstums-Loop)
     if(open!=null&&detail&&open>=start&&open<end)openH=detail.getBoundingClientRect().height;
     if(!measured&&end>start){ const tr=topSp.nextElementSibling;   // Zeilenhoehe einmal messen (nicht im versteckten Tab)
       const h=tr?tr.getBoundingClientRect().height:0;
       if(h>10){measured=true; if(Math.abs(h-rowH)>0.5){rowH=h; render(s); return;}} }
   }
   function check(){
-    const s=visibleStart(), vis=Math.ceil((wrap.clientHeight||600)/rowH)+1, e=Math.min(rows.length,s+vis);
+    const s=visibleStart(), vis=visCount(), e=Math.min(rows.length,s+vis);
     if(s<start+BUF/2&&start>0 || e>end-BUF/2&&end<rows.length) render(s);
     else if(open!=null&&detail&&open>=start&&open<end){const h=detail.getBoundingClientRect().height; if(Math.abs(h-openH)>1){openH=h;render(s);}}
   }
@@ -578,24 +596,25 @@ function decodeScout(d){
 }
 
 /* ---------- SCOUTING ---------- */
-/* Spaltenbreiten: Zahlen fest (w, px), Textspalten teilen sich den Rest (flex-Gewicht, min-Breite; Ellipsis +
-   voller Text im title). Alle 14 Standardspalten passen so ab 950 px Containerbreite ohne horizontalen Scroll
-   (1280er-Fenster mit Sidebar), d. h. Off/Def/Total/Peak/Talent% stehen im ersten Viewport. */
+/* Spaltenbreiten: Zahlen fest (w, px), Textspalten teilen sich den Rest (flex-Gewicht, min-Breite). Nat./Verein/
+   Bewerb brechen auf 2 Zeilen um (.c2) und tragen den vollen Text im title. Die Mindestbreiten sind so gewaehlt,
+   dass Verein(e)/Bewerb(e) lesbar sind: alle 14 Standardspalten passen ab ~1030 px Containerbreite (1400er-Fenster
+   mit Sidebar) ohne horizontalen Scroll; schmaler scrollt .tblscroll horizontal, die Name-Spalte klebt links. */
 const SCOUT_COLS=[
-  {k:"name",l:"Name",always:true,s:"nname",flex:1.4,min:120},
-  {k:"nat",l:"Nat.",s:"nnat",w:84},
-  {k:"team",l:"Verein",s:"nteam",flex:1,min:100},
-  {k:"comp",l:"Bewerb",s:"ncomp",flex:0.85,min:96},
-  {k:"by",l:"Jg.",num:1,w:50},
-  {k:"age",l:"Alter",num:1,w:50},
-  {k:"min",l:"Min.",num:1,w:56},
-  {k:"matches",l:"Sp.",num:1,w:40},
-  {k:"goals",l:"Tore",num:1,w:42},
-  {k:"off",l:"Off",num:1,rat:1,w:62},
-  {k:"def",l:"Def",num:1,rat:1,w:62},
-  {k:"total",l:"Total",num:1,rat:1,w:64},
-  {k:"peak",l:"Peak",num:1,rat:1,w:62},
-  {k:"pct_talent",l:"Talent%",num:1,rat:1,w:64},
+  {k:"name",l:"Name",always:true,s:"nname",flex:1.2,min:128,wrap:1},
+  {k:"nat",l:"Nat.",s:"nnat",flex:0.6,min:88,wrap:1},
+  {k:"team",l:"Verein",s:"nteam",flex:1.5,min:168,wrap:1},
+  {k:"comp",l:"Bewerb",s:"ncomp",flex:1.1,min:130,wrap:1},
+  {k:"by",l:"Jg.",num:1,w:44},
+  {k:"age",l:"Alter",num:1,w:48},
+  {k:"min",l:"Min.",num:1,w:54},
+  {k:"matches",l:"Sp.",num:1,w:38},
+  {k:"goals",l:"Tore",num:1,w:40},
+  {k:"off",l:"Off",num:1,rat:1,w:58},
+  {k:"def",l:"Def",num:1,rat:1,w:58},
+  {k:"total",l:"Total",num:1,rat:1,w:60},
+  {k:"peak",l:"Peak",num:1,rat:1,w:58},
+  {k:"pct_talent",l:"Talent%",num:1,rat:1,w:62},
   {k:"pos",l:"Pos.",hide:1,s:"npos",w:80},   // standardmäßig ausgeblendet
   {k:"role",l:"Rolle",hide:1,s:"nrole",w:68},  // standardmäßig ausgeblendet
 ];
@@ -656,9 +675,13 @@ function renderScout(){
     if(c.k==="name"){
       const a=p.id?el("span",{class:"plink",title:"Profil öffnen","data-id":p.id},p.name)
                   :el("span",{title:"kein Profil – Einsatz ohne Spieler-ID"},p.name);
-      return el("td",{},a,p.cap?el("span",{class:"cap"}," ©"):"");}
-    if(c.k==="team")return el("td",{title:p.team},p.team);            // title: voller Text trotz Ellipsis
-    if(c.k==="comp")return el("td",{title:p.comp},p.comp?el("span",{class:"tag"},p.comp):"");
+      return el("td",{title:p.name},el("div",{class:"c2"},a,p.cap?el("span",{class:"cap"}," ©"):""));}
+    // Textspalten: bis zu 2 Zeilen sichtbar (.c2), voller Text im title
+    if(c.k==="team")return el("td",{title:p.team},el("div",{class:"c2"},p.team));
+    if(c.k==="comp"){const d=el("div",{class:"c2"});
+      p.compsArr.forEach((x,i)=>{ if(i)d.append(" "); d.append(el("span",{class:"tag"},x)); });
+      return el("td",{title:p.comp},d);}
+    if(c.k==="nat")return el("td",{title:p.nat},el("div",{class:"c2"},p.nat));
     if(c.k==="pos")return el("td",{},p.pos?el("span",{class:"tag"},p.pos):"");
     if(c.k==="pct_talent"){const tal=p.pct_talent!=null;
       return el("td",{class:"num",style:tal&&p.pct_talent<=20?"color:var(--good);font-weight:600":""},
@@ -670,7 +693,7 @@ function renderScout(){
     return el("td",{},esc(p[c.k]));
   }
   let cols=[];
-  const vt=VirtualTable(tableWrap,{emptyText:"Keine Spieler für diese Filter.",
+  const vt=VirtualTable(tableWrap,{emptyText:"Keine Spieler für diese Filter.",tableClass:"r2 stick1",
     renderRow:p=>{const tr=el("tr"); for(const c of cols)tr.append(cell(p,c)); return tr;},
     onSort:c=>{state.sortSc.dir=state.sortSc.k===c.k?-state.sortSc.dir:1;state.sortSc.k=c.k;draw();}});
   function build(){                               // Kopf neu aufbauen (Spaltenänderung), dann draw
