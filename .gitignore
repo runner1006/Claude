@@ -42,3 +42,6 @@ data/html/
 /data/lineups.csv
 /data/player_extras.json
 /data/fix_events_work.jsonl
+
+# lokale Test-Hilfen
+/.claude/

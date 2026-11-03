@@ -59,10 +59,22 @@ def make_session() -> requests.Session:
     return s
 
 
-def get(session: requests.Session, url: str, timeout: float = 30.0) -> str:
-    """GET mit automatischer Anubis-Loesung (Cookie bleibt in der Session)."""
-    r = session.get(url, timeout=timeout)
-    r.raise_for_status()
+def get(session: requests.Session, url: str, timeout: float = 30.0,
+        retries: int = 3) -> str:
+    """GET mit automatischer Anubis-Loesung (Cookie bleibt in der Session).
+    Netzwerk-/Timeout-Fehler werden bis zu `retries` Mal mit Backoff wiederholt."""
+    for attempt in range(retries + 1):
+        try:
+            r = session.get(url, timeout=timeout)
+            r.raise_for_status()
+            break
+        except (requests.ConnectionError, requests.Timeout) as exc:
+            if attempt >= retries:
+                raise
+            wait = 3.0 * (attempt + 1)
+            print(f"  !! {exc.__class__.__name__} bei {url[-60:]} – neuer Versuch in {wait:.0f}s",
+                  file=sys.stderr)
+            time.sleep(wait)
     oefb._apply_encoding(r)
     if oefb._detect_challenge(r.text):
         return oefb.solve_challenge(session, url, r.text, timeout)

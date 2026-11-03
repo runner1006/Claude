@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sammelt die Spiel-IDs der vollen Saison aller aktuell enthaltenen Bewerbe
+"""Sammelt die Spiel-IDs der vollen Saison aller aktuell enthaltenen Bewerbe (2026/27)
 und schreibt sie dedupliziert nach data/all_ids.txt.
 
 Alle verfuegbaren Runden je Bewerb (rounds=None -> collect_ids nimmt automatisch
@@ -12,15 +12,37 @@ import sys
 
 import collect_ids as ci
 
-# Bewerb-ID -> Anzeigename (die 7 aktuell enthaltenen Ligen der Saison 2025/26)
+# Bewerb-ID -> Anzeigename (die aktuell enthaltenen Ligen der Saison 2026/27).
+# IDs aufgeloest ueber die "saisonen"-Liste der Vorjahres-Bewerbsseiten (Stand 02.11.2026).
+# Reform 2026/27: Regionalliga Mitte -> Regionalliga Nord; neu Regionalliga Sued
+# (Stmk/Ktn, je 14 Runden); HYPO Tirol Liga -> 1. HYPO TIROL Landesliga Ost.
 BEWERBE = [
-    ("226374", "Regionalliga Mitte"),
-    ("226282", "Landesliga Steiermark"),
-    ("226273", "Oberliga Nord"),
-    ("226278", "Oberliga Mitte West"),
-    ("226272", "Oberliga Süd Ost"),
-    ("227230", "ÖFB Jugendliga U18"),
-    ("227253", "ÖFB Jugendregionalliga U18"),
+    # Regionalligen
+    ("232371", "Regionalliga Nord"),
+    ("231530", "Regionalliga Süd Stmk"),
+    ("231655", "Regionalliga Süd Kärnten"),
+    ("231974", "Regionalliga Ost"),
+    ("232368", "Regionalliga West"),
+    # Landesligen (Top-Liga je Bundesland)
+    ("231506", "Landesliga Steiermark"),
+    ("231940", "Wiener Stadtliga"),
+    ("231756", "11teamsports 1. Landesliga (NÖ)"),
+    ("231975", "Burgenland Energie Landesliga"),
+    ("231619", "LT1 OÖ Liga"),
+    ("231665", "Kärntner Liga"),
+    ("231808", "Salzburger Liga"),
+    ("231680", "1. HYPO TIROL Landesliga Ost"),
+    ("232055", "VOL.AT-Eliteliga"),
+    # Oberligen Steiermark
+    ("231503", "Oberliga Nord"),
+    ("231501", "Oberliga Mitte West"),
+    ("231521", "Oberliga Süd Ost"),
+    # Jugend
+    ("232400", "ÖFB Jugendliga U18"),
+    ("232399", "ÖFB Jugendliga U16"),
+    ("232398", "ÖFB Jugendliga U15"),
+    ("232407", "ÖFB Jugendregionalliga U18"),
+    ("232406", "ÖFB Jugendregionalliga U16"),
 ]
 
 

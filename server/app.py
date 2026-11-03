@@ -10,6 +10,8 @@ GET  /api/health          Status + Datenbestand
 GET  /api/search?q=       Spielersuche (FTS)
 GET  /api/player/{id}     Spielerprofil komplett
 GET  /api/top             Rating-Bestenliste (Parameter wie MCP top_ratings)
+GET  /api/profile/{id}    Fertiges Dashboard-Profil (vorberechnet, build_dashboard.py)
+GET  /api/match/{id}      Spiel mit Aufstellungen (Minuten) und Events
 POST /admin/upload?name=  Daten-Upload (Bearer ADMIN_TOKEN); atomisch, fuer
                           oefb.sqlite und Dashboard-Datendateien
 /mcp                      Remote-MCP (streamable HTTP, Bearer MCP_TOKEN)
@@ -27,7 +29,10 @@ import json
 import os
 import sys
 
+import gzip
+
 from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -66,6 +71,7 @@ class MCPAuth(BaseHTTPMiddleware):
 
 
 app.add_middleware(MCPAuth)
+app.add_middleware(GZipMiddleware, minimum_size=1000)   # API-JSON komprimiert ausliefern
 app.mount("/mcp", mcp_app)
 
 
@@ -80,9 +86,13 @@ _MIME = {".json": "application/json", ".csv": "text/csv; charset=utf-8",
 _ALLOWED_STATIC = {"dashboard.html", "index.html", "histogram-range.js"}
 
 
+_NOCACHE = {"Cache-Control": "no-cache"}   # Browser fragt mit ETag nach -> 304 wenn unveraendert
+
+
 @app.get("/")
 def root():
-    return FileResponse(os.path.join(ROOT, "dashboard.html"), media_type="text/html")
+    return FileResponse(os.path.join(ROOT, "dashboard.html"), media_type="text/html",
+                        headers=_NOCACHE)
 
 
 @app.get("/{name}")
@@ -90,7 +100,7 @@ def static_file(name: str):
     if name not in _ALLOWED_STATIC:
         raise HTTPException(404)
     mt = "application/javascript" if name.endswith(".js") else "text/html"
-    return FileResponse(os.path.join(ROOT, name), media_type=mt)
+    return FileResponse(os.path.join(ROOT, name), media_type=mt, headers=_NOCACHE)
 
 
 @app.get("/data/{name}")
@@ -106,9 +116,10 @@ def data_file(name: str, request: Request):
         if request.headers.get("if-none-match") == etag:
             return Response(status_code=304)
         return FileResponse(gz, media_type=mt, headers={
-            "Content-Encoding": "gzip", "ETag": etag, "Vary": "Accept-Encoding"})
+            "Content-Encoding": "gzip", "ETag": etag, "Vary": "Accept-Encoding",
+            "Cache-Control": "no-cache"})
     if os.path.exists(base):
-        return FileResponse(base, media_type=mt)
+        return FileResponse(base, media_type=mt, headers=_NOCACHE)
     raise HTTPException(404)
 
 
@@ -122,8 +133,13 @@ def health():
         n = {t: oefb_mcp._rows(f"SELECT COUNT(*) n FROM {t}")[0]["n"]
              for t in ("matches", "players", "appearances", "ratings")}
         ver = oefb_mcp._rows("SELECT MAX(iso_date) d FROM matches")[0]["d"]
-        return {"status": "ok", "counts": n, "latest_match": ver,
-                "db_mtime": int(os.path.getmtime(oefb_mcp.DB))}
+        out = {"status": "ok", "counts": n, "latest_match": ver,
+               "db_mtime": int(os.path.getmtime(oefb_mcp.DB))}
+        try:
+            out["dashboard"] = {r["k"]: r["v"] for r in oefb_mcp._rows("SELECT k, v FROM dash_meta")}
+        except Exception:  # noqa: BLE001  (DB ohne build_dashboard.py)
+            out["dashboard"] = None
+        return out
     except Exception as e:  # noqa: BLE001
         return JSONResponse({"status": "error", "detail": str(e)}, status_code=500)
 
@@ -143,6 +159,61 @@ def api_top(birth_year: int | None = None, competition: str | None = None,
             metric: str = "total", min_minutes: int = 270, limit: int = 25):
     return json.loads(oefb_mcp.top_ratings(birth_year, competition, metric,
                                            min_minutes, limit))
+
+
+def _db_etag() -> str:
+    try:
+        return f'W/"db-{int(os.path.getmtime(oefb_mcp.DB))}"'
+    except OSError:
+        return 'W/"db-0"'
+
+
+@app.get("/api/profile/{player_id}")
+def api_profile(player_id: str, request: Request):
+    """Vorberechnetes Profil (gzip-Blob aus dash_profile) - ohne Rechenarbeit zur Laufzeit."""
+    if not player_id.isdigit():
+        raise HTTPException(404)
+    etag = _db_etag()
+    if request.headers.get("if-none-match") == etag:
+        return Response(status_code=304)
+    try:
+        rows = oefb_mcp._rows("SELECT gz FROM dash_profile WHERE player_id=?", (player_id,))
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(503, f"Profil-Tabelle fehlt (build_dashboard.py): {e}")
+    if not rows:
+        raise HTTPException(404, "Spieler nicht gefunden")
+    blob = rows[0]["gz"]
+    headers = {"ETag": etag, "Cache-Control": "no-cache", "Vary": "Accept-Encoding"}
+    if "gzip" in request.headers.get("accept-encoding", ""):
+        headers["Content-Encoding"] = "gzip"
+        return Response(content=blob, media_type="application/json", headers=headers)
+    return Response(content=gzip.decompress(blob), media_type="application/json", headers=headers)
+
+
+@app.get("/api/match/{match_id}")
+def api_match(match_id: str, request: Request):
+    """Spiel-Detail fuer den Matches-Tab: Aufstellungen (mit Minuten/Alter) + Events."""
+    if not match_id.isdigit():
+        raise HTTPException(404)
+    etag = _db_etag()
+    if request.headers.get("if-none-match") == etag:
+        return Response(status_code=304)
+    m = oefb_mcp._rows("SELECT * FROM matches WHERE match_id=?", (match_id,))
+    if not m:
+        raise HTTPException(404, "Spiel nicht gefunden")
+    lineup = oefb_mcp._rows(
+        """SELECT a.side, a.role, a.number, a.name, a.player_id, a.captain, a.minutes,
+                  a.on_min, a.off_min, a.goals, a.position, p.birth_year
+           FROM appearances a LEFT JOIN players p ON p.player_id=a.player_id
+           WHERE a.match_id=? ORDER BY a.rowid""", (match_id,))
+    events = oefb_mcp._rows(
+        "SELECT type, minute_raw AS minute, team, player, player_out, detail "
+        "FROM events WHERE match_id=? ORDER BY rowid", (match_id,))
+    out = {"match": m[0], "lineup": {"home": [], "away": []}, "events": events}
+    for a in lineup:
+        if a["side"] in out["lineup"]:
+            out["lineup"][a["side"]].append(a)
+    return JSONResponse(out, headers={"ETag": etag, "Cache-Control": "no-cache"})
 
 
 @app.post("/admin/upload")
