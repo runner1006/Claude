@@ -69,7 +69,8 @@ mit Datum, aber ohne Teams/Score bleiben enthalten (`home`/`away`/`sh`/`sa` = `n
 Sortiert nach Datum aufsteigend.
 
 Bewusste Abweichungen zum alten Dashboard: die Spalte „Datum“ und die Datum-Filteroptionen sortieren
-nach `iso` (alt: lexikografisch über `dd.mm.yyyy`); Team-/Bewerbsoptionen werden im Browser mit
+nach `iso` (alt: lexikografisch über `dd.mm.yyyy`; Gleichstand behält die Grundreihenfolge der Datei –
+stabiler Sort, kein zusätzlicher Tie-Break); Team-/Bewerbsoptionen werden im Browser mit
 `localeCompare("de")` sortiert (die Wörterbücher selbst sind Python-`casefold`-sortiert, Ö/Ü hinten).
 `teams` von `scout.json` und `matches_index.json` sind **verschiedene** Wörterbücher (Einsatz- vs.
 Spielbericht-Schreibweise) – Indizes nie tab-übergreifend verwenden.
@@ -133,6 +134,26 @@ Jahr des `ref_date` − `birth_year`, sonst leer. `minute` ist der Rohtext (z. B
 Spieler ohne ÖFB-ID (`scout.json` `id` = `""`, 20 Bank-Zeilen mit 0 Minuten) haben kein Profil: im
 Scouting ohne Link, in der Profil-Suche nicht angeboten. `games[].season` ist `"?"` und `date` `""`,
 wenn das Spiel kein parsebares Datum hat.
+
+## Browser (dashboard.html)
+
+* URL-Hash-Routing: `#scout`, `#profile`, `#profile=<id>`, `#stats`, `#explain`, `#matches` – Tabs und
+  Profile sind verlinkbar; das Öffnen eines Profils setzt `#profile=<id>` (`history.replaceState`).
+  `#profile=<id>` wird sofort aufgelöst (das Profil hängt nicht an `scout.json`).
+* Scouting, Statistik und Matches rendern **virtualisiert** (`VirtualTable`): nur sichtbare Zeilen + 20 Zeilen
+  Puffer im DOM, zwei Spacer-Zeilen halten die Scrollhöhe (Scrollbalken/End-Taste springen direkt ans
+  Listenende), Zeilenhöhe fix (nowrap + Ellipsis, voller Text im `title`), Filter/Sortierung setzen den
+  Scroll auf Zeile 1; leeres Ergebnis zeigt „Keine Spieler/Spiele für diese Filter.“. Im Matches-Tab
+  lebt das aufgeklappte Spiel als Detailzeile im virtuellen Fenster (Höhe gemessen).
+* Multiselect-Optionslisten (Bewerb/Verein, bis 2 500 Einträge) werden erst beim Öffnen gebaut.
+* `innerHTML`-Kontexte (Fehlertexte, Profil-Metadaten aus der API) laufen durch `hesc()`.
+* Pill „Spieler“ = Zeilen mit ID, „Ratings“ = Zeilen mit `total != null`, „Matches“ = `stats.matches`,
+  „Stand“ = `built` (de-AT).
+* Messwerte für Tests: `<span id="perf" data-fetch data-decode data-boot data-filter data-profile>` (ms);
+  `boot` = Zeit bis zur ersten gezeichneten Scouting-Tabelle.
+* Statische Dateien (`/`, `/dashboard.html`, `/histogram-range.js`) tragen ETag + `no-cache` und werden
+  (ab 1 KB) per GZip-Middleware komprimiert, wenn der Client `Accept-Encoding: gzip` schickt; 304-Antworten
+  wiederholen ETag + `Cache-Control`.
 
 ## Lokaler Testserver
 

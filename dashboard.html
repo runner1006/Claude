@@ -203,7 +203,16 @@
   @media(max-width:760px){.step{grid-template-columns:1fr}.step .n{margin-bottom:-10px}}
   /* ---- Laden / Fehler / Nachladen beim Scrollen ---- */
   .empty .err{color:#f0836b}
-  .sentinel{color:var(--muted);font-size:12px;text-align:center;padding:10px;min-height:1px}
+  /* ---- Virtuelle Tabelle (Scouting/Statistik/Matches): feste Zeilenhoehe (nowrap + Ellipsis,
+     voller Text im title), zwei Spacer-Zeilen halten die Scrollhoehe ---- */
+  .vt{table-layout:fixed}
+  .vt>thead th{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .vt>tbody>tr>td{height:36px;padding:0 10px;line-height:36px;white-space:nowrap;overflow:hidden;
+        text-overflow:ellipsis;vertical-align:middle}
+  .vt>tbody>tr.sp>td{height:0;padding:0;border:0;line-height:0}
+  .vt>tbody>tr.sp:hover{background:none}
+  .vt>tbody>tr>td.dt{height:auto;padding:8px 10px;line-height:1.5;white-space:normal;overflow:visible}
+  .vt>tbody>tr>td.none{color:var(--muted);text-align:center;height:60px;line-height:60px}
   .pf-load{color:var(--muted);padding:30px 0;text-align:center}
   .pill.err{color:#f0836b;border-color:#f0836b}
 </style>
@@ -249,6 +258,8 @@ const el = (t,a={},...kids)=>{const e=document.createElement(t);for(const k in a
   if(k==="class")e.className=a[k];else if(k==="html")e.innerHTML=a[k];else e.setAttribute(k,a[k]);}
   for(const c of kids)e.append(c.nodeType?c:document.createTextNode(c));return e;};
 const esc = s => (s==null?"":String(s));
+/* HTML-Escape fuer innerHTML-Kontexte (Fehlertexte, Profil-Metadaten aus der API) */
+const hesc = s => esc(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const norm = s => esc(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
 const leagueCat=c=>/\bU\s?\d|jugend/i.test(c||"")?"Jugend":"Erwachsen";
 const truthy=v=>v===true||v==="True"||v==="true"||v==="1"||v==="X"||v==="x";
@@ -286,7 +297,9 @@ function copyText(txt,btn){
 async function fetchJSON(url){
   let r;
   try{ r=await fetch(url); }
-  catch(e){ throw new Error(`Server nicht erreichbar (${url})`); }
+  catch(e){ throw new Error(location.protocol==="file:"
+    ?"Das Dashboard braucht den Datenserver (./serve_local.sh) – per file:// können keine Daten geladen werden."
+    :`Server nicht erreichbar (${url})`); }
   if(!r.ok){
     let detail=""; try{const j=await r.json(); detail=j.detail||"";}catch(e){}
     const err=new Error(`HTTP ${r.status}${detail?" – "+detail:""} (${url})`); err.status=r.status; throw err;
@@ -304,12 +317,14 @@ function emptyMsg(kind,html,retry){
 
 /* ---------- tabs + URL-Hash (#scout, #profile=<id>, #stats, #explain, #matches) ---------- */
 const TABS=["scout","profile","stats","explain","matches"];
+const onShow={};                    // tab -> Callback nach dem Einblenden (virtuelle Tabelle neu messen/layouten)
 function switchTab(tab){
   if(!TABS.includes(tab))tab="scout";
   document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("active",x.dataset.tab===tab));
   for(const t of TABS) $("#tab-"+t).hidden = (t!==tab);
   if(tab==="matches")loadMatches();
   setHash(tab==="profile"&&state.profileId?"profile="+state.profileId:tab);
+  if(onShow[tab])onShow[tab]();
 }
 function setHash(h){ if(location.hash!=="#"+h) history.replaceState(null,"","#"+h); }
 function route(){
@@ -371,16 +386,14 @@ function multiSelectControl(options,onChange){
     });
   }
   if(search)search.oninput=renderList;
-  btn.onclick=()=>{const o=pop.classList.toggle("open"); if(o)renderList();};
-  renderList();
-  return {element:wrap,clear:()=>{sel.clear();label();renderList();}};
+  btn.onclick=()=>{const o=pop.classList.toggle("open"); if(o)renderList();};   // Liste erst beim Oeffnen bauen (lazy)
+  return {element:wrap,clear:()=>{sel.clear();label();if(pop.classList.contains("open"))renderList();}};
 }
 /* Sidebar-Filter: alle Filter gestapelt & dauerhaft sichtbar; Range = Histogramm-Slider.
    Texteingaben sind entprellt (120 ms); onChange wird vom Aufrufer per rAF gebuendelt. */
 function makeFilterBar(host,rows,defs,onChange){
   const f={};                       // key -> {def,v}
   const ctl={};                     // key -> clear()
-  const byKey={};                   // key -> def
   const count=el("span",{class:"count"});
   const reset=el("button",{class:"fbtn"},"Reset");
   const head=el("div",{class:"sb-head"},el("span",{class:"sb-title"},"Filter"),reset);
@@ -391,7 +404,6 @@ function makeFilterBar(host,rows,defs,onChange){
   const set=(def,v)=>{ if(emptyVal(v))delete f[def.key]; else f[def.key]={def,v}; refresh(); };
 
   defs.forEach(def=>{
-    byKey[def.key]=def;
     const field=el("div",{class:"field"});
     field.append(el("span",{class:"flabel"},def.label));
     let inp;
@@ -452,8 +464,7 @@ function makeFilterBar(host,rows,defs,onChange){
       if(ok)out.push(r);}
     return out;
   };
-  const setFilter=(key,v)=>{ if(byKey[key])set(byKey[key],v); };   // programmatisch (Tests/Bench)
-  return {apply,count,setFilter};
+  return {apply,count};
 }
 /* Tab-Gerüst: Filter-Sidebar links, Inhalt rechts (Tabelle immer voll sichtbar) */
 function tabScaffold(sec){
@@ -464,21 +475,57 @@ function tabScaffold(sec){
   wrap.append(side,content); sec.append(wrap);
   return {side,content};
 }
-/* Haeppchenweises Rendern grosser Tabellen: erst CHUNK Zeilen, weitere sobald der
-   Sentinel am Tabellenende sichtbar wird (IntersectionObserver). Nie alle Zeilen als DOM. */
-const CHUNK=150;
-function chunkedRows(opts){        // opts: root (Scroll-Container oder null = Viewport), sentinel, makeRow(row,frag)
-  let rows=[],pos=0,tb=null;
-  const io=new IntersectionObserver(es=>{ if(es.some(e=>e.isIntersecting))more(); },{root:opts.root||null,rootMargin:"600px"});
-  function more(){
-    if(!tb||pos>=rows.length){opts.sentinel.textContent=""; return;}
-    const frag=document.createDocumentFragment(), end=Math.min(rows.length,pos+CHUNK);
-    for(;pos<end;pos++)opts.makeRow(rows[pos],frag);
-    tb.append(frag);
-    opts.sentinel.textContent=pos<rows.length?`${pos} von ${rows.length} Zeilen – beim Scrollen werden weitere geladen`:"";
-    io.unobserve(opts.sentinel); io.observe(opts.sentinel);   // neu pruefen; loest sofort aus, wenn noch sichtbar
+/* ---------- Virtuelle Tabelle ----------
+   Nur die sichtbaren Zeilen (+ BUF Puffer oben/unten) stehen im DOM; zwei Spacer-Zeilen halten die
+   Scrollhoehe, damit Scrollbalken, End-Taste und Sprung ans Listenende direkt funktionieren.
+   Zeilenhoehe wird einmal gemessen (CSS .vt: nowrap + Ellipsis, voller Text im title). Neu gerendert
+   wird per requestAnimationFrame, sobald der halbe Puffer aufgebraucht ist. setRows() springt an den
+   Anfang (Filter/Sortierung). Optional eine aufgeklappte Detailzeile mit gemessener Hoehe (Matches). */
+function VirtualTable(wrap,opts){
+  const BUF=20;
+  const table=el("table",{class:"vt"}),colg=el("colgroup"),thead=el("thead"),tb=el("tbody");
+  table.append(colg,thead,tb); wrap.innerHTML=""; wrap.append(table);
+  const topSp=el("tr",{class:"sp"},el("td")), botSp=el("tr",{class:"sp"},el("td"));
+  let rows=[],rowH=36,measured=false,start=0,end=0,open=null,openH=0,detail=null,ncols=1,raf=0;
+  function setCols(cols){
+    ncols=cols.length; colg.innerHTML=""; thead.innerHTML=""; const tr=el("tr");
+    cols.forEach(c=>{colg.append(el("col",{style:c.w?`width:${c.w}px`:""}));
+      const th=el("th",{},c.l); if(opts.onSort&&c.sortable!==false)th.onclick=()=>opts.onSort(c); tr.append(th);});
+    thead.append(tr); topSp.firstChild.colSpan=botSp.firstChild.colSpan=ncols;
   }
-  return {set(r,body){rows=r;pos=0;tb=body;tb.innerHTML="";more();}, more};
+  function setRows(r,openIdx,detailEl){ rows=r; open=openIdx==null||openIdx<0?null:openIdx; detail=detailEl||null; openH=0;
+    wrap.scrollTop=0; render(0); }
+  function setOpen(openIdx,detailEl){ open=openIdx==null||openIdx<0?null:openIdx; detail=detailEl||null; openH=0; render(start); }
+  function visibleStart(){
+    const st=wrap.scrollTop;
+    let s=Math.floor(st/rowH);
+    if(open!=null&&st>(open+1)*rowH){ s=Math.floor((st-openH)/rowH); if(s<=open)s=open; }
+    return Math.max(0,Math.min(s,rows.length));
+  }
+  function render(s){
+    const n=rows.length, vh=wrap.clientHeight||600, vis=Math.ceil(vh/rowH)+1;
+    start=Math.max(0,s-BUF); end=Math.min(n,s+vis+BUF);
+    tb.innerHTML="";
+    const frag=document.createDocumentFragment();
+    topSp.firstChild.style.height=(start*rowH+(open!=null&&open<start?openH:0))+"px"; frag.append(topSp);
+    if(!n&&opts.emptyText)frag.append(el("tr",{class:"sp"},el("td",{class:"none",colspan:String(ncols)},opts.emptyText)));
+    for(let i=start;i<end;i++){ frag.append(opts.renderRow(rows[i],i)); if(i===open&&detail)frag.append(detail); }
+    botSp.firstChild.style.height=Math.max(0,(n-end)*rowH)+"px"; frag.append(botSp);
+    tb.append(frag);
+    if(end<n&&wrap.clientHeight>vh+rowH){render(s);return;}   // Container ist mitgewachsen (z. B. nach leerem Ergebnis): Fenster nachziehen
+    if(open!=null&&detail&&open>=start&&open<end)openH=detail.getBoundingClientRect().height;
+    if(!measured&&end>start){ const tr=topSp.nextElementSibling;   // Zeilenhoehe einmal messen (nicht im versteckten Tab)
+      const h=tr?tr.getBoundingClientRect().height:0;
+      if(h>10){measured=true; if(Math.abs(h-rowH)>0.5){rowH=h; render(s); return;}} }
+  }
+  function check(){
+    const s=visibleStart(), vis=Math.ceil((wrap.clientHeight||600)/rowH)+1, e=Math.min(rows.length,s+vis);
+    if(s<start+BUF/2&&start>0 || e>end-BUF/2&&end<rows.length) render(s);
+    else if(open!=null&&detail&&open>=start&&open<end){const h=detail.getBoundingClientRect().height; if(Math.abs(h-openH)>1){openH=h;render(s);}}
+  }
+  wrap.addEventListener("scroll",()=>{ if(!raf)raf=requestAnimationFrame(()=>{raf=0;check();}); },{passive:true});
+  window.addEventListener("resize",()=>{ if(!wrap.isConnected)return; if(!raf)raf=requestAnimationFrame(()=>{raf=0;render(visibleStart());}); });
+  return {setCols,setRows,setOpen,relayout:()=>render(visibleStart()),get rows(){return rows;}};
 }
 /* rAF-gebuendeltes Neuzeichnen (mehrere Filteraenderungen -> ein draw) */
 function coalesce(fn){ let raf=0; return ()=>{ if(raf)return; raf=requestAnimationFrame(()=>{raf=0;fn();}); }; }
@@ -505,30 +552,30 @@ function decodeScout(d){
 }
 
 /* ---------- SCOUTING ---------- */
-const SCOUT_COLS=[
-  {k:"name",l:"Name",always:true,s:"nname"},
-  {k:"nat",l:"Nat.",s:"nnat"},
-  {k:"team",l:"Verein",s:"nteam"},
-  {k:"comp",l:"Bewerb",s:"ncomp"},
-  {k:"by",l:"Jg.",num:1},
-  {k:"age",l:"Alter",num:1},
-  {k:"min",l:"Min.",num:1},
-  {k:"matches",l:"Sp.",num:1},
-  {k:"goals",l:"Tore",num:1},
-  {k:"off",l:"Off",num:1,rat:1},
-  {k:"def",l:"Def",num:1,rat:1},
-  {k:"total",l:"Total",num:1,rat:1},
-  {k:"peak",l:"Peak",num:1,rat:1},
-  {k:"pct_talent",l:"Talent%",num:1,rat:1},
-  {k:"pos",l:"Pos.",hide:1,s:"npos"},   // standardmäßig ausgeblendet
-  {k:"role",l:"Rolle",hide:1,s:"nrole"},  // standardmäßig ausgeblendet
+const SCOUT_COLS=[                 // w = Spaltenbreite (px) der virtuellen Tabelle (table-layout:fixed)
+  {k:"name",l:"Name",always:true,s:"nname",w:200},
+  {k:"nat",l:"Nat.",s:"nnat",w:104},
+  {k:"team",l:"Verein",s:"nteam",w:220},
+  {k:"comp",l:"Bewerb",s:"ncomp",w:210},
+  {k:"by",l:"Jg.",num:1,w:58},
+  {k:"age",l:"Alter",num:1,w:62},
+  {k:"min",l:"Min.",num:1,w:72},
+  {k:"matches",l:"Sp.",num:1,w:54},
+  {k:"goals",l:"Tore",num:1,w:56},
+  {k:"off",l:"Off",num:1,rat:1,w:70},
+  {k:"def",l:"Def",num:1,rat:1,w:70},
+  {k:"total",l:"Total",num:1,rat:1,w:74},
+  {k:"peak",l:"Peak",num:1,rat:1,w:70},
+  {k:"pct_talent",l:"Talent%",num:1,rat:1,w:76},
+  {k:"pos",l:"Pos.",hide:1,s:"npos",w:90},   // standardmäßig ausgeblendet
+  {k:"role",l:"Rolle",hide:1,s:"nrole",w:80},  // standardmäßig ausgeblendet
 ];
 const deSort=a=>[...a].sort((x,y)=>String(x).localeCompare(String(y),"de"));
 const setPred=field=>v=>{const s=new Set(Array.isArray(v)?v:[v]); return p=>p[field].some(x=>s.has(x));};
 function renderScout(){
-  const sec=$("#tab-scout"); sec.innerHTML="";
+  const sec=$("#tab-scout"); sec.innerHTML=""; onShow.scout=null;
   if(!state.rows.length){
-    sec.append(state.loadErr?emptyMsg("error",`Spielerdaten konnten nicht geladen werden:<br>${esc(state.loadErr)}`,boot)
+    sec.append(state.loadErr?emptyMsg("error",`Spielerdaten konnten nicht geladen werden:<br>${hesc(state.loadErr)}`,loadScout)
                             :emptyMsg("loading","Spielerdaten werden geladen…"));
     return;
   }
@@ -572,7 +619,6 @@ function renderScout(){
   const colWrap=el("div",{class:"ms",style:"width:auto"},colBtn,colPop);
 
   const tableWrap=el("div",{class:"tblscroll"});
-  const sentinel=el("div",{class:"sentinel"});
   content.append(el("div",{class:"content-head"},fb.count,colWrap),tableWrap);
   // Klick auf Namen -> Profil (ein Listener fuer alle Zeilen)
   tableWrap.addEventListener("click",e=>{const a=e.target.closest(".plink"); if(a&&a.dataset.id)openProfile(a.dataset.id);});
@@ -582,7 +628,8 @@ function renderScout(){
       const a=p.id?el("span",{class:"plink",title:"Profil öffnen","data-id":p.id},p.name)
                   :el("span",{title:"kein Profil – Einsatz ohne Spieler-ID"},p.name);
       return el("td",{},a,p.cap?el("span",{class:"cap"}," ©"):"");}
-    if(c.k==="comp")return el("td",{},p.comp?el("span",{class:"tag"},p.comp):"");
+    if(c.k==="team")return el("td",{title:p.team},p.team);            // title: voller Text trotz Ellipsis
+    if(c.k==="comp")return el("td",{title:p.comp},p.comp?el("span",{class:"tag"},p.comp):"");
     if(c.k==="pos")return el("td",{},p.pos?el("span",{class:"tag"},p.pos):"");
     if(c.k==="pct_talent"){const tal=p.pct_talent!=null;
       return el("td",{class:"num",style:tal&&p.pct_talent<=20?"color:var(--good);font-weight:600":""},
@@ -593,22 +640,16 @@ function renderScout(){
     if(c.num)return el("td",{class:"num"},esc(p[c.k]));
     return el("td",{},esc(p[c.k]));
   }
-  let cols=[],tb=null;
-  const chunk=chunkedRows({root:tableWrap,sentinel,makeRow:(p,frag)=>{
-    const tr=el("tr"); for(const c of cols)tr.append(cell(p,c)); frag.append(tr);}});
+  let cols=[];
+  const vt=VirtualTable(tableWrap,{emptyText:"Keine Spieler für diese Filter.",
+    renderRow:p=>{const tr=el("tr"); for(const c of cols)tr.append(cell(p,c)); return tr;},
+    onSort:c=>{state.sortSc.dir=state.sortSc.k===c.k?-state.sortSc.dir:1;state.sortSc.k=c.k;draw();}});
   function build(){                               // Kopf neu aufbauen (Spaltenänderung), dann draw
     cols=SCOUT_COLS.filter(c=>c.always||state.scoutCols.has(c.k));
-    const table=el("table"),thead=el("tr");
-    cols.forEach(c=>{const th=el("th",{},c.l);
-      th.onclick=()=>{state.sortSc.dir=state.sortSc.k===c.k?-state.sortSc.dir:1;state.sortSc.k=c.k;draw();};
-      thead.append(th);});
-    table.append(el("thead",{},thead)); tb=el("tbody"); table.append(tb);
-    tableWrap.innerHTML=""; tableWrap.append(table,sentinel);
-    draw();
+    vt.setCols(cols); draw();
   }
   let nDraw=0;
   function draw(){
-    if(!tb)return;
     const t0=performance.now();
     const rows=fb.apply(rowsAll);
     const k=state.sortSc.k,d=state.sortSc.dir,col=SCOUT_COLS.find(c=>c.k===k);
@@ -618,26 +659,20 @@ function renderScout(){
     } else { const s=(col&&col.s)||k;
       rows.sort((a,b)=>{const va=a[s],vb=b[s]; return (va>vb?1:va<vb?-1:0)*d;}); }
     fb.count.textContent=`${rows.length} / ${rowsAll.length} Spieler`;
-    chunk.set(rows,tb);
+    vt.setRows(rows);
     const ms=performance.now()-t0;
     if(nDraw++===0)setPerf("boot",performance.now()-T_START); else setPerf("filter",ms);
   }
   const scheduleDraw=coalesce(draw);
+  onShow.scout=()=>vt.relayout();
   build();
-  // Mess-Hook (?bench=1): einige Filter-/Sortierwechsel ueber alle Zeilen, Dauer je draw()
-  state._bench=()=>{ const out={}; const run=(lab,fn)=>{fn(); const t=performance.now(); draw(); out[lab]=Math.round((performance.now()-t)*10)/10;};
-    run("text_mar",()=>fb.setFilter("name","mar")); run("text_clear",()=>fb.setFilter("name",""));
-    run("range_min500",()=>fb.setFilter("min",["500",""])); run("team",()=>fb.setFilter("team",[teamOpts[0]]));
-    run("sort_name",()=>{state.sortSc={k:"name",dir:1};}); run("sort_team",()=>{state.sortSc={k:"team",dir:1};});
-    run("reset",()=>{fb.setFilter("min",["",""]);fb.setFilter("team",[]);state.sortSc={k:"total",dir:-1};});
-    state.perf.bench=out; setPerf("bench_max",Math.max(...Object.values(out))); return out; };
 }
 
 /* ---------- STATS ---------- */
 function renderStats(){
-  const sec=$("#tab-stats"); sec.innerHTML="";
+  const sec=$("#tab-stats"); sec.innerHTML=""; onShow.stats=null;
   if(!state.rows.length){
-    sec.append(state.loadErr?emptyMsg("error",`Spielerdaten konnten nicht geladen werden:<br>${esc(state.loadErr)}`,boot)
+    sec.append(state.loadErr?emptyMsg("error",`Spielerdaten konnten nicht geladen werden:<br>${hesc(state.loadErr)}`,loadScout)
                             :emptyMsg("loading","Spielerdaten werden geladen…"));
     return;
   }
@@ -658,13 +693,20 @@ function renderStats(){
   ],()=>scheduleDraw());
   grpSel.onchange=draw;
   const head=el("h3",{style:"margin:8px 0 10px"});
-  const cols=[["g","Gruppe"],["avg","Ø Alter"],["bar",""],["span","Spanne"],["avgMin","Ø Min."],["n","Spieler"]];
-  const table=el("table"),thead=el("tr"),tb=el("tbody");
-  cols.forEach(([k,l])=>{const th=el("th",{},l); if(k!=="bar")
-    th.onclick=()=>{state.sortS.dir=state.sortS.k===k?-state.sortS.dir:1;state.sortS.k=k;draw();};
-    thead.append(th);});
-  table.append(el("thead",{},thead),tb);
-  content.append(el("div",{class:"content-head"},el("span",{class:"flabel"},"Gruppieren nach"),grpSel,fb.count),head,table);
+  const cols=[{k:"g",l:"Gruppe",w:300},{k:"avg",l:"Ø Alter",w:80},{k:"bar",l:"",sortable:false},
+              {k:"span",l:"Spanne",w:90},{k:"avgMin",l:"Ø Min.",w:90},{k:"n",l:"Spieler",w:80}];
+  const tableWrap=el("div",{class:"tblscroll"});
+  content.append(el("div",{class:"content-head"},el("span",{class:"flabel"},"Gruppieren nach"),grpSel,fb.count),head,tableWrap);
+  let maxAvg=1;
+  const vt=VirtualTable(tableWrap,{emptyText:"Keine Spieler für diese Filter.",
+    onSort:c=>{state.sortS.dir=state.sortS.k===c.k?-state.sortS.dir:1;state.sortS.k=c.k;draw();},
+    renderRow:t=>el("tr",{},
+      el("td",{title:t.g},t.g),el("td",{class:"num"},t.avg.toFixed(1)),
+      el("td",{},el("div",{class:"barbg"},el("div",{class:"bar",style:`width:${t.avg/maxAvg*100}%`}))),
+      el("td",{class:"num"},`${t.min}–${t.max}`),
+      el("td",{class:"num"},Math.round(t.avgMin)+"'"),
+      el("td",{class:"num"},String(t.n)))});
+  vt.setCols(cols);
 
   function draw(){
     const getG=GROUPS[grpSel.value];
@@ -680,20 +722,13 @@ function renderStats(){
     const k=state.sortS.k,d=state.sortS.dir;
     groups.sort((a,b)=>{const va=k==="g"?norm(a.g):(k==="span"?a.min:a[k]),
       vb=k==="g"?norm(b.g):(k==="span"?b.min:b[k]); return (va>vb?1:va<vb?-1:0)*d;});
-    const maxAvg=Math.max(...groups.map(t=>t.avg),1);
+    maxAvg=1; for(const t of groups)if(t.avg>maxAvg)maxAvg=t.avg;
     head.textContent=`Ø Alter je ${grpSel.value} — ${rows.length} Spieler in ${groups.length} Gruppen`;
     fb.count.textContent=rows.length+" / "+rowsAll.length+" Spieler";
-    tb.innerHTML="";
-    const frag=document.createDocumentFragment();
-    groups.forEach(t=>{ frag.append(el("tr",{},
-      el("td",{},t.g),el("td",{class:"num"},t.avg.toFixed(1)),
-      el("td",{},el("div",{class:"barbg"},el("div",{class:"bar",style:`width:${t.avg/maxAvg*100}%`}))),
-      el("td",{class:"num"},`${t.min}–${t.max}`),
-      el("td",{class:"num"},Math.round(t.avgMin)+"'"),
-      el("td",{class:"num"},String(t.n)))); });
-    tb.append(frag);
+    vt.setRows(groups);                           // virtuell: auch 3 000 Vereins-Gruppen nie komplett als DOM
   }
   const scheduleDraw=coalesce(draw);
+  onShow.stats=()=>vt.relayout();
   draw();
 }
 
@@ -823,32 +858,38 @@ function drawCumChart(host,games,birthYear,cat,cohort){
     "Zu wenige Jahrgangs-Spieler mit ≥ 270 Minuten für Referenzlinien.":"Kein Geburtsjahr bekannt — keine Jahrgangs-Referenz."));
   return pct;
 }
-/* Suchfeld + Container (einmal); das Profil selbst kommt per openProfile() */
+/* Suchfeld + Container werden EINMAL gebaut; danach nur den Inhalt unter dem Suchfeld aktualisieren
+   (ein offenes/ladendes Profil bleibt beim Nachladen/Retry von scout.json unangetastet). */
 function renderProfileShell(){
-  const sec=$("#tab-profile"); sec.innerHTML="";
-  const wrap=el("div",{class:"pf"}); sec.append(wrap);
-  const search=el("input",{type:"search",class:"fctl",placeholder:"Spieler suchen…"});
-  const sug=el("div",{class:"pf-sug"});
-  wrap.append(el("div",{class:"pf-search"},search,sug));
-  search.oninput=()=>{
-    sug.innerHTML=""; const q=norm(search.value); if(q.length<2)return;
-    const hits=[]; for(const p of state.rows){ if(p.id&&p.nname.includes(q)){hits.push(p); if(hits.length>=20)break;} }
-    hits.forEach(p=>{
-      const row=el("div",{},`${p.name} `,el("small",{},`${p.by?("Jg. "+p.by+" · "):""}${p.team}`));
-      row.onclick=()=>{sug.innerHTML=""; openProfile(p.id);};
-      sug.append(row);
-    });
-  };
-  const body=el("div"); wrap.append(body); state._pfBody=body;
+  const sec=$("#tab-profile");
+  if(!state._pfBody){
+    const wrap=el("div",{class:"pf"}); sec.append(wrap);
+    const search=el("input",{type:"search",class:"fctl",placeholder:"Spieler suchen…"});
+    const sug=el("div",{class:"pf-sug"});
+    wrap.append(el("div",{class:"pf-search"},search,sug));
+    search.oninput=()=>{
+      sug.innerHTML=""; const q=norm(search.value); if(q.length<2)return;
+      const hits=[]; for(const p of state.rows){ if(p.id&&p.nname.includes(q)){hits.push(p); if(hits.length>=20)break;} }
+      hits.forEach(p=>{
+        const row=el("div",{},`${p.name} `,el("small",{},`${p.by?("Jg. "+p.by+" · "):""}${p.team}`));
+        row.onclick=()=>{sug.innerHTML=""; openProfile(p.id);};
+        sug.append(row);
+      });
+    };
+    const body=el("div"); wrap.append(body); state._pfBody=body;
+  }
+  if(state.profileId)return;                     // Profil offen oder am Laden: nicht ueberschreiben
+  const body=state._pfBody; body.innerHTML="";
   if(!state.rows.length){
-    body.append(state.loadErr?emptyMsg("error",`Spielerdaten konnten nicht geladen werden:<br>${esc(state.loadErr)}`,boot)
+    body.append(state.loadErr?emptyMsg("error",`Spielerdaten konnten nicht geladen werden:<br>${hesc(state.loadErr)}`,loadScout)
                              :emptyMsg("loading","Spielerdaten werden geladen…"));
     return;
   }
-  if(state.profileId&&state.profileCache.has(state.profileId))renderProfile(body,state.profileCache.get(state.profileId));
-  else body.append(el("div",{class:"pf-empty"},"Spieler suchen – oder im Tab Scouting einen Namen anklicken."));
+  body.append(el("div",{class:"pf-empty"},"Spieler suchen – oder im Tab Scouting einen Namen anklicken."));
 }
 let _pfToken=0;
+/* Profil oeffnen: haengt NICHT an scout.json (Deep-Link #profile=<id> laedt sofort); der Name fuer den
+   Ladehinweis kommt aus scout.json, falls schon da. */
 async function openProfile(pid){
   pid=pid?String(pid):null; if(!pid)return;
   const t0=performance.now();
@@ -857,13 +898,14 @@ async function openProfile(pid){
   const token=++_pfToken;
   let data=state.profileCache.get(pid);
   if(!data){
-    body.innerHTML=""; body.append(el("div",{class:"pf-load"},"Profil lädt…"));
+    const known=state.byId.get(pid);
+    body.innerHTML=""; body.append(el("div",{class:"pf-load"},`Profil${known?" von "+known.name:""} lädt…`));
     try{ data=await fetchJSON("api/profile/"+pid); state.profileCache.set(pid,data); }
     catch(e){
       if(token!==_pfToken)return;
       body.innerHTML="";
-      body.append(emptyMsg("error",e.status===404?`Keine Daten zu diesem Spieler gefunden.<br><small>${esc(e.message)}</small>`
-                                                 :`Profil konnte nicht geladen werden:<br>${esc(e.message)}`,()=>openProfile(pid)));
+      body.append(emptyMsg("error",e.status===404?`Keine Daten zu diesem Spieler gefunden.<br><small>${hesc(e.message)}</small>`
+                                                 :`Profil konnte nicht geladen werden:<br>${hesc(e.message)}`,()=>openProfile(pid)));
       return;
     }
   }
@@ -882,12 +924,12 @@ function renderProfile(wrap,data){
     img.onerror=()=>{img.replaceWith(el("div",{class:"pf-foto ph"},"👤"));}; head.append(img); }
   else head.append(el("div",{class:"pf-foto ph"},"👤"));
   const meta=[];
-  if(pl.birth_year)meta.push(`Jahrgang <b>${esc(pl.birth_year)}</b>${pl.age?` (${esc(pl.age)} J.)`:""}`);
-  if(pl.nationality)meta.push(`Nationalität <b>${esc(pl.nationality)}</b>`);
-  if(pl.verband)meta.push(`Verband <b>${esc(pl.verband)}</b>`);
-  if(pl.club)meta.push(`Verein <b>${esc(pl.club)}</b>`);
-  if(pl.first_match)meta.push(`erstes Spiel <b>${esc(pl.first_match)}</b>`);
-  if(pl.n_clubs)meta.push(`${esc(pl.n_clubs)} Vereine`);
+  if(pl.birth_year)meta.push(`Jahrgang <b>${hesc(pl.birth_year)}</b>${pl.age?` (${hesc(pl.age)} J.)`:""}`);
+  if(pl.nationality)meta.push(`Nationalität <b>${hesc(pl.nationality)}</b>`);
+  if(pl.verband)meta.push(`Verband <b>${hesc(pl.verband)}</b>`);
+  if(pl.club)meta.push(`Verein <b>${hesc(pl.club)}</b>`);
+  if(pl.first_match)meta.push(`erstes Spiel <b>${hesc(pl.first_match)}</b>`);
+  if(pl.n_clubs)meta.push(`${hesc(pl.n_clubs)} Vereine`);
   const nameCopy=el("button",{class:"copybtn",title:"Namen kopieren"},"⧉");
   nameCopy.onclick=()=>copyText(pl.name,nameCopy);
   const idBox=el("div",{class:"pf-id"},
@@ -995,7 +1037,9 @@ function renderProfile(wrap,data){
     `${nExcl} Einsatz${nExcl>1?"e":""} ohne vollständige Tor-Minuten in der Quelle — nicht im +/- enthalten (Minuten/Tore zählen trotzdem).`));
 
   // --- +/- akkumuliert (Haupt-Chart; Referenz = dominante Bewerbs-Kategorie) ---
-  const domCat=tot>0?(minE>=minJ?"Erwachsen":"Jugend"):null;
+  // Referenz-Kategorie laut Vertrag aus cohort.cat (Server-Regel); Fallback nur ohne cohort
+  const coh=data.cohort||null;
+  const domCat=coh&&coh.cat?(coh.cat==="J"?"Jugend":"Erwachsen"):(tot>0?(minE>=minJ?"Erwachsen":"Jugend"):null);
   let cumPct=null;
   wrap.append(el("h3",{},"Plus-Minus akkumuliert ",el("small",{},"— mit Top-20-%-Schwelle des Jahrgangs")));
   if(vgames.length>=2){ const viz=el("div",{class:"viz"}); cumPct=drawCumChart(viz,vgames,pl.birth_year||null,domCat,data.cohort); wrap.append(viz);
@@ -1148,9 +1192,9 @@ function decodeMatches(d){
   });
 }
 function renderMatches(){
-  const sec=$("#tab-matches"); sec.innerHTML="";
+  const sec=$("#tab-matches"); sec.innerHTML=""; onShow.matches=null;
   if(!state.mindex){
-    if(state.mErr)sec.append(emptyMsg("error",`Matches konnten nicht geladen werden:<br>${esc(state.mErr)}`,()=>{state.mErr=null;loadMatches();}));
+    if(state.mErr)sec.append(emptyMsg("error",`Matches konnten nicht geladen werden:<br>${hesc(state.mErr)}`,()=>{state.mErr=null;loadMatches();}));
     else if(state.mLoading)sec.append(emptyMsg("loading","Matches laden… <code>data/matches_index.json</code>"));
     else sec.append(emptyMsg("empty","Die Spielliste wird beim Öffnen des Tabs geladen."));
     return;
@@ -1172,43 +1216,45 @@ function renderMatches(){
     {key:"ref",type:"text",label:"Schiedsrichter",get:m=>m.ref,nget:m=>m.nref},
   ],()=>scheduleDraw());
 
-  const cols=[["date","Datum"],["time","Zeit"],["home","Heim"],["score","Stand"],
-              ["away","Gast"],["comp","Bewerb"],["nev","Events"]];
-  const table=el("table"); const thead=el("tr");
-  cols.forEach(([k,l])=>{const th=el("th",{},l);
-    th.onclick=()=>{state.sortM.dir=state.sortM.k===k?-state.sortM.dir:1;state.sortM.k=k;draw();};
-    thead.append(th);});
-  table.append(el("thead",{},thead)); const tb=el("tbody"); table.append(tb);
-  const sentinel=el("div",{class:"sentinel"});
-  content.append(el("div",{class:"content-head"},fb.count),table,sentinel);
+  const cols=[{k:"date",l:"Datum",w:100},{k:"time",l:"Zeit",w:60},{k:"home",l:"Heim",w:240},{k:"score",l:"Stand",w:64},
+              {k:"away",l:"Gast",w:240},{k:"comp",l:"Bewerb",w:230},{k:"nev",l:"Events",w:70}];
+  const tableWrap=el("div",{class:"tblscroll"});           // eigener Scroll-Container wie im Scouting
+  content.append(el("div",{class:"content-head"},fb.count),tableWrap);
+  let cur=[];
+  const vt=VirtualTable(tableWrap,{emptyText:"Keine Spiele für diese Filter.",
+    onSort:c=>{state.sortM.dir=state.sortM.k===c.k?-state.sortM.dir:1;state.sortM.k=c.k;draw();},
+    renderRow:m=>{
+      const tr=el("tr",{class:"mrow","data-id":m.id});
+      tr.append(el("td",{},m.date),el("td",{},m.time),
+        el("td",{title:m.home},m.home),el("td",{class:"score"},m.score),
+        el("td",{title:m.away},m.away),el("td",{title:m.comp},m.comp?el("span",{class:"tag"},m.comp):""),
+        el("td",{class:"num"},String(m.nev)));
+      return tr;
+    }});
+  vt.setCols(cols);
   const byId=new Map(all.map(m=>[m.id,m]));
-  // Zeile anklicken -> Detail auf/zu (nur eines offen, erneuter Klick schliesst)
-  tb.addEventListener("click",e=>{
-    const tr=e.target.closest("tr.mrow"); if(!tr||!tb.contains(tr))return;
+  // Zeile anklicken -> Detail auf/zu (nur eines offen, erneuter Klick schliesst); Detailzeile lebt in state.openDetail
+  tableWrap.addEventListener("click",e=>{
+    const tr=e.target.closest("tr.mrow"); if(!tr)return;
     const m=byId.get(tr.dataset.id); if(!m)return;
-    const cur=tb.querySelector("tr.mdetail"); if(cur)cur.remove();
-    if(state.open===m.id){state.open=null;return;}
-    state.open=m.id; tr.after(detailRow(m));
+    if(state.open===m.id){state.open=null;state.openDetail=null;vt.setOpen(null,null);return;}
+    state.open=m.id; state.openDetail=detailRow(m,()=>vt.relayout());
+    vt.setOpen(cur.indexOf(m),state.openDetail);
   });
-  const chunk=chunkedRows({root:null,sentinel,makeRow:(m,frag)=>{
-    const tr=el("tr",{class:"mrow","data-id":m.id});
-    tr.append(el("td",{},m.date),el("td",{},m.time),
-      el("td",{},m.home),el("td",{class:"score"},m.score),
-      el("td",{},m.away),el("td",{},m.comp?el("span",{class:"tag"},m.comp):""),
-      el("td",{class:"num"},String(m.nev)));
-    frag.append(tr);
-    if(state.open===m.id)frag.append(detailRow(m));
-  }});
   function draw(){
     const rows=fb.apply(all);
     const k=state.sortM.k,d=state.sortM.dir;
-    if(k==="date")rows.sort((a,b)=>((a.iso>b.iso?1:a.iso<b.iso?-1:0)||(a.id>b.id?1:a.id<b.id?-1:0))*d);
+    // Datum ueber ISO; Gleichstand behaelt die Grundreihenfolge der Datei (stabiler Sort)
+    if(k==="date")rows.sort((a,b)=>(a.iso>b.iso?1:a.iso<b.iso?-1:0)*d);
     else if(k==="nev")rows.sort((a,b)=>(a.nev-b.nev)*d);
     else rows.sort((a,b)=>{const va=a[k],vb=b[k];return (va>vb?1:va<vb?-1:0)*d;});
     fb.count.textContent=rows.length+" / "+all.length+" Matches";
-    chunk.set(rows,tb);
+    cur=rows;
+    const oi=state.open?rows.findIndex(m=>m.id===state.open):-1;
+    vt.setRows(rows,oi,oi>=0?state.openDetail:null);
   }
   const scheduleDraw=coalesce(draw);
+  onShow.matches=()=>vt.relayout();
   draw();
 }
 const EVICON={goal:"⚽",yellow:"🟨",yellow_red:"🟨🟥",red:"🟥",substitution:"🔁"};
@@ -1216,8 +1262,9 @@ function loadMatch(id){
   if(!state.matchCache.has(id))state.matchCache.set(id,fetchJSON("api/match/"+id).catch(e=>{state.matchCache.delete(id);throw e;}));
   return state.matchCache.get(id);
 }
-function detailRow(m){
-  const td=el("td",{colspan:"7"}); const wrap=el("div",{class:"detail"});
+/* Detailzeile eines Spiels; after() wird nach dem (asynchronen) Fuellen gerufen (Hoehe neu messen) */
+function detailRow(m,after){
+  const td=el("td",{class:"dt",colspan:"7"}); const wrap=el("div",{class:"detail"});
   wrap.append(el("h3",{},`${m.home} ${m.score} ${m.away}`));
   const meta=[m.date&&m.time?`${m.date} ${m.time}`:m.date,m.comp,m.round,m.venue,
     m.spect?m.spect+" Zuschauer":null,m.ref?"SR "+m.ref:null,
@@ -1226,8 +1273,8 @@ function detailRow(m){
   if(m.url)wrap.querySelector(".meta").append(" ",el("a",{class:"ext",href:m.url,target:"_blank"},"↗ Quelle"));
   const body=el("div"); wrap.append(body);
   body.append(el("div",{class:"meta"},"Aufstellung lädt…"));
-  loadMatch(m.id).then(d=>{ if(state.open!==m.id)return; body.innerHTML=""; fillDetail(body,m,d); })
-    .catch(e=>{ body.innerHTML=""; body.append(el("div",{class:"meta",style:"color:#f0836b"},"Spiel konnte nicht geladen werden: "+esc(e.message))); });
+  loadMatch(m.id).then(d=>{ if(state.open!==m.id)return; body.innerHTML=""; fillDetail(body,m,d); if(after)after(); })
+    .catch(e=>{ body.innerHTML=""; body.append(el("div",{class:"meta",style:"color:#f0836b"},"Spiel konnte nicht geladen werden: "+esc(e.message))); if(after)after(); });
   td.append(wrap); return el("tr",{class:"mdetail"},td);
 }
 function fillDetail(body,m,d){
@@ -1248,7 +1295,8 @@ function fillDetail(body,m,d){
 /* Aufstellungsblock: Alter = exaktes Alter aus scout.json (am ref_date), sonst Jahr(ref_date) − Jahrgang */
 function lineupBlock(team,coach,list){
   const b=el("div",{class:"lu"});
-  b.append(el("h4",{},esc(team)+(coach?` · TR ${esc(coach)}`:"")));
+  const h=esc(team)+(coach?` · TR ${esc(coach)}`:"");
+  if(h)b.append(el("h4",{},h));                     // Spiel ohne Teams (7 Spielberichte): keine leere Ueberschrift
   if(!list||!list.length){b.append("—");return b;}
   const refYear=+String(state.scout&&state.scout.ref_date||"").slice(0,4)||new Date().getFullYear();
   const mk=(title,arr)=>{ if(!arr.length)return;
@@ -1508,8 +1556,8 @@ function renderExplain(){
       <div class="viz"><div id="viz-funnel"></div></div>
       <div class="note">Kategorien: <b>Early developer</b> (&lt;17 erkannt), <b>Late developer</b> (17–20),
         <b>Grassroots</b> (erst &gt;20 in den Daten). Ergebnis im Paper: mit „Peak + Minuten, Top 20 %"
-        werden ~<b>80 %</b> der später wertvollsten Spieler früh erkannt. → siehe Tab <b>Ratings</b>
-        (Spalte „Talent %").</div>
+        werden ~<b>80 %</b> der später wertvollsten Spieler früh erkannt. → siehe Tab <b>Scouting</b>
+        (Spalte „Talent%", Filter „Talent-Perzentil").</div>
     </div></div>
   </div>`;
   drawTimeline($("#viz-timeline"));
@@ -1527,26 +1575,33 @@ function setPills(d){
                ["#pillD",`Stand ${fmtBuilt(d.built)}`]];
   pills.forEach(([s,t])=>{const p=$(s); p.textContent=t; p.classList.add("on"); p.classList.remove("err");});
 }
-async function boot(){
-  state.loadErr=null;
+function init(){
   safe(renderScout); safe(renderStats); safe(renderExplain); safe(renderProfileShell); safe(renderMatches);
-  // Tab aus dem Hash sofort zeigen (Methodik/Matches brauchen scout.json nicht); Profile erst nach dem Laden
-  if(!/^#profile=/.test(location.hash))safe(route);
+  safe(route);           // Tab/Profil aus dem Hash sofort: Methodik, Matches und Profile brauchen scout.json nicht
+  loadScout();
+}
+/* scout.json laden (auch Retry-Callback): rendert nur die davon abhaengigen Tabs neu – Matches-Filter,
+   offenes Spiel-Detail und ein offenes Profil bleiben erhalten. */
+async function loadScout(){
+  state.loadErr=null;
+  const t0=performance.now();
   try{
     const d=await fetchJSON("data/scout.json");
+    setPerf("fetch",performance.now()-t0);
+    const t1=performance.now();
     state.scout=d; state.rows=decodeScout(d);
     state.byId=new Map(); for(const r of state.rows)if(r.id)state.byId.set(r.id,r);
+    setPerf("decode",performance.now()-t1);
     setPills(d);
-    safe(renderScout); safe(renderStats); safe(renderProfileShell);
   }catch(e){
     console.error(e); state.loadErr=e.message;
     const p=$("#pillP"); p.textContent="Fehler"; p.classList.add("err");
-    safe(renderScout); safe(renderStats); safe(renderProfileShell);
   }
-  safe(route);
-  if(/[?&]bench=1/.test(location.search))setTimeout(()=>{ if(state._bench)safe(state._bench); },50);
+  safe(renderScout); safe(renderStats); safe(renderProfileShell);
+  const tab=document.querySelector("nav button.active");
+  if(tab&&onShow[tab.dataset.tab])onShow[tab.dataset.tab]();   // sichtbare Tabelle gleich korrekt messen
 }
-boot();
+init();
 </script>
 </body>
 </html>

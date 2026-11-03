@@ -98,8 +98,8 @@ def _static(path: str, mt: str, request: Request):
     if not os.path.exists(path):
         raise HTTPException(404)
     etag = _file_etag(path)
-    if request.headers.get("if-none-match") == etag:
-        return Response(status_code=304)
+    if request.headers.get("if-none-match") == etag:          # 304 traegt ETag + Cache-Control (RFC 9110)
+        return Response(status_code=304, headers={"ETag": etag, **_NOCACHE})
     return FileResponse(path, media_type=mt, headers={"ETag": etag, **_NOCACHE})
 
 
@@ -126,9 +126,9 @@ def data_file(name: str, request: Request):
     gz = base + ".gz"
     if os.path.exists(gz):                       # vor-gezippt -> transparent
         etag = _file_etag(gz)
-        if request.headers.get("if-none-match") == etag:
-            return Response(status_code=304)
         headers = {"ETag": etag, "Vary": "Accept-Encoding", "Cache-Control": "no-cache"}
+        if request.headers.get("if-none-match") == etag:
+            return Response(status_code=304, headers=headers)
         if "gzip" in request.headers.get("accept-encoding", ""):
             headers["Content-Encoding"] = "gzip"
             return FileResponse(gz, media_type=mt, headers=headers)
@@ -193,7 +193,7 @@ def api_profile(player_id: str, request: Request):
         raise HTTPException(404)
     etag = _db_etag()
     if request.headers.get("if-none-match") == etag:
-        return Response(status_code=304)
+        return Response(status_code=304, headers={"ETag": etag, **_NOCACHE})
     try:
         rows = oefb_mcp._rows("SELECT gz FROM dash_profile WHERE player_id=?", (player_id,))
     except Exception as e:  # noqa: BLE001
@@ -215,7 +215,7 @@ def api_match(match_id: str, request: Request):
         raise HTTPException(404)
     etag = _db_etag()
     if request.headers.get("if-none-match") == etag:
-        return Response(status_code=304)
+        return Response(status_code=304, headers={"ETag": etag, **_NOCACHE})
     m = oefb_mcp._rows("SELECT * FROM matches WHERE match_id=?", (match_id,))
     if not m:
         raise HTTPException(404, "Spiel nicht gefunden")
