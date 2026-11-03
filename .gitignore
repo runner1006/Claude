@@ -45,3 +45,5 @@ data/html/
 
 # lokale Test-Hilfen
 /.claude/
+/data/scout.json
+/data/matches_index.json

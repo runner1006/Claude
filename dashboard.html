@@ -201,6 +201,9 @@
   .bench .lab{color:var(--muted)}
   .bench .lab.good{color:var(--good)}
   .bench .expl{font-size:11px;color:var(--muted);margin-top:7px}
+  /* Schmale Bildschirme: Rating-Zeilen ohne Erklaerungsspalte, kuerzerer Balken -> kein horizontaler Scroll */
+  @media(max-width:600px){.bench table{min-width:0;width:100%}.bench td{padding-right:8px}
+    .bench td:nth-child(6){display:none}.bench .barbg{width:56px}}
   .pf-card .sub{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.45}
   .pf-card .sub b{color:var(--text)}
   .copybtn{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:8px;
