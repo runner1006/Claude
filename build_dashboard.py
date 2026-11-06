@@ -36,7 +36,7 @@ from collections import defaultdict
 
 import numpy as np
 
-VERSION = 1
+VERSION = 2
 MINM = 270      # Mindestminuten fuer Rating-Benchmark und Kohorten-Referenz
 COHMIN = 20     # Mindestanzahl Kohorten-Spieler fuer Referenzlinien
 
@@ -202,10 +202,15 @@ def build(data_dir: str, ref: dt.date) -> None:
         if a is None:
             a = agg[key] = {"id": pid, "name": r["name"], "teams": {}, "comps": {},
                             "pos": {}, "role": r["role"] or "", "cap": False,
-                            "min": 0, "matches": 0, "goals": 0, "first": None, "last": None}
+                            "min": 0, "matches": 0, "goals": 0, "first": None, "last": None,
+                            "sea": {}}
         a["matches"] += 1
         a["min"] += r["minutes"] or 0
         a["goals"] += r["goals"] or 0
+        if m["season"]:                       # Minuten/Einsaetze je Saison (Saisonfilter im Scouting)
+            se = a["sea"].setdefault(m["season"], [0, 0])
+            se[0] += r["minutes"] or 0
+            se[1] += 1
         if r["captain"]:
             a["cap"] = True
         if r["role"] == "starter":
@@ -248,7 +253,9 @@ def build(data_dir: str, ref: dt.date) -> None:
     cols = ["id", "name", "teams", "comps", "by", "age", "pos", "role", "nat", "verband",
             "cap", "min", "matches", "goals", "first", "last",
             "off", "def", "total", "peak", "pct_talent", "pct_total", "pct_peak",
-            "r_min", "r_matches"]
+            "r_min", "r_matches", "sea"]
+    seasons = sorted({s for a in agg.values() for s in a["sea"]})
+    six = {s: i for i, s in enumerate(seasons)}
     rows = []
     for key, a in agg.items():
         p = P.get(a["id"]) or {}
@@ -267,7 +274,8 @@ def build(data_dir: str, ref: dt.date) -> None:
                      r3(rt["total"]) if rt else None, r3(rt["peak"]) if rt else None,
                      r3(rt["pct_talent"]) if rt else None, r3(rt["pct_total"]) if rt else None,
                      r3(rt["pct_peak"]) if rt else None,
-                     rt["minutes"] if rt else None, rt["matches"] if rt else None])
+                     rt["minutes"] if rt else None, rt["matches"] if rt else None,
+                     [[six[s], v[0], v[1]] for s, v in sorted(a["sea"].items())]])
     # Team-/Bewerbsnamen als Woerterbuch (Index statt wiederholter Strings -> ~40 % kleiner)
     team_names = sorted({t for r in rows for t in r[2]}, key=str.casefold)
     comp_names = sorted({c for r in rows for c in r[3]}, key=str.casefold)
@@ -281,7 +289,8 @@ def build(data_dir: str, ref: dt.date) -> None:
                        "appearances": n_app,
                        "ratings": len(R), "bench_n": BENCH_N,
                        "latest_match": max((m["iso_date"] or "" for m in M.values()), default=None)},
-             "teams": team_names, "competitions": comp_names, "cols": cols, "rows": rows}
+             "teams": team_names, "competitions": comp_names, "seasons": seasons,
+             "cols": cols, "rows": rows}
     write_json(os.path.join(data_dir, "scout.json"), scout)
 
     # ---- matches_index.json ------------------------------------------------------

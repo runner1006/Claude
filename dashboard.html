@@ -231,6 +231,7 @@
      lesbar, ohne dass die virtuelle Tabelle variable Zeilenhoehen braucht. */
   .vt.r2>tbody>tr>td{height:46px;line-height:17px;vertical-align:middle;padding:0 5px}
   .vt.r2>thead th{padding:8px 5px}
+  .vt>thead th[title]{cursor:help;text-decoration:underline dotted;text-underline-offset:3px}
   .vt.r2>tbody>tr.sp>td{height:0;line-height:0}
   .c2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;
       hyphens:auto;overflow-wrap:anywhere;max-height:34px}
@@ -579,22 +580,36 @@ function VirtualTable(wrap,opts){
 function coalesce(fn){ let raf=0; return ()=>{ if(raf)return; raf=requestAnimationFrame(()=>{raf=0;fn();}); }; }
 
 /* ---------- scout.json -> Zeilenobjekte (einmal beim Start) ---------- */
+/* Aktuelle Saison = letzte in scout.json "seasons" (z. B. "2026/27"); Kurzform "26/27" fuer Spaltenkopf/Filter */
+const curSeason=d=>(d&&d.seasons&&d.seasons.length)?d.seasons[d.seasons.length-1]:"";
+const shortSeason=s=>String(s).replace(/^(\d\d)(\d\d)\/(\d\d)$/,"$2/$3");
 function decodeScout(d){
   const teams=d.teams, comps=d.competitions, nteams=teams.map(norm), ncomps=comps.map(norm);
+  const seasons=d.seasons||[], cur=seasons.length-1;
   const C=Object.fromEntries(d.cols.map((c,i)=>[c,i]));
   const out=new Array(d.rows.length);
   for(let i=0;i<d.rows.length;i++){
-    const r=d.rows[i], ti=r[C.teams]||[], ci=r[C.comps]||[];
+    const r=d.rows[i], ti=r[C.teams]||[], ci=r[C.comps]||[], se=(C.sea!=null&&r[C.sea])||[];
     const teamsArr=ti.map(j=>teams[j]), compsArr=ci.map(j=>comps[j]);
     const team=teamsArr.join(", "), comp=compsArr.join(", "), name=esc(r[C.name]);
+    // se = [[Saison-Index, Minuten, Einsaetze], ...] aufsteigend; cmin/cmatches = laufende Saison (0 ohne Einsatz)
+    let cmin=0,cmatches=0; for(const x of se){ if(x[0]===cur){cmin=x[1]||0;cmatches=x[2]||0;} }
     out[i]={id:r[C.id]||"",name,teamsArr,compsArr,team,comp,by:r[C.by],age:r[C.age],
       pos:r[C.pos]||"",role:r[C.role]||"",nat:r[C.nat]||"",verband:r[C.verband]||"",cap:!!r[C.cap],
       min:r[C.min]||0,matches:r[C.matches]||0,goals:r[C.goals]||0,first:r[C.first],last:r[C.last],
       off:r[C.off],def:r[C.def],total:r[C.total],peak:r[C.peak],pct_talent:r[C.pct_talent],
+      seasonsArr:se.map(x=>seasons[x[0]]),cmin,cmatches,talRank:null,talN:null,
       cat:leagueCat(comp),
       // normalisierte Felder fuer Textsuche + String-Sortierung (keine norm() je Zeile spaeter)
       nname:norm(name),nteam:ti.map(j=>nteams[j]).join(", "),ncomp:ci.map(j=>ncomps[j]).join(", "),
       nnat:norm(r[C.nat]),npos:norm(r[C.pos]),nrole:norm(r[C.role])};
+  }
+  // Talent-Rang je Jahrgang (fuer den Tooltip "Rang x von n"): pct_talent aufsteigend, gleiche Werte = gleicher Rang
+  const byY=new Map();
+  for(const p of out){ if(p.by!=null&&p.pct_talent!=null){ if(!byY.has(p.by))byY.set(p.by,[]); byY.get(p.by).push(p);} }
+  for(const arr of byY.values()){
+    arr.sort((a,b)=>a.pct_talent-b.pct_talent);
+    let rank=0; for(let i=0;i<arr.length;i++){ if(i===0||arr[i].pct_talent!==arr[i-1].pct_talent)rank=i+1; arr[i].talRank=rank; arr[i].talN=arr.length; }
   }
   return out;
 }
@@ -603,8 +618,24 @@ function decodeScout(d){
 /* Spaltenbreiten: Zahlen fest (w, px), Textspalten teilen sich den Rest (flex-Gewicht, min-Breite). Nat./Verein/
    Bewerb brechen auf 2 Zeilen um (.c2) und tragen den vollen Text im title; Bewerbe stehen in der Tabelle als
    Kurzform (COMP_SHORT, z. B. "JRL U18"), damit auch 3 Bewerbe in 2 Zeilen lesbar sind. Die Mindestbreiten sind
-   so gewaehlt, dass alle 14 Standardspalten ab 950 px Containerbreite (1280er-Fenster mit Sidebar) ohne
-   horizontalen Scroll passen; schmaler scrollt .tblscroll horizontal, die Name-Spalte klebt links. */
+   so gewaehlt, dass alle 15 Standardspalten ab 956 px Containerbreite (1280er-Fenster mit Sidebar) ohne
+   horizontalen Scroll passen; schmaler scrollt .tblscroll horizontal, die Name-Spalte klebt links.
+   t = Tooltip am Spaltenkopf (Erklaerung der Kennzahl); COL_HELP wird fuer Spaltenkoepfe und Filter genutzt. */
+const COL_HELP={
+  by:"Geburtsjahrgang.",
+  age:"Alter am Stichtag der Datenerstellung (Geburtsdatum aus dem ÖFB-Profil; sonst Jahr minus Jahrgang).",
+  min:"Einsatzminuten gesamt über alle erfassten Saisonen (ab 2023/24) und Bewerbe; enthält auch die wenigen Spielberichte ohne Datum, die in keiner Saisonsumme stecken.",
+  cmin:"Einsatzminuten in der laufenden Saison. Wer heuer neu viel spielt, ist hier sichtbar – das Rating dagegen gewichtet alle Saisonen gleich.",
+  matches:"Einsätze gesamt (Kaderzeilen inkl. Bank ohne Minuten).",
+  goals:"Tore gesamt über alle erfassten Saisonen.",
+  off:"Offensiv-Rating (RAPM): Beitrag zu eigenen Toren pro 90 Minuten, bereinigt um Mitspieler, Gegner, Heimvorteil und Über-/Unterzahl. 0 = Durchschnitt aller Spieler; +0.10 ≈ ein Tor mehr je 10 Spiele.",
+  def:"Defensiv-Rating (RAPM): Verhinderung von Gegentoren pro 90 Minuten, gleich bereinigt wie Off. Positiv = mit ihm am Feld kassieren seine Teams weniger, als Mitspieler und Gegner erwarten ließen.",
+  total:"Total = Off + Def (Tore pro 90 Minuten). Alle Saisonen ab 2023/24 gleich gewichtet; wenige Minuten ziehen den Wert zur 0 (Regularisierung), daher braucht ein belastbares Rating mehrere hundert Minuten.",
+  peak:"Peak = Total plus Alterszuschlag: erwartetes Rating am Leistungshoch (ca. 25–27 J.) nach der Alterskurve von Hvattum. Macht junge und reife Spieler vergleichbar.",
+  pct_talent:"Talent-Perzentil im Geburtsjahrgang: Perzentil des Mittels aus Peak-Rang und Minuten-Rang (unter 270 Min. zählt der Minuten-Rang als letzter), 0 = bester des Jahrgangs, 50 = Mitte. Grün = Top 20 %. Mauszeiger auf den Wert zeigt den Rang.",
+  pos:"Häufigste Position laut Spielberichten.",
+  role:"starter = mindestens einmal in der Startelf, sonst bench.",
+};
 const COMP_LEGEND="Kurzformen: RL = Regionalliga, LL = Landesliga, OL = Oberliga, JL = ÖFB Jugendliga, JRL = ÖFB Jugendregionalliga. Voller Name per Mauszeiger.";
 const COMP_SHORT={
   "1. HYPO TIROL Landesliga Ost":"LL Tirol Ost","HYPO TIROL Liga":"Tirol Liga",
@@ -618,22 +649,23 @@ function shortComp(x){                           // Anzeige-Kurzform (Filter/Too
     .replace(/^Regionalliga/,"RL").replace(/^Oberliga/,"OL");
 }
 const SCOUT_COLS=[
-  {k:"name",l:"Name",always:true,s:"nname",flex:1.2,min:110,wrap:1},
-  {k:"nat",l:"Nat.",s:"nnat",flex:0.6,min:84,wrap:1},
-  {k:"team",l:"Verein",s:"nteam",flex:1.5,min:140,wrap:1},
-  {k:"comp",l:"Bewerb",s:"ncomp",flex:1.1,min:104,wrap:1,t:COMP_LEGEND},
-  {k:"by",l:"Jg.",num:1,w:44},
-  {k:"age",l:"Alter",num:1,w:44},
-  {k:"min",l:"Min.",num:1,w:54},
-  {k:"matches",l:"Sp.",num:1,w:36},
-  {k:"goals",l:"Tore",num:1,w:40},
-  {k:"off",l:"Off",num:1,rat:1,w:58},
-  {k:"def",l:"Def",num:1,rat:1,w:58},
-  {k:"total",l:"Total",num:1,rat:1,w:60},
-  {k:"peak",l:"Peak",num:1,rat:1,w:58},
-  {k:"pct_talent",l:"Talent%",num:1,rat:1,w:62},
-  {k:"pos",l:"Pos.",hide:1,s:"npos",w:80},   // standardmäßig ausgeblendet
-  {k:"role",l:"Rolle",hide:1,s:"nrole",w:68},  // standardmäßig ausgeblendet
+  {k:"name",l:"Name",always:true,s:"nname",flex:1.2,min:100,wrap:1},
+  {k:"nat",l:"Nat.",s:"nnat",flex:0.6,min:78,wrap:1},
+  {k:"team",l:"Verein",s:"nteam",flex:1.5,min:126,wrap:1},
+  {k:"comp",l:"Bewerb",s:"ncomp",flex:1.1,min:96,wrap:1,t:COMP_LEGEND},
+  {k:"by",l:"Jg.",num:1,w:44,t:COL_HELP.by},
+  {k:"age",l:"Alter",num:1,w:44,t:COL_HELP.age},
+  {k:"min",l:"Min.",num:1,w:50,t:COL_HELP.min},
+  {k:"cmin",l:"Saison",num:1,w:50,t:COL_HELP.cmin,needSea:1},   // Kopf/Tooltip nach dem Laden aus "seasons"; ohne Saisondaten (scout.json v1) ausgeblendet
+  {k:"matches",l:"Sp.",num:1,w:34,t:COL_HELP.matches},
+  {k:"goals",l:"Tore",num:1,w:38,t:COL_HELP.goals},
+  {k:"off",l:"Off",num:1,rat:1,w:58,t:COL_HELP.off},
+  {k:"def",l:"Def",num:1,rat:1,w:58,t:COL_HELP.def},
+  {k:"total",l:"Total",num:1,rat:1,w:60,t:COL_HELP.total},
+  {k:"peak",l:"Peak",num:1,rat:1,w:58,t:COL_HELP.peak},
+  {k:"pct_talent",l:"Talent%",num:1,rat:1,w:62,t:COL_HELP.pct_talent},
+  {k:"pos",l:"Pos.",hide:1,s:"npos",w:80,t:COL_HELP.pos},   // standardmäßig ausgeblendet
+  {k:"role",l:"Rolle",hide:1,s:"nrole",w:68,t:COL_HELP.role},  // standardmäßig ausgeblendet
 ];
 const deSort=a=>[...a].sort((x,y)=>String(x).localeCompare(String(y),"de"));
 const setPred=field=>v=>{const s=new Set(Array.isArray(v)?v:[v]); return p=>p[field].some(x=>s.has(x));};
@@ -646,12 +678,15 @@ function renderScout(){
   }
   const {side,content}=tabScaffold(sec);
   const rowsAll=state.rows, d=state.scout;
-  if(!state.scoutCols)state.scoutCols=new Set(SCOUT_COLS.filter(c=>!c.hide).map(c=>c.k));
+  const scCols=SCOUT_COLS.filter(c=>!c.needSea||state.hasSea);   // ohne Saisondaten (alte scout.json) keine Saisonspalte
+  if(!state.scoutCols)state.scoutCols=new Set(scCols.filter(c=>!c.hide).map(c=>c.k));
   const compOpts=deSort(d.competitions), teamOpts=deSort(d.teams);
   const min=v=>v+"'", r2=v=>(+v).toFixed(2);
+  const cur=curSeason(d), seaOpts=[...(d.seasons||[])].reverse();   // neueste Saison zuerst
   const fb=makeFilterBar(side,rowsAll,[
     {key:"name",type:"text",label:"Name",placeholder:"Spieler suchen…",get:p=>p.name,nget:p=>p.nname},
     {key:"cat",type:"select",label:"Kategorie",options:["Erwachsen","Jugend"],get:p=>p.cat},
+    ...(state.hasSea?[{key:"sea",type:"select",label:"Saison (Einsatz in)",options:seaOpts,pred:setPred("seasonsArr")}]:[]),
     {key:"comp",type:"select",label:"Bewerb",options:compOpts,pred:setPred("compsArr")},
     {key:"team",type:"select",label:"Verein",options:teamOpts,pred:setPred("teamsArr")},
     {key:"pos",type:"select",label:"Position",get:p=>p.pos},
@@ -659,6 +694,7 @@ function renderScout(){
     {key:"jg",type:"range",label:"Jahrgang",get:p=>p.by,scale:"quantile"},
     {key:"age",type:"range",label:"Alter",get:p=>p.age,min:10},
     {key:"min",type:"range",label:"Minuten (gesamt)",get:p=>p.min,format:min,scale:"log"},
+    ...(state.hasSea?[{key:"cmin",type:"range",label:"Minuten "+cur,get:p=>p.cmin,format:min,scale:"log"}]:[]),
     {key:"goals",type:"range",label:"Tore (gesamt)",get:p=>p.goals,scale:"log"},
     {key:"off",type:"range",label:"Offensiv-Rating",get:p=>p.off,step:0.01,format:r2},
     {key:"def",type:"range",label:"Defensiv-Rating",get:p=>p.def,step:0.01,format:r2},
@@ -673,7 +709,7 @@ function renderScout(){
 
   // Spalten-Auswahl (alle sichtbar per Default, abwählbar)
   const colPop=el("div",{class:"ms-pop"});
-  SCOUT_COLS.filter(c=>!c.always).forEach(c=>{
+  scCols.filter(c=>!c.always).forEach(c=>{
     const row=el("label",{class:"ms-opt"});
     const cb=el("input",{type:"checkbox"}); cb.checked=state.scoutCols.has(c.k);
     cb.onchange=()=>{cb.checked?state.scoutCols.add(c.k):state.scoutCols.delete(c.k); build();};
@@ -701,8 +737,11 @@ function renderScout(){
     if(c.k==="nat")return el("td",{title:p.nat},el("div",{class:"c2"},p.nat));
     if(c.k==="pos")return el("td",{},p.pos?el("span",{class:"tag"},p.pos):"");
     if(c.k==="pct_talent"){const tal=p.pct_talent!=null;
-      return el("td",{class:"num",style:tal&&p.pct_talent<=20?"color:var(--good);font-weight:600":""},
+      return el("td",{class:"num",style:tal&&p.pct_talent<=20?"color:var(--good);font-weight:600":"",
+        title:tal&&p.talRank?`Rang ${p.talRank} von ${p.talN} Spielern mit Perzentil im Jahrgang ${p.by} (Perzentil ${p.pct_talent.toFixed(1)}, 0 = bester)`
+             :(tal?"":(p.total!=null?"kein Talent-Perzentil: Geburtsjahr unbekannt":"kein Rating (keine Einsatzminuten im Modell)"))},
         tal?p.pct_talent.toFixed(1):"—");}
+    if(c.k==="cmin")return el("td",{class:"num",title:p.cmatches?`${p.cmatches} Einsätze in ${state.curSeason||"der laufenden Saison"}`:"kein Einsatz in der laufenden Saison"},(p.cmin||0)+"'");
     if(c.rat)return el("td",{class:"num",style:c.k==="total"?"font-weight:600":""},fmtRat(p[c.k]));
     if(c.k==="min")return el("td",{class:"num"},(p.min||0)+"'");
     if(c.k==="age")return el("td",{class:"num"},p.age!=null?p.age+"J":"—");
@@ -714,7 +753,7 @@ function renderScout(){
     renderRow:p=>{const tr=el("tr"); for(const c of cols)tr.append(cell(p,c)); return tr;},
     onSort:c=>{state.sortSc.dir=state.sortSc.k===c.k?-state.sortSc.dir:1;state.sortSc.k=c.k;draw();}});
   function build(){                               // Kopf neu aufbauen (Spaltenänderung), dann draw
-    cols=SCOUT_COLS.filter(c=>c.always||state.scoutCols.has(c.k));
+    cols=scCols.filter(c=>c.always||state.scoutCols.has(c.k));
     vt.setCols(cols); draw();
   }
   let nDraw=0;
@@ -1600,7 +1639,8 @@ function renderExplain(){
       </div>
       <div class="note"><b>Warum die Regularisierung?</b> Ein Spieler mit wenigen Minuten hat kaum
         Datenpunkte – <b>λ</b> hält sein Rating dann nahe 0, statt ihm ein zufälliges Extrem
-        zuzuweisen. w gewichtet Segmente (Dauer, Aktualität, Spielstand). λ wird per
+        zuzuweisen. w gewichtet Segmente nach Dauer; im aktuellen Datensatz ist w sonst 1 – alle Saisonen
+        zählen gleich (das Paper sieht zusätzlich Aktualitäts-/Spielstandsgewichte vor). λ wird per
         Cross-Validation gewählt (im Datensatz: λ≈30).</div>
     </div></div>
 
@@ -1658,7 +1698,10 @@ async function loadScout(){
     const d=await fetchJSON("data/scout.json");
     setPerf("fetch",performance.now()-t0);
     const t1=performance.now();
-    state.scout=d; state.rows=decodeScout(d);
+    state.scout=d; state.rows=decodeScout(d); state.curSeason=curSeason(d);
+    state.hasSea=!!(state.curSeason&&d.cols.includes("sea"));   // Saisondaten erst ab scout.json v2
+    const cc=SCOUT_COLS.find(c=>c.k==="cmin");
+    if(cc&&state.hasSea){ cc.l=shortSeason(state.curSeason); cc.t=`Einsatzminuten in der Saison ${state.curSeason}. `+COL_HELP.cmin.replace(/^Einsatzminuten in der laufenden Saison\. /,""); }
     state.byId=new Map(); for(const r of state.rows)if(r.id)state.byId.set(r.id,r);
     setPerf("decode",performance.now()-t1);
     setPills(d);
