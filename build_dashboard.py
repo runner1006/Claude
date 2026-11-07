@@ -36,7 +36,7 @@ from collections import defaultdict
 
 import numpy as np
 
-VERSION = 2
+VERSION = 3   # v3: Spalte total_cur (zeitgewichtetes Total-Rating) in scout.json und Profil
 MINM = 270      # Mindestminuten fuer Rating-Benchmark und Kohorten-Referenz
 COHMIN = 20     # Mindestanzahl Kohorten-Spieler fuer Referenzlinien
 
@@ -179,8 +179,9 @@ def build(data_dir: str, ref: dt.date) -> None:
 
     # Rating-Benchmark (alle Spieler >= 270 Min.): sortierte Verteilungen
     bench_rows = [r for r in R.values() if (r["minutes"] or 0) >= MINM]
-    BENCH = {k: np.sort(np.array([r[k] for r in bench_rows if r[k] is not None], dtype=float))
-             for k in ("off", "def", "total", "peak")}
+    RAT_KEYS = ("off", "def", "total", "peak", "total_cur")
+    BENCH = {k: np.sort(np.array([r.get(k) for r in bench_rows if r.get(k) is not None], dtype=float))
+             for k in RAT_KEYS}
     BENCH_N = len(bench_rows)
 
     # ---- Einsaetze -> Aggregat je Spieler + Spiele je Spieler --------------------
@@ -253,7 +254,7 @@ def build(data_dir: str, ref: dt.date) -> None:
     cols = ["id", "name", "teams", "comps", "by", "age", "pos", "role", "nat", "verband",
             "cap", "min", "matches", "goals", "first", "last",
             "off", "def", "total", "peak", "pct_talent", "pct_total", "pct_peak",
-            "r_min", "r_matches", "sea"]
+            "r_min", "r_matches", "sea", "total_cur"]
     seasons = sorted({s for a in agg.values() for s in a["sea"]})
     six = {s: i for i, s in enumerate(seasons)}
     rows = []
@@ -275,7 +276,8 @@ def build(data_dir: str, ref: dt.date) -> None:
                      r3(rt["pct_talent"]) if rt else None, r3(rt["pct_total"]) if rt else None,
                      r3(rt["pct_peak"]) if rt else None,
                      rt["minutes"] if rt else None, rt["matches"] if rt else None,
-                     [[six[s], v[0], v[1]] for s, v in sorted(a["sea"].items())]])
+                     [[six[s], v[0], v[1]] for s, v in sorted(a["sea"].items())],
+                     r3(rt.get("total_cur")) if rt else None])
     # Team-/Bewerbsnamen als Woerterbuch (Index statt wiederholter Strings -> ~40 % kleiner)
     team_names = sorted({t for r in rows for t in r[2]}, key=str.casefold)
     comp_names = sorted({c for r in rows for c in r[3]}, key=str.casefold)
@@ -444,8 +446,9 @@ def build(data_dir: str, ref: dt.date) -> None:
         bench = None
         if rt:
             bench = {"n": BENCH_N}
-            for k in ("off", "def", "total", "peak"):
-                bench[k] = r3(pct_in(BENCH[k], rt[k])) if rt[k] is not None else None
+            for k in RAT_KEYS:
+                bench[k] = (r3(pct_in(BENCH[k], rt[k])) if rt.get(k) is not None and len(BENCH[k])
+                            else None)
 
         age = age_on(bdates.get(pid), ref)
         if age is None and by:
@@ -460,9 +463,10 @@ def build(data_dir: str, ref: dt.date) -> None:
                        "career": {"games": p["career_games"], "goals": p["career_goals"],
                                   "minutes": p["career_minutes"], "yellow": p["career_yellow"],
                                   "yellowred": p["career_yellowred"], "red": p["career_red"]}},
-            "rating": ({k: rt[k] for k in ("off", "def", "total", "peak", "pct_total",
-                                           "pct_peak", "pct_talent", "minutes", "matches",
-                                           "teams", "competitions")} if rt else None),
+            "rating": ({k: rt.get(k) for k in ("off", "def", "total", "peak", "pct_total",
+                                               "pct_peak", "pct_talent", "minutes", "matches",
+                                               "teams", "competitions",
+                                               "off_cur", "def_cur", "total_cur")} if rt else None),
             "bench": bench,
             "games": gs,
             "cohort": cohort,

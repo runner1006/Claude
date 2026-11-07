@@ -598,6 +598,7 @@ function decodeScout(d){
       pos:r[C.pos]||"",role:r[C.role]||"",nat:r[C.nat]||"",verband:r[C.verband]||"",cap:!!r[C.cap],
       min:r[C.min]||0,matches:r[C.matches]||0,goals:r[C.goals]||0,first:r[C.first],last:r[C.last],
       off:r[C.off],def:r[C.def],total:r[C.total],peak:r[C.peak],pct_talent:r[C.pct_talent],
+      total_cur:C.total_cur!=null?r[C.total_cur]:null,   // zeitgewichtetes Total (scout.json v3), sonst null
       seasonsArr:se.map(x=>seasons[x[0]]),cmin,cmatches,talRank:null,talN:null,
       cat:leagueCat(comp),
       // normalisierte Felder fuer Textsuche + String-Sortierung (keine norm() je Zeile spaeter)
@@ -618,19 +619,20 @@ function decodeScout(d){
 /* Spaltenbreiten: Zahlen fest (w, px), Textspalten teilen sich den Rest (flex-Gewicht, min-Breite). Nat./Verein/
    Bewerb brechen auf 2 Zeilen um (.c2) und tragen den vollen Text im title; Bewerbe stehen in der Tabelle als
    Kurzform (COMP_SHORT, z. B. "JRL U18"), damit auch 3 Bewerbe in 2 Zeilen lesbar sind. Die Mindestbreiten sind
-   so gewaehlt, dass alle 15 Standardspalten ab 956 px Containerbreite (1280er-Fenster mit Sidebar) ohne
+   so gewaehlt, dass alle 16 Standardspalten (inkl. "Total akt.") ab 956 px Containerbreite (1280er-Fenster mit Sidebar) ohne
    horizontalen Scroll passen; schmaler scrollt .tblscroll horizontal, die Name-Spalte klebt links.
    t = Tooltip am Spaltenkopf (Erklaerung der Kennzahl); COL_HELP wird fuer Spaltenkoepfe und Filter genutzt. */
 const COL_HELP={
   by:"Geburtsjahrgang.",
   age:"Alter am Stichtag der Datenerstellung (Geburtsdatum aus dem ÖFB-Profil; sonst Jahr minus Jahrgang).",
   min:"Einsatzminuten gesamt über alle erfassten Saisonen (ab 2023/24) und Bewerbe; enthält auch die wenigen Spielberichte ohne Datum, die in keiner Saisonsumme stecken.",
-  cmin:"Einsatzminuten in der laufenden Saison. Wer heuer neu viel spielt, ist hier sichtbar – das Rating dagegen gewichtet alle Saisonen gleich.",
+  cmin:"Einsatzminuten in der laufenden Saison. Wer heuer neu viel spielt, ist hier sichtbar – das Total-Rating dagegen gewichtet alle Saisonen gleich (siehe „Total akt.“ für die zeitgewichtete Variante).",
   matches:"Einsätze gesamt (Kaderzeilen inkl. Bank ohne Minuten).",
   goals:"Tore gesamt über alle erfassten Saisonen.",
   off:"Offensiv-Rating (RAPM): Beitrag zu eigenen Toren pro 90 Minuten, bereinigt um Mitspieler, Gegner, Heimvorteil und Über-/Unterzahl. 0 = Durchschnitt aller Spieler; +0.10 ≈ ein Tor mehr je 10 Spiele.",
   def:"Defensiv-Rating (RAPM): Verhinderung von Gegentoren pro 90 Minuten, gleich bereinigt wie Off. Positiv = mit ihm am Feld kassieren seine Teams weniger, als Mitspieler und Gegner erwarten ließen.",
   total:"Total = Off + Def (Tore pro 90 Minuten). Alle Saisonen ab 2023/24 gleich gewichtet; wenige Minuten ziehen den Wert zur 0 (Regularisierung), daher braucht ein belastbares Rating mehrere hundert Minuten.",
+  total_cur:"Total akt. = zeitgewichtetes Total-Rating (Off + Def, Tore pro 90 Minuten): dieselbe Regression, aber jedes Spiel zählt mit Gewicht ½^(Alter in Tagen / 365) – die laufende Saison voll, die Vorsaison halb, zwei Saisonen zurück ein Viertel (Halbwertszeit 1 Saison, Bezugsdatum = neuestes Spiel). Unterschied zu Total: Total gewichtet alle Saisonen ab 2023/24 gleich und reagiert träge auf aktuelle Form; Total akt. zeigt schneller, wer heuer stark spielt – wer heuer neu viel spielt, bleibt bei Total lange nahe 0, bei Total akt. nicht. Dafür ist Total akt. bei wenigen aktuellen Minuten etwas verrauschter.",
   peak:"Peak = Total plus Alterszuschlag: erwartetes Rating am Leistungshoch (ca. 25–27 J.) nach der Alterskurve von Hvattum. Macht junge und reife Spieler vergleichbar.",
   pct_talent:"Talent-Perzentil im Geburtsjahrgang: Perzentil des Mittels aus Peak-Rang und Minuten-Rang (unter 270 Min. zählt der Minuten-Rang als letzter), 0 = bester des Jahrgangs, 50 = Mitte. Grün = Top 20 %. Mauszeiger auf den Wert zeigt den Rang.",
   pos:"Häufigste Position laut Spielberichten.",
@@ -649,10 +651,10 @@ function shortComp(x){                           // Anzeige-Kurzform (Filter/Too
     .replace(/^Regionalliga/,"RL").replace(/^Oberliga/,"OL");
 }
 const SCOUT_COLS=[
-  {k:"name",l:"Name",always:true,s:"nname",flex:1.2,min:100,wrap:1},
-  {k:"nat",l:"Nat.",s:"nnat",flex:0.6,min:78,wrap:1},
-  {k:"team",l:"Verein",s:"nteam",flex:1.5,min:126,wrap:1},
-  {k:"comp",l:"Bewerb",s:"ncomp",flex:1.1,min:96,wrap:1,t:COMP_LEGEND},
+  {k:"name",l:"Name",always:true,s:"nname",flex:1.2,min:90,wrap:1},
+  {k:"nat",l:"Nat.",s:"nnat",flex:0.6,min:64,wrap:1},
+  {k:"team",l:"Verein",s:"nteam",flex:1.5,min:94,wrap:1},
+  {k:"comp",l:"Bewerb",s:"ncomp",flex:1.1,min:80,wrap:1,t:COMP_LEGEND},
   {k:"by",l:"Jg.",num:1,w:44,t:COL_HELP.by},
   {k:"age",l:"Alter",num:1,w:44,t:COL_HELP.age},
   {k:"min",l:"Min.",num:1,w:50,t:COL_HELP.min},
@@ -662,6 +664,7 @@ const SCOUT_COLS=[
   {k:"off",l:"Off",num:1,rat:1,w:58,t:COL_HELP.off},
   {k:"def",l:"Def",num:1,rat:1,w:58,t:COL_HELP.def},
   {k:"total",l:"Total",num:1,rat:1,w:60,t:COL_HELP.total},
+  {k:"total_cur",l:"Total akt.",num:1,rat:1,w:72,t:COL_HELP.total_cur,needCur:1},   // zeitgewichtet; ohne Spalte in scout.json (< v3) ausgeblendet
   {k:"peak",l:"Peak",num:1,rat:1,w:58,t:COL_HELP.peak},
   {k:"pct_talent",l:"Talent%",num:1,rat:1,w:62,t:COL_HELP.pct_talent},
   {k:"pos",l:"Pos.",hide:1,s:"npos",w:80,t:COL_HELP.pos},   // standardmäßig ausgeblendet
@@ -678,7 +681,7 @@ function renderScout(){
   }
   const {side,content}=tabScaffold(sec);
   const rowsAll=state.rows, d=state.scout;
-  const scCols=SCOUT_COLS.filter(c=>!c.needSea||state.hasSea);   // ohne Saisondaten (alte scout.json) keine Saisonspalte
+  const scCols=SCOUT_COLS.filter(c=>(!c.needSea||state.hasSea)&&(!c.needCur||state.hasCur));   // ohne Saisondaten/total_cur (alte scout.json) keine Saison-/Total-akt.-Spalte
   if(!state.scoutCols)state.scoutCols=new Set(scCols.filter(c=>!c.hide).map(c=>c.k));
   const compOpts=deSort(d.competitions), teamOpts=deSort(d.teams);
   const min=v=>v+"'", r2=v=>(+v).toFixed(2);
@@ -699,6 +702,7 @@ function renderScout(){
     {key:"off",type:"range",label:"Offensiv-Rating",get:p=>p.off,step:0.01,format:r2},
     {key:"def",type:"range",label:"Defensiv-Rating",get:p=>p.def,step:0.01,format:r2},
     {key:"total",type:"range",label:"Total-Rating",get:p=>p.total,step:0.01,format:r2},
+    ...(state.hasCur?[{key:"total_cur",type:"range",label:"Total akt. (zeitgewichtet)",get:p=>p.total_cur,step:0.01,format:r2}]:[]),
     {key:"peak",type:"range",label:"Peak-Rating",get:p=>p.peak,step:0.01,format:r2},
     {key:"tal",type:"range",label:"Talent-Perzentil (0=Top)",get:p=>p.pct_talent,
       min:0,max:100,histo:false,format:v=>(+v).toFixed(0)+"%",
@@ -742,6 +746,7 @@ function renderScout(){
              :(tal?"":(p.total!=null?"kein Talent-Perzentil: Geburtsjahr unbekannt":"kein Rating (keine Einsatzminuten im Modell)"))},
         tal?p.pct_talent.toFixed(1):"—");}
     if(c.k==="cmin")return el("td",{class:"num",title:p.cmatches?`${p.cmatches} Einsätze in ${state.curSeason||"der laufenden Saison"}`:"kein Einsatz in der laufenden Saison"},(p.cmin||0)+"'");
+    if(c.k==="total_cur")return el("td",{class:"num",title:p.total_cur!=null&&p.total!=null?`zeitgewichtet; Differenz zu Total ${(p.total_cur-p.total>=0?"+":"")+(p.total_cur-p.total).toFixed(3)}`:""},fmtRat(p.total_cur));
     if(c.rat)return el("td",{class:"num",style:c.k==="total"?"font-weight:600":""},fmtRat(p[c.k]));
     if(c.k==="min")return el("td",{class:"num"},(p.min||0)+"'");
     if(c.k==="age")return el("td",{class:"num"},p.age!=null?p.age+"J":"—");
@@ -1055,6 +1060,7 @@ function renderProfile(wrap,data){
   const DIMS=[["Offensiv","off",2,"Beitrag zu eigenen Toren"],
      ["Defensiv","def",2,"Verhinderung von Gegentoren"],
      ["Total","total",3,"Off + Def"],
+     ["Total akt.","total_cur",3,"zeitgewichtet, Halbwertszeit 1 Saison"],   // nur in Profilen ab v3 vorhanden
      ["Peak","peak",3,"aufs Leistungshoch projiziert"]];
   const benchN=bench&&bench.n!=null?bench.n:(state.scout&&state.scout.stats?state.scout.stats.bench_n:0);
   if(rat&&bench){
@@ -1639,8 +1645,10 @@ function renderExplain(){
       </div>
       <div class="note"><b>Warum die Regularisierung?</b> Ein Spieler mit wenigen Minuten hat kaum
         Datenpunkte – <b>λ</b> hält sein Rating dann nahe 0, statt ihm ein zufälliges Extrem
-        zuzuweisen. w gewichtet Segmente nach Dauer; im aktuellen Datensatz ist w sonst 1 – alle Saisonen
-        zählen gleich (das Paper sieht zusätzlich Aktualitäts-/Spielstandsgewichte vor). λ wird per
+        zuzuweisen. w gewichtet Segmente nach Dauer; für Off/Def/Total ist w sonst 1 – alle Saisonen
+        zählen gleich. <b>Total akt.</b> ist dieselbe Regression mit Aktualitätsgewicht
+        w = ½<sup>Alter in Tagen / 365</sup> (Halbwertszeit eine Saison, Bezugsdatum = neuestes Spiel):
+        die laufende Saison zählt voll, die Vorsaison halb. λ wird jeweils per
         Cross-Validation gewählt (im Datensatz: λ≈30).</div>
     </div></div>
 
@@ -1700,6 +1708,7 @@ async function loadScout(){
     const t1=performance.now();
     state.scout=d; state.rows=decodeScout(d); state.curSeason=curSeason(d);
     state.hasSea=!!(state.curSeason&&d.cols.includes("sea"));   // Saisondaten erst ab scout.json v2
+    state.hasCur=d.cols.includes("total_cur");                   // zeitgewichtetes Total erst ab scout.json v3
     const cc=SCOUT_COLS.find(c=>c.k==="cmin");
     if(cc&&state.hasSea){ cc.l=shortSeason(state.curSeason); cc.t=`Einsatzminuten in der Saison ${state.curSeason}. `+COL_HELP.cmin.replace(/^Einsatzminuten in der laufenden Saison\. /,""); }
     state.byId=new Map(); for(const r of state.rows)if(r.id)state.byId.set(r.id,r);

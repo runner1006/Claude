@@ -20,16 +20,17 @@ vor-gezipptes `.gz` mit `Content-Encoding: gzip` ausgeliefert (transparent für 
 ## scout.json
 
 ```json
-{"v":2,"built":"2026-11-03T01:52:10","ref_date":"2026-11-03",
+{"v":3,"built":"2026-11-07T…","ref_date":"2026-11-07",
  "stats":{"players":13167,"players_with_id":13147,"matches":11074,"appearances":371488,"ratings":11882,"bench_n":9076,"latest_match":"2026-10-31"},
  "teams":["ASK Ebreichsdorf", ...],          // Namens-Wörterbuch (Index -> Name)
  "competitions":["11teamsports 1. Landesliga", ...],
  "seasons":["2023/24","2024/25","2025/26","2026/27"],   // aufsteigend; letzte = laufende Saison
  "cols":["id","name","teams","comps","by","age","pos","role","nat","verband","cap","min","matches","goals",
-         "first","last","off","def","total","peak","pct_talent","pct_total","pct_peak","r_min","r_matches","sea"],
+         "first","last","off","def","total","peak","pct_talent","pct_total","pct_peak","r_min","r_matches","sea",
+         "total_cur"],
  "rows":[["463666","Felix Rudolf Wimmer",[140,353],[10],1998,28,"tor","starter","","O",false,3510,42,0,
           "2023-07-28","2025-10-31",0.0581,0.063,0.1211,0.1311,15.1,9.4,9.4,3510,39,
-          [[0,1818,26],[1,2386,28],[2,2103,27]]], ...]}
+          [[0,1818,26],[1,2386,28],[2,2103,27]],0.084], ...]}
 ```
 
 Spalten je Zeile (Reihenfolge = `cols`):
@@ -51,6 +52,7 @@ Spalten je Zeile (Reihenfolge = `cols`):
 | `off`, `def`, `total`, `peak` | RAPM-Rating (Tore/90) oder `null` ohne Rating |
 | `pct_talent`, `pct_total`, `pct_peak` | Perzentile aus `ratings.csv` (0 = bester) |
 | `r_min`, `r_matches` | Minuten/Spiele laut Rating-Datei (Benchmark-Basis: `r_min ≥ 270`) |
+| `total_cur` | zeitgewichtetes Total-Rating (seit v3; `plusminus.py --half-life`, Default 365 Tage): dieselbe RAPM-Regression, aber jedes Segment mit Gewicht w = exp(−ln2 · Alter in Tagen / 365) (Bezugsdatum = neuestes Spiel), als gewichtete Kleinste-Quadrate; λ eigens per CV. Reagiert deutlich stärker auf die laufende Saison als `total`. `null` ohne Rating. Dashboard: Spalte „Total akt.“, Range-Filter und Profil-Zeile; fehlt die Spalte in `cols` (v1/v2), blendet das Dashboard Spalte und Filter aus (`state.hasCur`) |
 | `sea` | Minuten/Einsätze je Saison: `[[Index in seasons, Minuten, Einsätze], …]` aufsteigend (seit v2). Das Dashboard leitet daraus `seasonsArr` (Filter „Saison (Einsatz in)“), `cmin`/`cmatches` (Spalte und Filter „Minuten <laufende Saison>“) ab; fehlen `sea`/`seasons` (v1), blendet das Dashboard Spalte und beide Filter aus. Die 52 leeren Spielberichte ohne Saison (Stand 2026-11-07: 1 722 Einsätze, 472 Spieler) stecken nur in `min`/`matches`, nicht in `sea` |
 
 Kategorie Jugend/Erwachsen eines Bewerbs wie bisher per `/\bU\s?\d|jugend/i`.
@@ -71,13 +73,14 @@ Sortiert nach Datum aufsteigend.
 ## /api/profile/{player_id}
 
 ```json
-{"v":2,"built":"…",
+{"v":3,"built":"…",
  "player":{"id":"849039","name":"Sebastian Hölzl","birth_year":2001,"age":25,"nationality":"Deutschland",
            "verband":"S","club":"SV Grödig","foto_url":"https://…","youth":0,"first_match":"2012-…","last_match":"…",
            "n_clubs":4,"career":{"games":…,"goals":…,"minutes":…,"yellow":…,"yellowred":…,"red":…}},
  "rating":{"off":0.2004,"def":0.1993,"total":0.3997,"peak":0.3997,"pct_total":0.0,"pct_peak":0.0,"pct_talent":1.0,
-           "minutes":5582,"matches":71,"teams":"FC Puch / SV Grödig","competitions":"Salzburger Liga"} | null,
- "bench":{"n":9076,"off":0.22,"def":0.07,"total":0.0,"peak":4.09} | null,   // Perzentil je Dimension (0 = bester), n = Spieler ≥ 270 Min.
+           "minutes":5582,"matches":71,"teams":"FC Puch / SV Grödig","competitions":"Salzburger Liga",
+           "off_cur":0.19,"def_cur":0.17,"total_cur":0.36} | null,            // *_cur: zeitgewichtet (seit v3)
+ "bench":{"n":9076,"off":0.22,"def":0.07,"total":0.0,"peak":4.09,"total_cur":0.1} | null,   // Perzentil je Dimension (0 = bester), n = Spieler ≥ 270 Min.; total_cur seit v3
  "games":[{"mid":"3405668","iso":"2023-08-05","date":"05.08.2023","season":"2023/24","comp":"Salzburger Liga","cat":"E",
            "team":"FC Puch","opp":"SK Adnet","ha":"H","score":"1:2","sf":1,"sg":2,"res":"N",
            "min":90,"on":0,"off":null,"goals":0,"gf":1,"ga":2,"pm":-1,"pos":"weitere","role":"starter"}, ...],
@@ -147,7 +150,7 @@ aus der CSV. `minute` ist der Rohtext (z. B. `"90+2"`, `"(Elfm.)"`), Anzeige wie
   Scroll auf Zeile 1; leeres Ergebnis zeigt „Keine Spieler/Spiele für diese Filter.“. Im Matches-Tab
   lebt das aufgeklappte Spiel als Detailzeile im virtuellen Fenster (Höhe gemessen).
 * Spaltenbreiten: Zahlenspalten fest (px), Textspalten teilen sich den Rest der Containerbreite
-  (Gewicht + Mindestbreite). Alle 15 Standard-Spalten des Scoutings passen ab 956 px Containerbreite
+  (Gewicht + Mindestbreite). Alle 16 Standard-Spalten des Scoutings (inkl. „Total akt.“) passen ab 956 px Containerbreite
   (1280er-Fenster mit Sidebar) ohne horizontalen Scroll; darunter scrollt `.tblscroll` horizontal
   (Kopfzeile klebt oben, Name-Spalte links). Unter 880 px steht die Filter-Sidebar über der Tabelle,
   die Seite selbst scrollt nie horizontal.
@@ -158,6 +161,9 @@ aus der CSV. `minute` ist der Rohtext (z. B. `"90+2"`, `"(Elfm.)"`), Anzeige wie
 * Alle Kennzahl-Spaltenköpfe tragen einen Tooltip (`COL_HELP`, gepunktet unterstrichen, Cursor „help“);
   die Talent%-Zelle zeigt per Tooltip „Rang x von n im Jahrgang“ (im Browser aus `pct_talent` je `by` gereiht).
   Der Spaltenkopf der laufenden Saison („26/27“) wird nach dem Laden aus `seasons` gesetzt.
+* Spalte „Total akt.“ (`total_cur`, seit v3) hängt wie „26/27“ an der Datei: fehlt die Spalte in `cols`,
+  gibt es weder Spalte noch Filter; im Profil erscheint die Zeile „Total akt.“ nur, wenn `bench.total_cur`
+  vorhanden ist. Der Zell-Tooltip zeigt die Differenz zu Total.
 * Multiselect-Optionslisten (Bewerb/Verein, bis 2 500 Einträge) werden erst beim Öffnen gebaut.
 * `innerHTML`-Kontexte (Fehlertexte, Profil-Metadaten aus der API) laufen durch `hesc()`.
 * Pill „Spieler“ = `stats.players_with_id` (Fallback: Zeilen mit ID), „Ratings“ = Zeilen mit `total != null`,

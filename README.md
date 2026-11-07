@@ -101,11 +101,16 @@ python player_ages.py --ids-file data/all_ids.txt -o data/players.csv \
 ```bash
 pip install -r requirements.txt   # inkl. numpy/scipy
 python plusminus.py               # nutzt data/*.csv -> data/ratings.csv (Lambda per CV)
+python plusminus.py --half-life 180   # Halbwertszeit der Zeitgewichtung (Tage, Default 365)
 ```
 
 `ratings.csv` je Spieler: `off`, `def`, `total`, `peak` (auf Leistungshoch
 projiziert via fixer Alterskurve), sowie Perzentil-Ränge je Jahrgang
 (`pct_total`, `pct_peak`, `pct_talent` = Peak+Minuten kombiniert, 0 = bester).
+Zusätzlich `off_cur`, `def_cur`, `total_cur`: dieselbe Regression zeitgewichtet
+(jedes Segment mit w = exp(−ln2 · Alter in Tagen / Halbwertszeit), Bezugsdatum =
+neuestes Spiel, gewichtete Kleinste-Quadrate, eigenes λ per CV) – die laufende
+Saison zählt voll, die Vorsaison halb; im Dashboard als „Total akt.“.
 Methodik-Grundlage: Hvattum (2020); Hvattum, Kriegl & Čulík (2021).
 **Hinweis:** aktuell nur eine Saison → Ratings sind verrauscht; die Alterskurve
 ist fest übernommen, nicht geschätzt. Für robuste Werte mehr Saisons scrapen.

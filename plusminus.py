@@ -42,18 +42,29 @@ MVP-Hinweise / Grenzen
 - Nur EINE Saison => Ratings sind verrauscht; die Alterskurve wird NICHT
   geschaetzt, sondern fest uebernommen (Paper). Fuer robuste Werte mehr Saisons
   scrapen.
-- Gewichte w(m,s) sind hier 1 (keine Aktualitaets-/Garbage-Time-Gewichtung).
+- Gewichte w(m,s) sind fuer die Spalten off/def/total 1 (keine Aktualitaets-/
+  Garbage-Time-Gewichtung). Zusaetzlich gibt es eine ZEITGEWICHTETE Variante
+  (Spalten off_cur/def_cur/total_cur): jedes Segment erhaelt
+      w = exp(-ln2 * Alter_in_Tagen / Halbwertszeit)   (Halbwertszeit --half-life,
+  Default 365 Tage; Bezugsdatum = neuestes Spiel), umgesetzt als gewichtete
+  Kleinste-Quadrate (Zeilen von X und y mit sqrt(w) skaliert; Regularisierung
+  unveraendert, Lambda per CV wie bisher, Test-MSE ebenfalls w-gewichtet).
+  Die laufende Saison zaehlt so deutlich staerker als die Vorsaisonen.
 - Eigentore/Elfmeter werden wie normale Tore der begünstigten Mannschaft gezaehlt.
 
 Aufruf
 ------
     python plusminus.py                      # nutzt data/*.csv, schreibt data/ratings.csv
     python plusminus.py --lam 100 --no-cv    # festes Lambda ohne Cross-Validation
+    python plusminus.py --half-life 180      # Halbwertszeit der Zeitgewichtung (Tage)
 """
 from __future__ import annotations
 
 import argparse
 import csv
+import datetime as dt
+import math
+import re
 import sys
 from collections import defaultdict
 
@@ -106,6 +117,46 @@ def load_matches(path: str) -> dict[str, str]:
     except FileNotFoundError:
         pass
     return comp
+
+
+def load_match_dates(path: str) -> dict[str, dt.date]:
+    """match_id -> Spieldatum (aus `date` TT.MM.JJJJ); Spiele ohne Datum fehlen."""
+    dates: dict[str, dt.date] = {}
+    try:
+        for r in csv.DictReader(open(path, encoding="utf-8")):
+            m = re.search(r"(\d{2})\.(\d{2})\.(\d{4})", r.get("date") or "")
+            if m:
+                try:
+                    dates[r["match_id"]] = dt.date(int(m.group(3)), int(m.group(2)), int(m.group(1)))
+                except ValueError:
+                    pass
+    except FileNotFoundError:
+        pass
+    return dates
+
+
+def time_weights(segments: list[dict], dates: dict[str, dt.date],
+                 half_life: float) -> tuple[np.ndarray, dt.date | None, int]:
+    """Aktualitaetsgewicht je Segment: w = exp(-ln2 * Alter_in_Tagen / half_life).
+
+    Bezugsdatum = neuestes Spiel mit Datum. Segmente aus Spielen ohne Datum bekommen
+    das mittlere Gewicht der datierten Segmente. Rueckgabe: (w, Bezugsdatum, n_ohne_datum).
+    """
+    ref = max((dates[s["mid"]] for s in segments if s["mid"] in dates), default=None)
+    w = np.ones(len(segments))
+    if ref is None or half_life <= 0:
+        return w, ref, 0
+    known = []
+    for i, s in enumerate(segments):
+        d = dates.get(s["mid"])
+        if d is None:
+            w[i] = np.nan
+        else:
+            w[i] = math.exp(-math.log(2) * (ref - d).days / half_life)
+            known.append(w[i])
+    nan = np.isnan(w)
+    w[nan] = float(np.mean(known)) if known else 1.0
+    return w, ref, int(nan.sum())
 
 
 def load_players(path: str) -> tuple[dict, dict]:
@@ -203,7 +254,9 @@ def build_segments(matches: dict, goals: dict) -> list[dict]:
 class Model:
     """Baut die (duennbesetzte) Design-Matrix und loest das RAPM-System."""
 
-    def __init__(self, segments: list[dict]):
+    def __init__(self, segments: list[dict], seg_weights: np.ndarray | None = None):
+        """seg_weights: optionales Gewicht je Segment (gewichtete Kleinste-Quadrate:
+        beide Zeilen des Segments werden mit sqrt(w) skaliert). None = alle 1."""
         pids = sorted({p for s in segments for p in (s["home"] + s["away"])})
         self.pid_idx = {p: i for i, p in enumerate(pids)}
         self.pids = pids
@@ -245,6 +298,11 @@ class Model:
         self.X = sp.csr_matrix((rows_v, (rows_i, rows_j)), shape=(r, self.ncol))
         self.y = np.asarray(y, dtype=float)
         self.rmatch = np.asarray(rmatch)
+        # Zeilengewichte (je Segment 2 Zeilen); sw = sqrt(w) skaliert X und y
+        self.w = (np.repeat(np.asarray(seg_weights, dtype=float), 2) if seg_weights is not None
+                  else np.ones(r))
+        self.sw = np.sqrt(self.w)
+        self.weighted = seg_weights is not None
 
     def _reg(self, lam: float) -> sp.csr_matrix:
         """Regularisierungszeilen: sqrt(lam) auf jede Spieler-Spalte (off+def)."""
@@ -256,12 +314,17 @@ class Model:
               iter_lim: int = 500) -> np.ndarray:
         X = self.X if row_mask is None else self.X[row_mask]
         y = self.y if row_mask is None else self.y[row_mask]
+        if self.weighted:
+            sw = self.sw if row_mask is None else self.sw[row_mask]
+            X = sp.diags(sw) @ X
+            y = y * sw
         A = sp.vstack([X, self._reg(lam)]).tocsr()
         yy = np.concatenate([y, np.zeros(2 * self.n)])
         return lsqr(A, yy, iter_lim=iter_lim, atol=1e-8, btol=1e-8)[0]
 
     def cv_lambda(self, grid: list[float], seed: int = 0) -> tuple[float, list]:
-        """Waehlt Lambda per Match-Holdout (80/20) nach Segment-Tor-MSE."""
+        """Waehlt Lambda per Match-Holdout (80/20) nach Segment-Tor-MSE
+        (bei Zeitgewichtung: w-gewichteter MSE, passend zum Schaetzziel)."""
         rng = np.random.default_rng(seed)
         uniq = np.array(sorted(set(self.rmatch)))
         test_m = set(rng.choice(uniq, size=max(1, len(uniq) // 5), replace=False))
@@ -272,7 +335,8 @@ class Model:
         for lam in grid:
             beta = self.solve(lam, row_mask=train)
             pred = self.X[test] @ beta
-            mse = float(np.mean((pred - self.y[test]) ** 2))
+            err2 = (pred - self.y[test]) ** 2
+            mse = float(np.average(err2, weights=self.w[test]) if self.weighted else np.mean(err2))
             report.append((lam, mse))
             if mse < best_mse:
                 best_mse, best = mse, lam
@@ -351,9 +415,13 @@ def main(argv: list[str] | None = None) -> int:
                    help="Bezugsjahr fuer Alter/Peak (Default: 2026).")
     p.add_argument("--min-minutes", type=int, default=270,
                    help="Mindestminuten fuer die kombinierte Talent-Rangliste.")
+    p.add_argument("--half-life", type=float, default=365.0,
+                   help="Halbwertszeit (Tage) der Zeitgewichtung fuer off_cur/def_cur/total_cur "
+                        "(Default 365 = ca. eine Saison).")
     args = p.parse_args(argv)
 
     comp_of = load_matches(args.matches)
+    dates = load_match_dates(args.matches)
     matches, meta = load_players(args.players)
     goals = load_goals(args.events)
     print(f"Geladen: {len(matches)} Spiele, {len(meta)} Spieler.", file=sys.stderr)
@@ -384,6 +452,24 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Heimvorteil={hfa:+.3f} Tore/90, Ueberzahl-Effekt={man:+.3f} Tore/90 pro Mann.",
           file=sys.stderr)
 
+    # --- Zeitgewichtete Variante (off_cur/def_cur/total_cur) ---
+    w, ref_date, n_nodate = time_weights(segments, dates, args.half_life)
+    print(f"\nZeitgewichtung: Halbwertszeit {args.half_life:g} Tage, Bezugsdatum {ref_date}, "
+          f"Ø w={w.mean():.3f}, Segmente ohne Datum: {n_nodate} (erhalten Ø-Gewicht).",
+          file=sys.stderr)
+    model_w = Model(segments, seg_weights=w)
+    if args.no_cv or args.lam is not None:
+        lam_w = lam
+    else:
+        lam_w, report_w = model_w.cv_lambda(grid)
+        print("CV zeitgewichtet (Lambda -> gewichteter Test-MSE):", file=sys.stderr)
+        for l, m in report_w:
+            print(f"    λ={l:<6} MSE={m:.5f}{'   <- best' if l == lam_w else ''}", file=sys.stderr)
+    print(f"Verwende λ_cur = {lam_w}.", file=sys.stderr)
+    beta_w = model_w.solve(lam_w)
+    print(f"Zeitgewichtet: Heimvorteil={beta_w[model_w.C_HFA]:+.3f} Tore/90, "
+          f"Ueberzahl-Effekt={beta_w[model_w.C_MAN]:+.3f} Tore/90 pro Mann.", file=sys.stderr)
+
     # Ratings je Spieler zusammenstellen
     ref = args.ref_year
     rows = []
@@ -392,6 +478,8 @@ def main(argv: list[str] | None = None) -> int:
         off = float(beta[model.OFF + i])
         deff = float(beta[model.DEF + i])
         total = off + deff
+        off_c = float(beta_w[model_w.OFF + i])
+        def_c = float(beta_w[model_w.DEF + i])
         by = m.get("birth_year")
         age = (ref - by) if by else None
         peak = total + age_adjustment(age)
@@ -404,6 +492,8 @@ def main(argv: list[str] | None = None) -> int:
             "minutes": m.get("minutes", 0), "matches": len(m.get("matches", set())),
             "off": round(off, 4), "def": round(deff, 4),
             "total": round(total, 4), "peak": round(peak, 4),
+            "off_cur": round(off_c, 4), "def_cur": round(def_c, 4),
+            "total_cur": round(off_c + def_c, 4),
         })
 
     # Perzentile je Geburtsjahrgang (0 = bester)
@@ -436,12 +526,17 @@ def main(argv: list[str] | None = None) -> int:
     rows.sort(key=lambda r: r["total"], reverse=True)
     fields = ["player_id", "name", "birth_year", "age", "teams", "competitions",
               "minutes", "matches", "off", "def", "total", "peak",
-              "pct_total", "pct_peak", "pct_talent"]
+              "pct_total", "pct_peak", "pct_talent",
+              "off_cur", "def_cur", "total_cur"]
     with open(args.out, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()
         w.writerows(rows)
     print(f"\nRatings -> {args.out} ({len(rows)} Spieler).", file=sys.stderr)
+    tt = np.array([r["total"] for r in rows]); tc = np.array([r["total_cur"] for r in rows])
+    mm = np.array([r["minutes"] for r in rows]) >= args.min_minutes
+    print(f"Korrelation total vs. total_cur: r={np.corrcoef(tt, tc)[0, 1]:.3f} (alle), "
+          f"r={np.corrcoef(tt[mm], tc[mm])[0, 1]:.3f} (≥{args.min_minutes} Min.).", file=sys.stderr)
 
     print("\nKonnektivitaet:", file=sys.stderr)
     print(connectivity(segments, meta, comp_of), file=sys.stderr)

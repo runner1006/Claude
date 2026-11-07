@@ -70,7 +70,8 @@ CREATE TABLE ratings(
   player_id TEXT PRIMARY KEY, name TEXT, birth_year INTEGER,
   teams TEXT, competitions TEXT, minutes INTEGER, matches INTEGER,
   off REAL, def REAL, total REAL, peak REAL,
-  pct_total REAL, pct_peak REAL, pct_talent REAL);
+  pct_total REAL, pct_peak REAL, pct_talent REAL,
+  off_cur REAL, def_cur REAL, total_cur REAL);
 CREATE TABLE player_stats(
   player_id TEXT, kategorie TEXT, bezeichnung TEXT,
   spiele INTEGER, tore INTEGER, siege INTEGER, unentschieden INTEGER,
@@ -160,9 +161,11 @@ def build(data_dir: str, out: str) -> None:
         rats = [(r["player_id"], r["name"], _int(r["birth_year"]), r["teams"],
                  r["competitions"], _int(r["minutes"], 0), _int(r["matches"], 0),
                  fl(r["off"]), fl(r["def"]), fl(r["total"]), fl(r["peak"]),
-                 fl(r["pct_total"]), fl(r["pct_peak"]), fl(r["pct_talent"]))
+                 fl(r["pct_total"]), fl(r["pct_peak"]), fl(r["pct_talent"]),
+                 # zeitgewichtete Variante (seit 2026-11: Halbwertszeit 1 Saison), fehlt in alten CSVs
+                 fl(r.get("off_cur")), fl(r.get("def_cur")), fl(r.get("total_cur")))
                 for r in csv.DictReader(f)]
-    con.executemany("INSERT OR REPLACE INTO ratings VALUES(" + ",".join("?"*14) + ")", rats)
+    con.executemany("INSERT OR REPLACE INTO ratings VALUES(" + ",".join("?"*17) + ")", rats)
     log(f"ratings: {len(rats)}")
 
     # --- Profil-Rohdaten: stats / clubs / achievements ---
