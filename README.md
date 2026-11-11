@@ -111,7 +111,7 @@ Zusätzlich `off_cur`, `def_cur`, `total_cur`: dieselbe Regression zeitgewichtet
 (jedes Segment mit w = exp(−ln2 · Alter in Tagen / Halbwertszeit), Bezugsdatum =
 neuestes Spiel, gewichtete Kleinste-Quadrate, eigenes λ per CV) – die laufende
 Saison zählt voll, die Vorsaison halb; im Dashboard als „Total akt.“.
-Methodik-Grundlage: Hvattum (2020); Hvattum, Kriegl & Čulík (2021).
+Methodik-Grundlage: Hvattum (2020); Hvattum, Kriegl & Čulík (2023, Buchkapitel in *Statistics Meets Sports*).
 **Hinweis:** aktuell nur eine Saison → Ratings sind verrauscht; die Alterskurve
 ist fest übernommen, nicht geschätzt. Für robuste Werte mehr Saisons scrapen.
 

@@ -5,8 +5,8 @@ OEFB Plus-Minus-Ratings (RAPM)
 
 Berechnet Regularized-Adjusted-Plus-Minus-Ratings (offensiv/defensiv/total)
 fuer die gescrapten OEFB-Daten – nach der Methodik von Hvattum (2020) bzw.
-Hvattum, Kriegl & Culik (2021), "Identifying talent in association football
-through plus-minus ratings".
+Hvattum, Kriegl & Culik (2023), "Identifying talent with plus-minus ratings in
+association football" (Buchkapitel in "Statistics Meets Sports").
 
 Idee
 ----
