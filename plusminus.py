@@ -538,6 +538,25 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Korrelation total vs. total_cur: r={np.corrcoef(tt, tc)[0, 1]:.3f} (alle), "
           f"r={np.corrcoef(tt[mm], tc[mm])[0, 1]:.3f} (≥{args.min_minutes} Min.).", file=sys.stderr)
 
+    # Modellkennzahlen fuer Berichte (data/ratings_meta.json neben ratings.csv)
+    import json, os
+    meta_out = {
+        "built": dt.datetime.now().isoformat(timespec="seconds"),
+        "matches": len(matches), "players": len(rows), "segments": len(segments),
+        "segment_minutes_mean": round(sum(s["dur"] for s in segments) / max(1, len(segments)), 2),
+        "goals_in_segments": tot_goals,
+        "lambda": lam, "lambda_cur": lam_w, "half_life_days": args.half_life,
+        "ref_date_cur": ref_date.isoformat() if ref_date else None, "segments_without_date": n_nodate,
+        "home_advantage": round(float(hfa), 4), "man_advantage": round(float(man), 4),
+        "home_advantage_cur": round(float(beta_w[model_w.C_HFA]), 4),
+        "man_advantage_cur": round(float(beta_w[model_w.C_MAN]), 4),
+        "corr_total_cur_all": round(float(np.corrcoef(tt, tc)[0, 1]), 4),
+        "corr_total_cur_minmin": round(float(np.corrcoef(tt[mm], tc[mm])[0, 1]), 4),
+        "min_minutes": args.min_minutes,
+    }
+    with open(os.path.join(os.path.dirname(args.out) or ".", "ratings_meta.json"), "w", encoding="utf-8") as f:
+        json.dump(meta_out, f, ensure_ascii=False, indent=1)
+
     print("\nKonnektivitaet:", file=sys.stderr)
     print(connectivity(segments, meta, comp_of), file=sys.stderr)
 

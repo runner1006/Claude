@@ -1,0 +1,20 @@
+{
+ "built": "2026-11-12T00:14:13",
+ "matches": 12883,
+ "players": 13629,
+ "segments": 77283,
+ "segment_minutes_mean": 15.0,
+ "goals_in_segments": 46408,
+ "lambda": 30,
+ "lambda_cur": 30,
+ "half_life_days": 365.0,
+ "ref_date_cur": "2026-11-01",
+ "segments_without_date": 297,
+ "home_advantage": 0.3051,
+ "man_advantage": 0.6258,
+ "home_advantage_cur": 0.3063,
+ "man_advantage_cur": 0.6591,
+ "corr_total_cur_all": 0.9015,
+ "corr_total_cur_minmin": 0.902,
+ "min_minutes": 270
+}
