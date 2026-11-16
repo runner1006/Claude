@@ -172,3 +172,20 @@ aus der CSV. `minute` ist der Rohtext (z. B. `"90+2"`, `"(Elfm.)"`), Anzeige wie
   `boot` = Zeit bis zur ersten gezeichneten Scouting-Tabelle.
 * `/data/{name}` liefert nur `scout.json` und `matches_index.json` (Allowlist); andere Dateien im
   Datenordner (`oefb.sqlite`, Roh-Exporte) sind nicht abrufbar.
+
+## Oberfläche: Sprache, Stil, Bedienung (seit 2026-11-16)
+
+* **Zwei Sprachen (DE/EN)**, Umschalter in der Kopfzeile. Reihenfolge der Auswahl: `?lang=de|en` in der URL,
+  dann `localStorage["oefb-lang"]`, dann Browsersprache. Übersetzungen stehen im Code direkt neben dem deutschen
+  Text: `TX("deutsch","english")`. Die Datenwerte bleiben deutsch (Kategorie `Jugend`/`Erwachsen`, Positionen,
+  Ergebnis `S/U/N`, Ländernamen); nur die Anzeige wird übersetzt (`catLabel`, `posLabel`, `roleLabel`,
+  `resLabel`, `natLabel` mit `NAT_EN`). Bewerbs- und Vereinsnamen sind Eigennamen und bleiben unverändert.
+  Ein Sprachwechsel rendert alle Tabs neu und setzt die Filter zurück; ein offenes Profil bleibt offen.
+* **Stil nach Strykerlabs/Nova**: Grund `#0C0D14`, Karten `#141626`, Linien `#2B2E45`, Akzent `#34B190`
+  (nur als Akzent, nie als Fläche), Warnung `#FFC22D`, Info `#00B3F0`, Fehler `#FF6F70`, Violett `#785EF0`.
+  Schrift Inter mit System-Fallback; die Schriftdatei wird nicht geladen (kein externer Font-Server).
+* **Bedienung**: eigene Tooltips an den Spaltenköpfen (`data-tip`, sofort sichtbar, auch per Tastaturfokus),
+  Sortierpfeil an der sortierten Spalte, Filter in auf-/zuklappbaren Gruppen mit Zähler aktiver Filter,
+  unter 880 px ist die Filterleiste eingeklappt, CSV-Export der gefilterten Scouting-Liste (DE: Semikolon und
+  Dezimalkomma, EN: Komma und Punkt), Taste `/` springt ins Suchfeld.
+

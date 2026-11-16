@@ -27,7 +27,7 @@
 
   var STYLE_ID = "histogram-range-css";
   var CSS = "" +
-    ".hr{--hr-acc:var(--accent,#b16286);--hr-mut:var(--line,#2a313d);--hr-txt:var(--muted,#9aa4b2);width:100%;user-select:none}" +
+    ".hr{--hr-acc:var(--accent,#34B190);--hr-mut:var(--line,#2a313d);--hr-txt:var(--muted,#9aa4b2);width:100%;user-select:none}" +
     ".hr-top{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--hr-txt);margin-bottom:6px}" +
     ".hr-top b{color:var(--text,#e6e9ef);font-weight:600}" +
     ".hr-histo{display:flex;align-items:flex-end;gap:1px;height:42px;margin:0 8px 5px}" +
