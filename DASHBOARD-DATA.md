@@ -188,4 +188,12 @@ aus der CSV. `minute` ist der Rohtext (z. B. `"90+2"`, `"(Elfm.)"`), Anzeige wie
   Sortierpfeil an der sortierten Spalte, Filter in auf-/zuklappbaren Gruppen mit Zähler aktiver Filter,
   unter 880 px ist die Filterleiste eingeklappt, CSV-Export der gefilterten Scouting-Liste (DE: Semikolon und
   Dezimalkomma, EN: Komma und Punkt), Taste `/` springt ins Suchfeld.
-
+* **Standardsprache Englisch** (seit 2026-11-17); die Wahl DE/EN wird gemerkt. Filter, Vorlage und Sortierung
+  bleiben beim Sprachwechsel erhalten (`state.fs` je Tab, `makeFilterBar(..., {init,onState})`, `fb.setState()`).
+* **Gespeicherte Filter** (Dropdown oben in der Scouting-Filterleiste, `PRESETS` in `renderScout`): acht feste
+  Vorlagen aus Filterzustand + Sortierung, je zwei für Akademie/Nachwuchs, drei für Erwachsenenfußball, drei nach
+  Spielertyp. Kein Speichern durch Nutzer (kein Login). Alle Vorlagen verlangen Minuten in der laufenden Saison.
+  Schwellen bei jedem Saisonwechsel an den Daten prüfen (Ziel: rund 90 bis 300 Spieler je Vorlage).
+* Filter „Erwachsene oder Nachwuchs“ trifft jetzt jeden, der im gewählten Bereich gespielt hat (`hasE`/`hasJ`);
+  neuer Filter „In der Akademie-Liga (ÖFB Jugendliga)“ (`aka`). Regler-Achsen: Potenz-Achse nach Schiefe,
+  Nullspitze als eigener Balken (siehe Kopfkommentar in `histogram-range.js`).
