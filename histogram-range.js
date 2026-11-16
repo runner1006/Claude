@@ -10,9 +10,19 @@
  *   min,max  : number    – Domain (Default: aus values)
  *   step     : number    – Raster (Default 1)
  *   bins     : number    – Anzahl Histogramm-Balken (Default 32)
- *   scale    : "linear" | "quantile"
+ *   scale    : "linear" | "auto" (auch "log") | "quantile"
+ *              "auto"     => Achse nach der Schiefe der Verteilung: rechtsschief (Schiefe > 1, z. B. Tore)
+ *                            logarithmisch, sonst linear.
  *              "quantile" => nicht-lineare Achse: dort wo mehr Werte liegen,
  *              ist die Achse dichter (mehr Platz / feinere Kontrolle).
+ *   zero     : bool      – Nullspitze getrennt behandeln (Default true): liegen >= 15 % der Werte genau auf dem
+ *              Minimum (z. B. 0 Minuten), bekommt diese Punktmasse einen eigenen, schraffierten Balken links
+ *              und zaehlt nicht in die Skalierung der uebrigen Balken (zero-inflated Verteilung).
+ *   zeroNote : (n0, anteil, text) => string – Hinweiszeile zur Nullspitze (i18n durch den Aufrufer)
+ *
+ * Balkenhoehen (ausser "quantile"): Wurzel der Dichte (Rootogramm nach Tukey) – stabilisiert die Varianz von
+ * Zaehlwerten, sodass duenn besetzte Bereiche neben einem Gipfel sichtbar bleiben. Bins haben variable Breite
+ * (an das Raster "step" gesnappt, keine leeren Zwischen-Bins bei ganzzahligen Werten); Flaeche ~ Anzahl.
  *   format   : v=>string – Anzeige der Werte (Default gerundet)
  *   inputs   : bool      – manuelle Min/Max-Eingabefelder (Default true)
  *   title    : string    – optionaler Titel; avg: optionaler HTML-Text rechts
@@ -33,6 +43,9 @@
     ".hr-histo{display:flex;align-items:flex-end;gap:1px;height:42px;margin:0 8px 5px}" +
     ".hr-bar{flex:1 1 0;background:var(--hr-mut);border-radius:2px 2px 0 0;min-height:2px;transition:background .08s}" +
     ".hr-bar.on{background:var(--hr-acc)}" +
+    ".hr-zero{margin-right:3px;opacity:.9;background:repeating-linear-gradient(135deg,var(--hr-mut) 0 3px,transparent 3px 6px);border:1px solid var(--hr-mut);border-bottom:0}" +
+    ".hr-zero.on{background:repeating-linear-gradient(135deg,var(--hr-acc) 0 3px,transparent 3px 6px);border-color:var(--hr-acc)}" +
+    ".hr-note{font-size:11px;line-height:1.35;color:var(--hr-txt);margin:0 8px 7px}" +
     ".hr-track{position:relative;height:22px;margin:0 8px;touch-action:none}" +
     ".hr-rail{position:absolute;left:0;right:0;top:50%;height:5px;transform:translateY(-50%);background:var(--hr-mut);border-radius:3px}" +
     ".hr-fill{position:absolute;top:50%;height:5px;transform:translateY(-50%);background:var(--hr-acc);border-radius:3px}" +
@@ -41,6 +54,7 @@
     ".hr-thumb:active{cursor:grabbing}" +
     ".hr-bubble{position:absolute;top:50%;left:50%;transform:translate(-50%,14px);background:#0b0d11;color:#fff;font-size:11px;" +
       "font-weight:600;padding:1px 7px;border-radius:20px;white-space:nowrap;pointer-events:none;font-variant-numeric:tabular-nums}" +
+    ".hr-bub-lo{left:-10px;transform:translate(0,14px)}.hr-bub-hi{left:auto;right:-10px;transform:translate(0,14px)}" +
     ".hr-inputs{display:flex;align-items:center;gap:7px;margin:13px 8px 0}" +
     ".hr-inputs input{flex:1 1 0;width:100%;min-width:0;background:var(--panel2,#1f242e);border:1px solid var(--line,#2a313d);" +
       "color:var(--text,#e6e9ef);padding:7px 9px;border-radius:8px;font-size:12px;font-variant-numeric:tabular-nums}" +
@@ -67,19 +81,40 @@
     var step = opts.step || 1;
     var bins = opts.bins || 32;
     var fmt = opts.format || function (v) { return String(Math.round(v)); };
-    // "log" spreizt Long-Tail-Verteilungen (Minuten, Tore) sichtbar auf.
-    var scale = (opts.scale === "quantile" && n > 1) ? "quantile"
-              : (opts.scale === "log" ? "log" : "linear");
-    var logMax = scale === "log" ? Math.log(dmax - dmin + 1) : 1;
-    if (scale === "log" && !(logMax > 0)) scale = "linear";
+    var mode = (opts.scale === "quantile" && n > 1) ? "quantile"
+             : ((opts.scale === "log" || opts.scale === "auto") ? "auto" : "linear");
     var showHisto = opts.histo !== false;   // false => nur Slider (z.B. gleichverteilte Perzentile)
     var withInputs = opts.inputs !== false;
     var lo = dmin, hi = dmax;
 
+    // ---- Nullspitze (zero-inflated): Punktmasse auf dem Minimum getrennt behandeln ----
+    var n0 = 0; while (n0 < n && values[n0] === dmin) n0++;
+    var zeroMode = mode !== "quantile" && opts.zero !== false && n > 0 && n0 < n && n0 / n >= 0.15;
+    var v0 = zeroMode ? values[n0] : dmin;          // kleinster Wert ueber dem Minimum
+    var Z = zeroMode ? 0.07 : 0;                    // Anteil der Achse fuer die Punktmasse
+    // ---- Achse fuer den stetigen Teil: Schiefe entscheidet zwischen linear und log ----
+    var useLog = false, span = dmax - v0; if (!(span > 0)) span = 1;
+    if (mode === "auto") {
+      var m1 = 0, cnt = n - (zeroMode ? n0 : 0), k0 = zeroMode ? n0 : 0, q;
+      for (q = k0; q < n; q++) m1 += values[q]; m1 /= Math.max(cnt, 1);
+      var m2 = 0, m3 = 0, dq;
+      for (q = k0; q < n; q++) { dq = values[q] - m1; m2 += dq * dq; m3 += dq * dq * dq; }
+      m2 /= Math.max(cnt, 1); m3 /= Math.max(cnt, 1);
+      var skew = m2 > 0 ? m3 / Math.pow(m2, 1.5) : 0;
+      useLog = skew > 1 && span > 20 * step;
+    }
+    var logMax = Math.log(span + 1);
+    function g(v) { return clamp(useLog ? Math.log(Math.max(v - v0, 0) + 1) / logMax : (v - v0) / span, 0, 1); }
+    function gi(p) { p = clamp(p, 0, 1); return useLog ? v0 + Math.exp(p * logMax) - 1 : v0 + p * span; }
+
     // ---- Achsen-Mapping Position<->Wert ----
     function toPos(v) {
-      if (scale === "linear") return (v - dmin) / (dmax - dmin);
-      if (scale === "log") return clamp(Math.log(Math.max(v - dmin, 0) + 1) / logMax, 0, 1);
+      if (mode !== "quantile") {
+        if (!zeroMode) return g(v);
+        if (v <= dmin) return 0;
+        if (v < v0) return Z;
+        return Z + (1 - Z) * g(v);
+      }
       if (v <= values[0]) return 0;
       if (v >= values[n - 1]) return 1;
       var a = 0, b = n;
@@ -89,24 +124,40 @@
     }
     function toVal(p) {
       p = clamp(p, 0, 1);
-      if (scale === "linear") return dmin + p * (dmax - dmin);
-      if (scale === "log") return dmin + Math.exp(p * logMax) - 1;
+      if (mode !== "quantile") {
+        if (!zeroMode) return gi(p);
+        if (p < Z * 0.5) return dmin;               // ganz links: Nullen eingeschlossen
+        if (p <= Z) return v0;                      // knapp daneben: ab dem kleinsten Wert > Minimum
+        return gi((p - Z) / (1 - Z));
+      }
       var idx = p * (n - 1), i = Math.floor(idx), f = idx - i;
       return values[i] + ((values[Math.min(i + 1, n - 1)]) - values[i]) * f;
     }
 
-    // ---- Histogramm-Bins (im Positionsraum) ----
-    // Balken-Höhe: bei log = reine Anzahl je Bin (zeigt die Verteilungsform),
-    // sonst Dichte je Wert-Einheit (bei linear proportional zur Anzahl).
-    var useCount = (scale === "log");
-    var dens = new Array(bins), centers = new Array(bins);
-    for (var i = 0; i < bins; i++) {
-      var vLo = toVal(i / bins), vHi = toVal((i + 1) / bins);
-      if (vHi <= vLo) vHi = vLo + step;
-      var c = 0, last = (i === bins - 1);
-      for (var j = 0; j < n; j++) { var x = values[j]; if (x >= vLo && (x < vHi || (last && x <= vHi))) c++; }
-      dens[i] = useCount ? c : c / Math.max(vHi - vLo, step);
-      centers[i] = (vLo + vHi) / 2;
+    // ---- Histogramm-Bins ----
+    var dens = [], centers = [], flexes = [], i, j;
+    if (mode === "quantile") {                      // Dichte je Wert-Einheit im Positionsraum (wie bisher)
+      for (i = 0; i < bins; i++) {
+        var vLo = toVal(i / bins), vHi = toVal((i + 1) / bins);
+        if (vHi <= vLo) vHi = vLo + step;
+        var c = 0, last = (i === bins - 1);
+        for (j = 0; j < n; j++) { var x = values[j]; if (x >= vLo && (x < vHi || (last && x <= vHi))) c++; }
+        dens.push(c / Math.max(vHi - vLo, step)); centers.push((vLo + vHi) / 2); flexes.push(1);
+      }
+    } else {
+      // Kanten im transformierten Raum gleichmaessig, dann ans Raster gesnappt und dedupliziert
+      var edges = [v0], e;
+      for (i = 1; i <= bins; i++) { e = Math.round(gi(i / bins) / step) * step; if (e > edges[edges.length - 1] + step * 1e-6) edges.push(e); }
+      if (edges[edges.length - 1] < dmax) edges.push(dmax); else edges[edges.length - 1] = dmax;
+      if (edges.length < 2) edges.push(dmax + step);
+      var ptr = zeroMode ? n0 : 0;
+      for (i = 0; i < edges.length - 1; i++) {
+        var a2 = edges[i], b2 = edges[i + 1], lastB = (i === edges.length - 2), c2 = 0;
+        while (ptr < n && (values[ptr] < b2 || (lastB && values[ptr] <= b2))) { if (values[ptr] >= a2) c2++; ptr++; }
+        var w = Math.max(g(b2) - g(a2), 1e-6);
+        dens.push(Math.sqrt(c2 / w));               // Rootogramm: Wurzel der Dichte
+        centers.push((a2 + b2) / 2); flexes.push(w);
+      }
     }
     var maxDens = Math.max.apply(null, dens.concat([1e-9]));
 
@@ -119,14 +170,22 @@
     }
     var bars = [];
     if (showHisto) {
+      if (zeroMode && opts.zeroNote) { var note = elem("hr-note", root); note.textContent = opts.zeroNote(n0, n0 / n, fmt(dmin)); }
       var histo = elem("hr-histo", root);
-      bars = dens.map(function (dv) { var b = elem("hr-bar", histo); b.style.height = (dv / maxDens * 100) + "%"; return b; });
+      if (zeroMode) {                               // Punktmasse: eigener, schraffierter Balken (nicht massstaeblich)
+        var zb = elem("hr-bar hr-zero", histo); zb.style.height = "100%"; zb.style.flex = (Z / (1 - Z)) + " 1 0";
+        zb.title = fmt(dmin) + ": " + n0 + " (" + Math.round(n0 / n * 100) + " %)";
+        bars.push(zb);
+      }
+      dens.forEach(function (dv, k) { var b = elem("hr-bar", histo); b.style.height = (dv / maxDens * 100) + "%";
+        b.style.flex = flexes[k] + " 1 0"; bars.push(b); });
+      if (zeroMode) centers = [dmin].concat(centers);
     }
     var track = elem("hr-track", root);
     elem("hr-rail", track);
     var fill = elem("hr-fill", track);
     var thumbLo = elem("hr-thumb", track), thumbHi = elem("hr-thumb", track);
-    var bubLo = elem("hr-bubble", thumbLo), bubHi = elem("hr-bubble", thumbHi);
+    var bubLo = elem("hr-bubble hr-bub-lo", thumbLo), bubHi = elem("hr-bubble hr-bub-hi", thumbHi);   // am Rand buendig statt mittig (lange Labels)
     var inLo, inHi;
     if (withInputs) {
       var ir = elem("hr-inputs", root);

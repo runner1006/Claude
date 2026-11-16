@@ -514,7 +514,8 @@ const csvNum=v=>v==null||v===""?"":(LANG==="de"?String(v).replace(".",","):Strin
 document.addEventListener("keydown",e=>{ if(e.key!=="/"||e.metaKey||e.ctrlKey||e.altKey)return;
   const a=document.activeElement; if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return;
   const sec=[...document.querySelectorAll("main>section")].find(x=>!x.hidden); const inp=sec&&sec.querySelector("input[type=search]");
-  if(inp){ e.preventDefault(); const sb=inp.closest(".sidebar"); if(sb)sb.classList.remove("collapsed"); inp.focus(); inp.select(); } });
+  if(inp){ e.preventDefault(); const sb=inp.closest(".sidebar"); if(sb)sb.classList.remove("collapsed"); inp.focus(); inp.select(); }
+  else { const pi=document.querySelector("#tab-profile input[type=search]"); if(pi){ e.preventDefault(); switchTab("profile"); pi.focus(); pi.select(); } } });
 
 /* Header-Hoehe (bricht auf schmalen Screens um) als CSS-Variable: nav und Sidebar kleben darunter */
 (function(){ const hdr=document.querySelector("header"); if(!hdr)return;
@@ -620,7 +621,7 @@ function makeFilterBar(host,rows,defs,onChange){
   defs.forEach(def=>{
     if(def.type==="section"){
       const badge=el("span",{class:"n"});
-      const det=el("details",{class:"fgrp"}); det.open=lsGet("oefb-fg-"+def.key)!=="0";
+      const det=el("details",{class:"fgrp"}); { const st=lsGet("oefb-fg-"+def.key); det.open=st==null?def.open!==false:st!=="0"; }
       det.append(el("summary",{},el("span",{},def.label,badge)));
       det.addEventListener("toggle",()=>lsSet("oefb-fg-"+def.key,det.open?"1":"0"));
       const body=el("div",{class:"fg-body"}); det.append(body); fields.append(det);
@@ -650,7 +651,9 @@ function makeFilterBar(host,rows,defs,onChange){
         if(def.min!=null&&n<def.min)continue; if(def.max!=null&&n>def.max)continue; vals.push(n);}  // unsinnige Kleinstwerte ausblenden
       const hr=HistogramRange({values:vals,step:def.step||1,format:def.format,
         scale:def.scale||"linear",histo:def.histo!==false,min:def.min,max:def.max,
-        inputs:true,onChange:r=>set(def,r)});
+        inputs:true,onChange:r=>set(def,r),
+        zeroNote:(n0,share,lab)=>TX(`${Math.round(share*100)} % stehen bei ${lab} (schraffierter Balken links); die Verteilung zeigt nur die Werte darüber.`,
+                                   `${Math.round(share*100)}% are at ${lab} (hatched bar on the left); the distribution shows only the values above.`)});
       ctl[def.key]=()=>hr.reset();
       inp=hr.element;
       field.append(inp);
@@ -913,36 +916,37 @@ function renderScout(){
   const compOpts=deSort(d.competitions), teamOpts=deSort(d.teams);
   const min=v=>v+"'", r2=v=>(+v).toFixed(2);
   const cur=curSeason(d), seaOpts=[...(d.seasons||[])].reverse();   // neueste Saison zuerst
+  const refY=+String(d.ref_date||"").slice(0,4)||new Date().getFullYear();
   const fb=makeFilterBar(side,rowsAll,[
-    {type:"section",key:"sc-player",label:TX("Spieler","Player")},
-    {key:"name",type:"text",label:"Name",placeholder:TX("Spieler suchen…  ( / )","Search player…  ( / )"),get:p=>p.name,nget:p=>p.nname},
+    {type:"section",key:"sc-main",label:TX("Hauptfilter","Main filters")},
     {key:"cat",type:"select",label:TX("Erwachsene oder Nachwuchs","Senior or youth football"),options:["Erwachsen","Jugend"],get:p=>p.cat,disp:catLabel,
       help:TX("In welchem Bereich der Spieler eingesetzt wurde. Nachwuchs = ÖFB Jugendliga und Jugendregionalliga (U15, U16, U18). Erwachsene = Regionalliga, Landesliga, Oberliga. Wer in beiden gespielt hat, zählt zum Nachwuchs.",
               "Where the player has played. Youth = ÖFB youth league and regional youth league (U15, U16, U18). Senior = Regionalliga, Landesliga, Oberliga (men's 3rd to 5th tier). Players with appearances in both count as youth.")},
-    ...(state.hasSea?[{key:"sea",type:"select",label:TX("Gespielt in Saison","Played in season"),options:seaOpts,pred:setPred("seasonsArr"),
-      help:TX("Zeigt nur Spieler mit mindestens einem Einsatz in einer der gewählten Saisonen.","Shows only players with at least one appearance in one of the selected seasons.")}]:[]),
+    {key:"jg",type:"range",label:TX("Jahrgang (Alter)","Year of birth (age)"),get:p=>p.by,scale:"quantile",
+      format:v=>`${v} (${refY-v}${TX(" J."," y")})`,
+      help:TX(`Ein Filter für beides: Der Regler läuft über das Geburtsjahr, daneben steht das Alter im Jahr ${refY}. In die Felder das Geburtsjahr eintippen.`,
+              `One filter for both: the slider runs over the year of birth, with the age in ${refY} shown next to it. Type the year of birth into the fields.`)},
+    {key:"min",type:"range",label:TX("Einsatzminuten seit 2023/24","Minutes played since 2023/24"),get:p=>p.min,format:min,scale:"log",help:help("min")},
+    ...(state.hasSea?[{key:"cmin",type:"range",label:TX("Einsatzminuten ","Minutes played ")+cur,get:p=>p.cmin,format:min,scale:"log",
+      help:TX("Minuten nur in der laufenden Saison. Damit findet man Spieler, die heuer neu viel spielen.","Minutes in the current season only. Use it to find players who are new and play a lot this season.")}]:[]),
+    {key:"tal",type:"range",label:TX("Talent-Rang im Jahrgang (Top-%)","Talent rank in birth year (top %)"),help:help("pct_talent"),get:p=>p.pct_talent,
+      min:0,max:100,histo:false,format:v=>(+v).toFixed(0)+"%",
+      presets:[["Top 10%",["","10"]],["Top 20%",["","20"]],["Top 30%",["","30"]],[TX("alle","all"),["",""]]]},
+    {key:"pos",type:"select",label:"Position",get:p=>p.pos,disp:posLabel,
+      help:TX("Häufigste Position laut Spielbericht. Nur grob (Tor, Abwehr, Mittelfeld, Sturm) und nicht in jedem Bewerb erfasst.","Most frequent position in the match reports. Coarse only (goalkeeper, defence, midfield, attack) and not recorded in every competition.")},
+    {key:"nat",type:"select",label:TX("Nationalität","Nationality"),get:p=>p.nat,disp:natLabel},
+    {type:"section",key:"sc-ext",label:TX("Erweiterte Filter","Extended filters"),open:false},
     {key:"comp",type:"select",label:TX("Liga / Bewerb","League / competition"),options:compOpts,pred:setPred("compsArr"),
       help:TX("Spieler mit mindestens einem Einsatz in einem der gewählten Bewerbe (alle Saisonen).","Players with at least one appearance in one of the selected competitions (all seasons).")},
     {key:"team",type:"select",label:TX("Verein","Club"),options:teamOpts,pred:setPred("teamsArr"),
       help:TX("Alle Vereine, für die der Spieler seit 2023/24 in den erfassten Bewerben gespielt hat.","All clubs the player has played for in the recorded competitions since 2023/24.")},
-    {key:"pos",type:"select",label:"Position",get:p=>p.pos,disp:posLabel,
-      help:TX("Häufigste Position laut Spielbericht. Nur grob (Tor, Abwehr, Mittelfeld, Sturm) und nicht in jedem Bewerb erfasst.","Most frequent position in the match reports. Coarse only (goalkeeper, defence, midfield, attack) and not recorded in every competition.")},
-    {key:"nat",type:"select",label:TX("Nationalität","Nationality"),get:p=>p.nat,disp:natLabel},
-    {key:"jg",type:"range",label:TX("Geburtsjahr","Year of birth"),get:p=>p.by,scale:"quantile"},
-    {key:"age",type:"range",label:TX("Alter (Jahre)","Age (years)"),get:p=>p.age,min:10},
-    {key:"cap",type:"bool",label:TX("War schon Kapitän","Has been captain"),get:p=>p.cap,
-      help:TX("Ja = mindestens einmal als Kapitän im Spielbericht.","Yes = listed as captain in at least one match report.")},
+    ...(state.hasSea?[{key:"sea",type:"select",label:TX("Gespielt in Saison","Played in season"),options:seaOpts,pred:setPred("seasonsArr"),
+      help:TX("Zeigt nur Spieler mit mindestens einem Einsatz in einer der gewählten Saisonen.","Shows only players with at least one appearance in one of the selected seasons.")}]:[]),
     {key:"role",type:"select",label:TX("Startelf oder Bank","Starter or substitute"),get:p=>p.role,disp:roleLabel,
       help:TX("Startelf-Spieler = mindestens einmal von Beginn an gespielt. Nur Einwechsel/Bank = nie in der Startelf.","Has started = in the starting XI at least once. Substitute only = never in the starting XI.")},
-    {type:"section",key:"sc-play",label:TX("Einsätze und Tore","Appearances and goals")},
-    {key:"min",type:"range",label:TX("Einsatzminuten seit 2023/24","Minutes played since 2023/24"),get:p=>p.min,format:min,scale:"log",help:help("min")},
-    ...(state.hasSea?[{key:"cmin",type:"range",label:TX("Einsatzminuten ","Minutes played ")+cur,get:p=>p.cmin,format:min,scale:"log",
-      help:TX("Minuten nur in der laufenden Saison. Damit findet man Spieler, die heuer neu viel spielen.","Minutes in the current season only. Use it to find players who are new and play a lot this season.")}]:[]),
+    {key:"cap",type:"bool",label:TX("War schon Kapitän","Has been captain"),get:p=>p.cap,
+      help:TX("Ja = mindestens einmal als Kapitän im Spielbericht.","Yes = listed as captain in at least one match report.")},
     {key:"goals",type:"range",label:TX("Tore seit 2023/24","Goals since 2023/24"),get:p=>p.goals,scale:"log"},
-    {type:"section",key:"sc-rat",label:TX("Bewertung (Plus-Minus)","Ratings (plus-minus)")},
-    {key:"tal",type:"range",label:TX("Talent-Rang im Jahrgang (Top-%)","Talent rank in birth year (top %)"),help:help("pct_talent"),get:p=>p.pct_talent,
-      min:0,max:100,histo:false,format:v=>(+v).toFixed(0)+"%",
-      presets:[["Top 10%",["","10"]],["Top 20%",["","20"]],["Top 30%",["","30"]],[TX("alle","all"),["",""]]]},
     {key:"total",type:"range",label:TX("Gesamt-Rating (Total)","Overall rating (Total)"),help:help("total"),get:p=>p.total,step:0.01,format:r2},
     ...(state.hasCur?[{key:"total_cur",type:"range",label:TX("Gesamt-Rating aktuell (zeitgewichtet)","Overall rating, recent form (time-weighted)"),help:help("total_cur"),get:p=>p.total_cur,step:0.01,format:r2}]:[]),
     {key:"peak",type:"range",label:TX("Peak-Rating (aufs beste Alter hochgerechnet)","Peak rating (projected to peak age)"),help:help("peak"),get:p=>p.peak,step:0.01,format:r2},
@@ -963,10 +967,12 @@ function renderScout(){
   const colWrap=el("div",{class:"ms",style:"width:auto"},colBtn,colPop);
   const outside=e=>{ if(!colWrap.isConnected){document.removeEventListener("click",outside);return;} if(!colWrap.contains(e.target))colPop.classList.remove("open"); };
   document.addEventListener("click",outside);
+  const findBtn=el("button",{class:"fbtn",type:"button",title:TX("Einen bestimmten Spieler nach Namen suchen (Taste /)","Find a specific player by name (press /)")},TX("Spieler suchen","Find player"));
+  findBtn.onclick=()=>{ switchTab("profile"); const pi=document.querySelector("#tab-profile input[type=search]"); if(pi)pi.focus(); };
   const csvBtn=el("button",{class:"fbtn",type:"button",title:TX("Gefilterte Liste als CSV herunterladen","Download the filtered list as CSV")},"CSV ↓");
 
   const tableWrap=el("div",{class:"tblscroll"});
-  content.append(el("div",{class:"content-head"},fb.count,el("div",{class:"toolbar"},csvBtn,colWrap)),tableWrap);
+  content.append(el("div",{class:"content-head"},fb.count,el("div",{class:"toolbar"},findBtn,csvBtn,colWrap)),tableWrap);
   // Klick auf Namen -> Profil (ein Listener fuer alle Zeilen)
   tableWrap.addEventListener("click",e=>{const a=e.target.closest(".plink"); if(a&&a.dataset.id)openProfile(a.dataset.id);});
 
@@ -1256,7 +1262,7 @@ function renderProfileShell(){
                              :emptyMsg("loading",TX("Spielerdaten werden geladen…","Loading player data…")));
     return;
   }
-  body.append(el("div",{class:"pf-empty"},TX("Spieler suchen – oder im Tab Scouting einen Namen anklicken.","Search for a player – or click a name in the Scouting tab.")));
+  body.append(el("div",{class:"pf-empty"},TX("Spieler nach Namen suchen – oder im Tab Scouting einen Namen anklicken.","Search for a player by name – or click a name in the Scouting tab.")));
 }
 let _pfToken=0;
 /* Profil oeffnen: haengt NICHT an scout.json (Deep-Link #profile=<id> laedt sofort); der Name fuer den
@@ -1603,7 +1609,7 @@ function renderMatches(){
     {key:"date",type:"select",label:TX("Datum","Date"),options:dateOpts,get:m=>m.date},
     {key:"goals",type:"range",label:TX("Tore im Spiel","Goals in the match"),get:m=>m.goals},
     {key:"ev",type:"range",label:TX("Erfasste Ereignisse (Tore, Karten, Wechsel)","Recorded events (goals, cards, substitutions)"),get:m=>m.nev},
-    {key:"zus",type:"range",label:TX("Zuschauer","Spectators"),get:m=>+m.spect||0},
+    {key:"zus",type:"range",label:TX("Zuschauer","Spectators"),get:m=>+m.spect||0,scale:"auto"},
     {key:"ref",type:"text",label:TX("Schiedsrichter","Referee"),get:m=>m.ref,nget:m=>m.nref},
   ],()=>scheduleDraw());
 
@@ -2085,7 +2091,7 @@ function applyLang(){
   document.documentElement.lang=LANG;
   document.title=TX("ÖFB Scouting – Spieler-Datenbank","ÖFB Scouting – Player Database");
   $("#hSub").textContent=TX("Spieler-Datenbank","Player database");
-  const NAV={scout:"Scouting",profile:TX("Profil","Profile"),stats:TX("Statistik","Statistics"),explain:TX("Methodik","Method"),matches:"Matches"};
+  const NAV={scout:"Scouting",profile:TX("Spieler","Players"),stats:TX("Statistik","Statistics"),explain:TX("Methodik","Method"),matches:"Matches"};
   document.querySelectorAll("nav button").forEach(b=>{b.textContent=NAV[b.dataset.tab]||b.textContent;});
   document.querySelectorAll("#langSeg button").forEach(b=>b.classList.toggle("active",b.dataset.lang===LANG));
   $("#pillD").title=TX("Stand der vorberechneten Daten","Build time of the precomputed data");
