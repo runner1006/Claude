@@ -11,8 +11,10 @@
  *   step     : number    – Raster (Default 1)
  *   bins     : number    – Anzahl Histogramm-Balken (Default 32)
  *   scale    : "linear" | "auto" (auch "log") | "quantile"
- *              "auto"     => Achse nach der Schiefe der Verteilung: rechtsschief (Schiefe > 1, z. B. Tore)
- *                            logarithmisch, sonst linear.
+ *              "auto"     => Achse nach der Schiefe der Verteilung (Tukeys Potenzleiter): Schiefe <= 0,5 linear,
+ *                            bis 2,5 Wurzel-Achse, darueber Kubikwurzel-Achse. Bewusst KEINE Log-Achse: sie gab
+ *                            den kleinsten Werten den halben Regler (50 % = 143 von 9287 Minuten); mit der
+ *                            Wurzel-Achse liegt 50 % bei einem Viertel des Maximums.
  *              "quantile" => nicht-lineare Achse: dort wo mehr Werte liegen,
  *              ist die Achse dichter (mehr Platz / feinere Kontrolle).
  *   zero     : bool      – Nullspitze getrennt behandeln (Default true): liegen >= 15 % der Werte genau auf dem
@@ -94,7 +96,7 @@
     var v0 = zeroMode ? values[n0] : dmin;          // kleinster Wert ueber dem Minimum
     var Z = zeroMode ? 0.07 : 0;                    // Anteil der Achse fuer die Punktmasse
     // ---- Achse fuer den stetigen Teil: Schiefe entscheidet zwischen linear und log ----
-    var useLog = false, span = dmax - v0; if (!(span > 0)) span = 1;
+    var pw = 1, span = dmax - v0; if (!(span > 0)) span = 1;
     if (mode === "auto") {
       var m1 = 0, cnt = n - (zeroMode ? n0 : 0), k0 = zeroMode ? n0 : 0, q;
       for (q = k0; q < n; q++) m1 += values[q]; m1 /= Math.max(cnt, 1);
@@ -102,11 +104,10 @@
       for (q = k0; q < n; q++) { dq = values[q] - m1; m2 += dq * dq; m3 += dq * dq * dq; }
       m2 /= Math.max(cnt, 1); m3 /= Math.max(cnt, 1);
       var skew = m2 > 0 ? m3 / Math.pow(m2, 1.5) : 0;
-      useLog = skew > 1 && span > 20 * step;
+      if (span > 20 * step) pw = skew > 2.5 ? 1 / 3 : (skew > 0.5 ? 0.5 : 1);
     }
-    var logMax = Math.log(span + 1);
-    function g(v) { return clamp(useLog ? Math.log(Math.max(v - v0, 0) + 1) / logMax : (v - v0) / span, 0, 1); }
-    function gi(p) { p = clamp(p, 0, 1); return useLog ? v0 + Math.exp(p * logMax) - 1 : v0 + p * span; }
+    function g(v) { var t = clamp((v - v0) / span, 0, 1); return pw === 1 ? t : Math.pow(t, pw); }
+    function gi(p) { p = clamp(p, 0, 1); return v0 + span * (pw === 1 ? p : Math.pow(p, 1 / pw)); }
 
     // ---- Achsen-Mapping Position<->Wert ----
     function toPos(v) {
