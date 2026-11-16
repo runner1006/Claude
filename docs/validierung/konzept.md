@@ -84,18 +84,56 @@ am wichtigsten, weil Wechsel ins Ausland und in höhere Ligen sonst fehlen.
 
 ## 4. Abgleich mit Scoutastic
 
-Die technische Probe steht in `docs/validierung/scoutastic-probe.md` (Skript `validierung/scoutastic_probe.py`).
+Die technische Probe ist erledigt: `docs/validierung/scoutastic-probe.md`, Skript `validierung/scoutastic_probe.py`
+(nur lesende GET-Aufrufe), Ergebnis `validierung/scoutastic_probe_ergebnis.json`.
 
-Geplanter Ablauf in kleinen Schritten:
+**Ergebnis der Probe (35 Spieler, 123 Requests)**
 
-1. **Probe-Matching** an rund 35 Spielern: Suche per Name, Abgleich über Geburtsdatum, Verein als Kontrolle.
-2. **Pilot 1, Nachwuchs:** die Top 30 je Jahrgang 2005 bis 2008 aus dem Rückblick plus 30 zufällige
-   Vergleichsspieler je Jahrgang. Rund 240 Spieler. Frage: Wie viele „kein Durchbruch“ sind in Wahrheit Profis?
-3. **Pilot 2, Erwachsene:** die Top 30 nach Gesamt-Rating 2023/24 und 30 Vergleichsspieler.
-4. **Frühere Akademie-Jahrgänge:** Für Spieler, die vor 2023/24 in den Akademien waren, haben wir kein Rating.
-   Scoutastic liefert hier nur die Antwort auf „Wie viele Akademiespieler schaffen es überhaupt?“, also eine
-   belastbare Basisquote je Akademie. Das ist ein eigener, kleiner Baustein.
-5. **Erst dann** entscheiden, ob ein Vollabgleich aller rund 15.000 Spieler lohnt.
+| Gruppe | eindeutig gefunden | nicht gefunden |
+|---|---|---|
+| Nachwuchs (20) | 19 | 1 |
+| Erwachsene (10) | 10 | 0 |
+| schwierige Namen (5) | 5 | 0 |
+
+- **Matching-Weg:** ÖFB-Verein auf den Scoutastic-Stammverein abbilden, dessen Kader mit Zweitteam und Akademie
+  in einem Request laden, dann Name plus Geburtsjahr vergleichen. Für Abgänge die Transferliste des Vereins.
+  Eine Namenssuche per GET gibt es nicht.
+- **Unsere Geburtsdaten taugen nicht zum Abgleich:** In `players_profiles.json` steht bei allen Spielern der
+  1. Jänner, wir kennen also nur das Geburtsjahr. Scoutastic hat das echte Datum und kann es nachliefern.
+- **Werdegang:** Minuten je Saison und Bewerb sind bei allen gefundenen Spielern gefüllt, die Liga-Stufe ist
+  sauber vorhanden (Bundesliga 1, 2. Liga 2, Regionalliga 3). Marktwert nur bei Profis, Vertragsende lückenhaft.
+- **Lücke:** Die ÖFB Jugendliga ist in Scoutastic vollständig, die Jugendregionalliga nur dünn.
+- **ÖFB-Profile sind teils veraltet:** Ein Spieler steht bei uns noch als Bundesliga-Spieler, ist laut
+  Scoutastic aber im Sommer 2026 ins Ausland gewechselt und hat keine Bundesliga-Minute. Der Profi-Status im
+  Pilot aus Abschnitt 3 enthält also Fehler in beide Richtungen.
+
+**Durchbruch-Definition mit Scoutastic** (ersetzt Stufe A aus Abschnitt 2):
+
+| Stufe | Regel |
+|---|---|
+| Profi-Debüt | mindestens 1 Minute in einer Liga der Stufe 1 oder 2 |
+| Durchbruch | mindestens 900 Minuten in einer Saison in Stufe 1 oder 2, nicht im Zweitteam |
+
+In der Probe trennen 900 Minuten klar Stammspieler von Einwechselspielern.
+
+**Offene Entscheidungen**
+- Zählen 900 Minuten für ein Zweitteam in der 2. Liga (Young Violets, Sturm II, Liefering) als Durchbruch
+  oder als eigene Vorstufe?
+- Welche Auslandsligen zählen? Vorschlag: ab dem Niveau der österreichischen 2. Liga nach der Skala aus dem
+  Kontexttransfer-Modell.
+- Darf die Suche per `POST /players/search` genutzt werden? Sie wäre der kürzeste Weg, ist technisch aber ein
+  POST und im Scoutastic-Skill bisher ausgeschlossen.
+
+**Nächste Schritte, bewusst klein**
+
+1. **Pilot 1, Nachwuchs:** die Top 30 je Jahrgang 2005 bis 2008 aus dem Rückblick plus 30 zufällige
+   Vergleichsspieler je Jahrgang, rund 240 Spieler. Frage: Wie viele „kein Durchbruch“ sind in Wahrheit Profis?
+2. **Pilot 2, Erwachsene:** die Top 30 nach Gesamt-Rating 2023/24 und 30 Vergleichsspieler.
+3. **Frühere Akademie-Jahrgänge:** Für Spieler vor 2023/24 haben wir kein Rating. Scoutastic liefert hier die
+   Basisquote je Akademie („Wie viele schaffen es überhaupt?“), über die Debütantenlisten von Bundesliga und
+   2. Liga. Das ist ein eigener, kleiner Baustein.
+4. **Vollabgleich** erst danach: rund 5.200 Spieler, 6.000 bis 7.700 Requests, einmalig etwa eineinhalb
+   Stunden. Größter Aufwand ist die Zuordnung der Vereinsnamen (nur 232 von 437 treffen automatisch).
 
 ## 5. Was davon schon im Dashboard steht
 
