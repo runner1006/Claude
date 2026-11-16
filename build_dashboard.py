@@ -200,6 +200,12 @@ def build(data_dir: str, ref: dt.date) -> None:
         pid = r["player_id"] or ""
         key = pid or f"name::{r['name']}|{r['team']}"
         comp = m["competition"] or ""
+        # Anzeigename des Teams: Die Aufstellungsseite kuerzt Zweitteams ("LASK Amat." -> "LASK"). Steht im
+        # Spielbericht "Amat.", wird es angehaengt, damit die zweite Mannschaft nicht wie die Profis aussieht.
+        mt = (m["home_team"] if r["side"] == "home" else m["away_team"]) or ""
+        team = r["team"] or ""
+        if team and mt.rstrip().endswith("Amat.") and "Amat" not in team:
+            team = team.rstrip() + " Amat."
         a = agg.get(key)
         if a is None:
             a = agg[key] = {"id": pid, "name": r["name"], "teams": {}, "comps": {},
@@ -213,8 +219,8 @@ def build(data_dir: str, ref: dt.date) -> None:
             se = a["sea"].setdefault(m["season"], [0, 0])
             se[0] += r["minutes"] or 0
             se[1] += 1
-            if pid and r["team"] and comp:    # Kader je Verein/Bewerb/Saison (Statistik-Tab: echtes Vereinsalter)
-                sq = squads.setdefault((pid, r["team"], comp, m["season"]), [0, 0])
+            if pid and team and comp:    # Kader je Verein/Bewerb/Saison (Statistik-Tab: echtes Vereinsalter)
+                sq = squads.setdefault((pid, team, comp, m["season"]), [0, 0])
                 sq[0] += r["minutes"] or 0
                 sq[1] += 1
         if r["captain"]:
@@ -224,7 +230,7 @@ def build(data_dir: str, ref: dt.date) -> None:
         if r["position"]:
             a["pos"][r["position"]] = a["pos"].get(r["position"], 0) + 1
         iso = m["iso_date"] or ""
-        for dkey, val in (("teams", r["team"]), ("comps", comp)):
+        for dkey, val in (("teams", team), ("comps", comp)):
             if val:
                 prev = a[dkey].get(val)
                 if prev is None or iso > prev:
@@ -244,7 +250,7 @@ def build(data_dir: str, ref: dt.date) -> None:
         games[pid].append({
             "mid": mid, "iso": iso, "date": m["date"] or "", "season": m["season"] or "?",
             "comp": comp, "cat": "J" if league_cat(comp) == "Jugend" else "E",
-            "team": r["team"], "opp": m["away_team"] if r["side"] == "home" else m["home_team"],
+            "team": team, "opp": m["away_team"] if r["side"] == "home" else m["home_team"],
             "ha": "H" if r["side"] == "home" else "A", "score": m["score"] or "",
             "sf": sf, "sg": sg, "res": "S" if sf > sg else ("N" if sf < sg else "U"),
             "min": mins, "on": on, "off": r["off_min"], "goals": r["goals"] or 0,
