@@ -565,8 +565,8 @@ function compilePred(def,v){
   return ()=>true;
 }
 function chipText(def,v){
-  const f=def.format||(x=>x), dp=def.disp||(x=>x);
-  if(def.type==="range")return `${def.label} ${v[0]!==""?"≥"+f(v[0]):""}${v[0]!==""&&v[1]!==""?" ":""}${v[1]!==""?"≤"+f(v[1]):""}`;
+  const f=def.chipFormat||def.format||(x=>x), dp=def.disp||(x=>x), lab=def.chipLabel||def.label;
+  if(def.type==="range")return v[0]!==""&&v[1]!==""?`${lab} ${f(v[0])}–${f(v[1])}`:`${lab} ${v[0]!==""?"≥ "+f(v[0]):"≤ "+f(v[1])}`;
   if(def.type==="bool")return `${def.label}: ${v==="ja"?TX("ja","yes"):TX("nein","no")}`;
   if(def.type==="text")return `„${v}"`;
   if(def.type==="select"){const a=Array.isArray(v)?v:[v];
@@ -923,7 +923,7 @@ function renderScout(){
       help:TX("In welchem Bereich der Spieler eingesetzt wurde. Nachwuchs = ÖFB Jugendliga und Jugendregionalliga (U15, U16, U18). Erwachsene = Regionalliga, Landesliga, Oberliga. Wer in beiden gespielt hat, zählt zum Nachwuchs.",
               "Where the player has played. Youth = ÖFB youth league and regional youth league (U15, U16, U18). Senior = Regionalliga, Landesliga, Oberliga (men's 3rd to 5th tier). Players with appearances in both count as youth.")},
     {key:"jg",type:"range",label:TX("Jahrgang (Alter)","Year of birth (age)"),get:p=>p.by,scale:"quantile",
-      format:v=>`${v} (${refY-v}${TX(" J."," y")})`,
+      format:v=>`${v} (${refY-v}${TX(" J."," y")})`,chipFormat:v=>v,chipLabel:TX("Jahrgang","Born"),
       help:TX(`Ein Filter für beides: Der Regler läuft über das Geburtsjahr, daneben steht das Alter im Jahr ${refY}. In die Felder das Geburtsjahr eintippen.`,
               `One filter for both: the slider runs over the year of birth, with the age in ${refY} shown next to it. Type the year of birth into the fields.`)},
     {key:"min",type:"range",label:TX("Einsatzminuten seit 2023/24","Minutes played since 2023/24"),get:p=>p.min,format:min,scale:"log",help:help("min")},

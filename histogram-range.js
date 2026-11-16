@@ -54,8 +54,9 @@
     ".hr-thumb:active{cursor:grabbing}" +
     ".hr-bubble{position:absolute;top:50%;left:50%;transform:translate(-50%,14px);background:#0b0d11;color:#fff;font-size:11px;" +
       "font-weight:600;padding:1px 7px;border-radius:20px;white-space:nowrap;pointer-events:none;font-variant-numeric:tabular-nums}" +
-    ".hr-bub-lo{left:-10px;transform:translate(0,14px)}.hr-bub-hi{left:auto;right:-10px;transform:translate(0,14px)}" +
-    ".hr-inputs{display:flex;align-items:center;gap:7px;margin:13px 8px 0}" +
+    ".hr-vals{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:5px 8px 0;font-size:12px;font-variant-numeric:tabular-nums;color:var(--hr-txt)}" +
+    ".hr-val{white-space:nowrap;font-weight:600}.hr-val.set{color:var(--hr-acc)}.hr-val-sep{flex:1;text-align:center;opacity:.5}" +
+    ".hr-inputs{display:flex;align-items:center;gap:7px;margin:7px 8px 0}" +
     ".hr-inputs input{flex:1 1 0;width:100%;min-width:0;background:var(--panel2,#1f242e);border:1px solid var(--line,#2a313d);" +
       "color:var(--text,#e6e9ef);padding:7px 9px;border-radius:8px;font-size:12px;font-variant-numeric:tabular-nums}" +
     ".hr-inputs input:focus{outline:none;border-color:var(--hr-acc)}" +
@@ -185,7 +186,11 @@
     elem("hr-rail", track);
     var fill = elem("hr-fill", track);
     var thumbLo = elem("hr-thumb", track), thumbHi = elem("hr-thumb", track);
-    var bubLo = elem("hr-bubble hr-bub-lo", thumbLo), bubHi = elem("hr-bubble hr-bub-hi", thumbHi);   // am Rand buendig statt mittig (lange Labels)
+    // Werteanzeige als feste Zeile (links unterer, rechts oberer Wert) statt Blasen an den Griffen:
+    // die Blasen ueberlappten sich, sobald die Griffe nah beieinander standen.
+    var valsRow = elem("hr-vals", root);
+    var bubLo = elem("hr-val", valsRow), bubSep = elem("hr-val-sep", valsRow), bubHi = elem("hr-val", valsRow);
+    bubSep.textContent = "–";
     var inLo, inHi;
     if (withInputs) {
       var ir = elem("hr-inputs", root);
@@ -203,6 +208,7 @@
       fill.style.left = toPos(lo) * 100 + "%"; fill.style.right = (100 - toPos(hi) * 100) + "%";
       thumbLo.style.left = toPos(lo) * 100 + "%"; thumbHi.style.left = toPos(hi) * 100 + "%";
       bubLo.textContent = fmt(lo); bubHi.textContent = fmt(hi);
+      bubLo.classList.toggle("set", lo > dmin); bubHi.classList.toggle("set", hi < dmax);
       if (withInputs) { inLo.value = (lo <= dmin ? "" : lo); inHi.value = (hi >= dmax ? "" : hi); }
       for (var k = 0; k < bars.length; k++) bars[k].classList.toggle("on", centers[k] >= lo && centers[k] <= hi);
     }
