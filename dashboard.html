@@ -972,7 +972,7 @@ function renderScout(){
   const cur=curSeason(d), seaOpts=[...(d.seasons||[])].reverse();   // neueste Saison zuerst
   const refY=+String(d.ref_date||"").slice(0,4)||new Date().getFullYear();
   /* Gespeicherte Filter (Vorlagen): feste Filterkombination + Sortierung. Schwellen an den Daten geprueft
-     (Stand 11/2026: je Vorlage rund 90 bis 250 Spieler). Alle verlangen Einsaetze in der laufenden Saison,
+     (Stand 11/2026: je Vorlage rund 30 bis 210 Spieler; Erwachsenen-Vorlagen bewusst nur bis 18 Jahre). Alle verlangen Einsaetze in der laufenden Saison,
      sonst fuehren Spieler die Liste an, die gar nicht mehr in diesen Ligen spielen. b18 = Jahrgang der heute 18-Jaehrigen. */
   const b18=refY-18, curK=state.hasCur?"total_cur":"total";
   const PRESETS=[
@@ -985,19 +985,19 @@ function renderScout(){
        f:{aka:"nein",jg:[b18,""],min:[600,""],cmin:[270,""],tal:["",20]},
        d:TX("Bis 18 Jahre, aber nie in der ÖFB Jugendliga der Bundesliga-Akademien: Jugendregionalliga oder schon im Erwachsenenfußball. Top 20 % des Jahrgangs, heuer im Einsatz.",
             "Aged 18 or younger but never in the ÖFB Jugendliga of the Bundesliga academies: regional youth league or already in senior football. Top 20% of their birth year, active this season.")}]},
-    {g:TX("Erwachsenenfußball","Senior football"),items:[
-      {k:"s-proven",l:TX("Bewährte Top-Spieler","Proven top performers"),sort:"total",
-       f:{cat:["Erwachsen"],jg:["",b18],min:[4500,""],cmin:[450,""],tal:["",5]},
-       d:TX("Ab 18 Jahren, über 4.500 Minuten seit 2023/24, Top 5 % des Jahrgangs und heuer Stammspieler. Sortiert nach Gesamt-Rating.",
-            "Aged 18+, more than 4,500 minutes since 2023/24, top 5% of their birth year and regulars this season. Sorted by overall rating.")},
-      {k:"s-form",l:TX("Auffällig in dieser Saison","Standout this season"),sort:curK,
-       f:{cat:["Erwachsen"],jg:["",b18],cmin:[800,""],[curK]:[0.12,""]},
-       d:TX("Heuer über 800 Minuten und ein aktuelles Gesamt-Rating in den besten rund 5 %. Sortiert nach aktueller Form.",
-            "More than 800 minutes this season and a recent-form rating in roughly the top 5%. Sorted by recent form.")},
-      {k:"s-new",l:TX("Neu aufgetaucht: starke Debütsaison","New faces: strong first season"),sort:curK,
-       f:{cat:["Erwachsen"],jg:["",b18],cmin:[700,""],min:["",2000],[curK]:[0.05,""]},
-       d:TX("Heuer über 700 Minuten, davor kaum Einsätze (höchstens 2.000 Minuten gesamt) und klar überdurchschnittlich. Spieler, die in älteren Listen noch fehlen.",
-            "More than 700 minutes this season, hardly any before (at most 2,000 minutes in total) and clearly above average. Players still missing from older lists.")}]},
+    {g:TX("Erwachsenenfußball (≤ 18 Jahre)","Senior football (age ≤ 18)"),items:[
+      {k:"s-proven",l:TX("Bewährte Top-Spieler (≤ 18)","Proven top performers (≤ 18)"),sort:"total",
+       f:{cat:["Erwachsen"],jg:[b18,""],min:[1800,""],cmin:[270,""],tal:["",20]},
+       d:TX("18 Jahre oder jünger und schon im Erwachsenenfußball: über 1.800 Minuten seit 2023/24, Top 20 % des Jahrgangs, heuer im Einsatz. Sortiert nach Gesamt-Rating. Für ältere Spieler den Regler Jahrgang (Alter) öffnen.",
+            "Aged 18 or younger and already in senior football: more than 1,800 minutes since 2023/24, top 20% of their birth year, active this season. Sorted by overall rating. Open the year of birth (age) slider for older players.")},
+      {k:"s-form",l:TX("Auffällig in dieser Saison (≤ 18)","Standout this season (≤ 18)"),sort:curK,
+       f:{cat:["Erwachsen"],jg:[b18,""],cmin:[450,""],[curK]:[0.04,""]},
+       d:TX("18 Jahre oder jünger, heuer über 450 Minuten und in der aktuellen Form klar über dem Durchschnitt. Sortiert nach aktueller Form.",
+            "Aged 18 or younger, more than 450 minutes this season and clearly above average in recent form. Sorted by recent form.")},
+      {k:"s-new",l:TX("Neu aufgetaucht (≤ 18)","New faces (≤ 18)"),sort:curK,
+       f:{cat:["Erwachsen"],jg:[b18,""],cmin:[450,""],min:["",2000],[curK]:[0,""]},
+       d:TX("18 Jahre oder jünger, heuer über 450 Minuten, davor kaum Einsätze (höchstens 2.000 Minuten gesamt) und mindestens Durchschnitt. Spieler, die in älteren Listen noch fehlen.",
+            "Aged 18 or younger, more than 450 minutes this season, hardly any before (at most 2,000 minutes in total) and at least average. Players still missing from older lists.")}]},
     {g:TX("Spielertyp","Player type"),items:[
       {k:"t-goals",l:TX("Torjäger","Goal scorers"),sort:"goals",
        f:{cat:["Erwachsen"],goals:[30,""],cmin:[450,""]},
