@@ -87,7 +87,7 @@ _ALLOWED_STATIC = {"dashboard.html", "index.html", "histogram-range.js"}
 # /data/* liefert nur die vorberechneten Dashboard-Dateien. Alles andere im Datenordner (oefb.sqlite,
 # grosse Roh-Exporte) bleibt privat - sonst wuerde die GZip-Middleware z. B. die 160-MB-DB je Request
 # komplett komprimieren (~10 s CPU) und jeder koennte sie herunterladen.
-_ALLOWED_DATA = {"scout.json", "matches_index.json"}
+_ALLOWED_DATA = {"scout.json", "matches_index.json", "squads.json"}
 
 
 _NOCACHE = {"Cache-Control": "no-cache"}   # Browser fragt mit ETag nach -> 304 wenn unveraendert

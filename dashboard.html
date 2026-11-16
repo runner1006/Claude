@@ -417,7 +417,7 @@
 const T_START=performance.now();                 // fuer die Boot-Messung (#perf)
 const state = { scout:null, rows:[], byId:new Map(), loadErr:null,
   mindex:null, mrows:[], mLoading:false, mErr:null,
-  sortM:{k:"date",dir:1}, sortS:{k:"avg",dir:-1}, sortSc:{k:"total",dir:-1}, open:null,
+  sortM:{k:"date",dir:1}, sortS:{k:"avg",dir:1}, sortSc:{k:"total",dir:-1}, open:null,
   profileId:null, profileCache:new Map(), matchCache:new Map(), scoutCols:null, perf:{},
   fs:{scout:{},stats:{},matches:{}}, presetKey:"" };   // fs: Filterzustand je Tab (ueberlebt Sprachwechsel und Neu-Rendern)
 
@@ -568,6 +568,7 @@ function switchTab(tab){
   document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("active",x.dataset.tab===tab));
   for(const t of TABS) $("#tab-"+t).hidden = (t!==tab);
   if(tab==="matches")loadMatches();
+  if(tab==="stats")loadSquads();
   setHash(tab==="profile"&&state.profileId?"profile="+state.profileId:tab);
   if(onShow[tab])onShow[tab]();
 }
@@ -1153,6 +1154,17 @@ function renderScout(){
 }
 
 /* ---------- STATS ---------- */
+/* Kaderdaten (Minuten je Spieler x Verein x Bewerb x Saison) lazy beim ersten Oeffnen des Statistik-Tabs */
+async function loadSquads(){
+  if(state.squads||state.sqLoading)return;
+  state.sqLoading=true; state.sqErr=null; renderStats();
+  try{ state.squads=await fetchJSON("data/squads.json"); }
+  catch(e){ state.sqErr=e.status===404?TX("Kaderdaten fehlen auf dem Server (squads.json noch nicht hochgeladen).","Squad data is missing on the server (squads.json not uploaded yet)."):e.message; }
+  state.sqLoading=false; renderStats();
+}
+/* STATISTIK: echtes Vereinsalter. Basis ist ein "Einsatzblock" = Minuten eines Spielers fuer EINEN Verein in
+   EINEM Bewerb und EINER Saison. Durchschnittsalter = nach Einsatzminuten gewichtet (wer mehr spielt, zaehlt mehr);
+   Alter = Startjahr der Saison minus Geburtsjahr. Standard: laufende Saison, gruppiert nach Verein. */
 function renderStats(){
   const sec=$("#tab-stats"); sec.innerHTML=""; onShow.stats=null;
   if(!state.rows.length){
@@ -1160,60 +1172,79 @@ function renderStats(){
                             :emptyMsg("loading",TX("Spielerdaten werden geladen…","Loading player data…")));
     return;
   }
+  if(!state.squads){
+    if(state.sqErr)sec.append(emptyMsg("error",TX("Statistik konnte nicht geladen werden:","Statistics could not be loaded:")+`<br>${hesc(state.sqErr)}`,()=>{state.sqErr=null;loadSquads();}));
+    else sec.append(emptyMsg("loading",TX("Kaderdaten werden geladen…","Loading squad data…")));
+    return;
+  }
   const {side,content}=tabScaffold(sec);
-  const rowsAll=state.rows;                       // 1 Zeile je Spieler
-  const GROUPS=[["team",TX("Verein","Club"),p=>p.team],["comp",TX("Liga / Bewerb","League / competition"),p=>p.comp],
-                ["cat",TX("Erwachsene/Nachwuchs","Senior/youth"),p=>catLabel(p.cat)],["pos","Position",p=>posLabel(p.pos)],
-                ["role",TX("Startelf/Bank","Starter/substitute"),p=>roleLabel(p.role)],["by",TX("Geburtsjahr","Year of birth"),p=>p.by==null?"":p.by]];
+  const d=state.squads, C=Object.fromEntries(d.cols.map((c,i)=>[c,i])), seasons=d.seasons, curS=seasons[seasons.length-1];
+  if(!state._sqRows||state._sqFor!==d){            // einmal dekodieren
+    state._sqRows=[]; state._sqFor=d;
+    for(const r of d.rows){ const p=state.byId.get(String(r[C.pid])); if(!p)continue;
+      const season=seasons[r[C.season]], comp=d.competitions[r[C.comp]], y0=+String(season).slice(0,4);
+      state._sqRows.push({p,team:d.teams[r[C.team]],comp,season,min:r[C.min],n:r[C.n],cat:leagueCat(comp),
+        age:p.by!=null&&y0?y0-p.by:null}); }
+  }
+  const all=state._sqRows;
+  if(!state.fsStatsInit){ state.fsStatsInit=true; if(!Object.keys(state.fs.stats).length)state.fs.stats={sea:[curS],cat:["Erwachsen"]}; }   // Start: laufende Saison, Erwachsenenfussball
+  const GROUPS=[["team",TX("Verein","Club"),e=>e.team],["comp",TX("Liga / Bewerb","League / competition"),e=>e.comp],
+                ["pos","Position",e=>posLabel(e.p.pos)],["by",TX("Geburtsjahr","Year of birth"),e=>e.p.by==null?"":String(e.p.by)]];
   const grpSel=el("select",{class:"fctl",style:"width:auto"});
   GROUPS.forEach(g=>grpSel.append(el("option",{value:g[0]},g[1])));
-  if(state.statGroup)grpSel.value=state.statGroup;
-  const fb=makeFilterBar(side,rowsAll,[
-    {key:"cat",type:"select",label:TX("Erwachsene oder Nachwuchs","Senior or youth football"),options:["Erwachsen","Jugend"],get:p=>p.cat,disp:catLabel},
-    {key:"comp",type:"select",label:TX("Liga / Bewerb","League / competition"),get:p=>p.comp},
-    {key:"team",type:"select",label:TX("Verein","Club"),get:p=>p.team},
-    {key:"pos",type:"select",label:"Position",get:p=>p.pos,disp:posLabel},
-    {key:"role",type:"select",label:TX("Startelf oder Bank","Starter or substitute"),get:p=>p.role,disp:roleLabel},
-    {key:"age",type:"range",label:TX("Alter (Jahre)","Age (years)"),get:p=>p.age,min:10},
-    {key:"min",type:"range",label:TX("Einsatzminuten seit 2023/24","Minutes played since 2023/24"),get:p=>p.min,format:v=>v+"'",scale:"quantile"},
+  if(state.statGroup&&GROUPS.some(g=>g[0]===state.statGroup))grpSel.value=state.statGroup;
+  const fb=makeFilterBar(side,all,[
+    {key:"sea",type:"select",label:TX("Saison","Season"),options:[...seasons].reverse(),get:e=>e.season,
+      help:TX("Das Alter wird je Saison gerechnet (Startjahr der Saison minus Geburtsjahr). Ohne Auswahl erscheint jeder Verein je Saison in einer eigenen Zeile.",
+              "Age is computed per season (season start year minus year of birth). Without a selection each club appears once per season.")},
+    {key:"cat",type:"select",label:TX("Erwachsene oder Nachwuchs","Senior or youth football"),options:["Erwachsen","Jugend"],get:e=>e.cat,disp:catLabel},
+    {key:"comp",type:"select",label:TX("Liga / Bewerb","League / competition"),options:deSort(d.competitions),get:e=>e.comp},
+    {key:"team",type:"select",label:TX("Verein","Club"),options:deSort(d.teams),get:e=>e.team},
+    {key:"pos",type:"select",label:"Position",get:e=>e.p.pos,disp:posLabel},
   ],()=>scheduleDraw(),{init:state.fs.stats,onState:st=>{state.fs.stats=st;}});
   grpSel.onchange=()=>{state.statGroup=grpSel.value; draw();};
-  const head=el("h3",{style:"margin:8px 0 10px;font-size:15px;font-weight:600"});
-  const cols=[{k:"g",l:TX("Gruppe","Group"),flex:1.4,min:170},{k:"avg",l:TX("Ø Alter","Avg age"),w:84},{k:"bar",l:"",sortable:false,flex:1,min:110},
-              {k:"span",l:TX("Alter von–bis","Age range"),w:96},{k:"avgMin",l:TX("Ø Minuten","Avg minutes"),w:96},{k:"n",l:TX("Spieler","Players"),w:78}];
+  const head=el("h3",{style:"margin:8px 0 4px;font-size:15px;font-weight:600"});
+  const sub=el("div",{class:"meta",style:"margin-bottom:10px"},TX("Durchschnittsalter nach Einsatzminuten gewichtet: Wer mehr spielt, zählt mehr. Gruppen unter 900 Minuten sind ausgeblendet.",
+    "Average age weighted by minutes played: whoever plays more counts more. Groups below 900 minutes are hidden."));
+  const cols=[{k:"g",l:TX("Gruppe","Group"),flex:1.5,min:190},
+    {k:"avg",l:TX("Ø Alter","Avg age"),w:84,num:1,t:TX("Nach Einsatzminuten gewichtetes Durchschnittsalter der eingesetzten Spieler.","Minutes-weighted average age of the players used.")},
+    {k:"bar",l:"",sortable:false,flex:1,min:110},
+    {k:"span",l:TX("Jüngster–Ältester","Youngest–oldest"),w:128},
+    {k:"u21",l:TX("Minuten U21","U21 minutes"),w:104,num:1,t:TX("Anteil der Einsatzminuten von Spielern, die in der Saison höchstens 21 Jahre alt sind.","Share of minutes played by players aged 21 or younger in that season.")},
+    {k:"n",l:TX("Spieler","Players"),w:74,num:1,t:TX("Anzahl eingesetzter Spieler (mit Minuten).","Number of players used (with minutes).")},
+    {k:"mins",l:TX("Minuten","Minutes"),w:88,num:1}];
   const tableWrap=el("div",{class:"tblscroll"});
-  content.append(el("div",{class:"content-head"},el("span",{class:"flabel"},TX("Gruppieren nach","Group by")),grpSel,el("div",{class:"toolbar"},fb.count)),head,tableWrap);
-  let maxAvg=1;
-  const vt=VirtualTable(tableWrap,{emptyText:TX("Keine Spieler für diese Filter.","No players match these filters."),
+  content.append(el("div",{class:"content-head"},el("span",{class:"flabel"},TX("Gruppieren nach","Group by")),grpSel,el("div",{class:"toolbar"},fb.count)),head,sub,tableWrap);
+  let lo=14,hi=40;
+  const vt=VirtualTable(tableWrap,{emptyText:TX("Keine Daten für diese Filter.","No data for these filters."),
     sortState:()=>state.sortS,
-    onSort:c=>{state.sortS.dir=state.sortS.k===c.k?-state.sortS.dir:1;state.sortS.k=c.k;draw();},
+    onSort:c=>{state.sortS.dir=state.sortS.k===c.k?-state.sortS.dir:(c.k==="g"||c.k==="avg"?1:-1);state.sortS.k=c.k;draw();},
     renderRow:t=>el("tr",{},
-      el("td",{title:t.g},t.g),el("td",{class:"num"},t.avg.toFixed(1)),
-      el("td",{},el("div",{class:"barbg"},el("div",{class:"bar",style:`width:${t.avg/maxAvg*100}%`}))),
+      el("td",{title:t.g},t.g),el("td",{class:"num",style:"font-weight:600"},t.avg.toFixed(1)),
+      el("td",{},el("div",{class:"barbg"},el("div",{class:"bar",style:`width:${Math.max(2,Math.min(100,(t.avg-lo)/(hi-lo)*100))}%`}))),
       el("td",{class:"num"},`${t.min}–${t.max}`),
-      el("td",{class:"num"},Math.round(t.avgMin)+"'"),
-      el("td",{class:"num"},String(t.n)))});
+      el("td",{class:"num"},Math.round(t.u21)+TX(" %","%")),
+      el("td",{class:"num"},String(t.n)),
+      el("td",{class:"num"},nf(t.mins)+"'"))});
   vt.setCols(cols);
 
   function draw(){
     const G=GROUPS.find(g=>g[0]===grpSel.value)||GROUPS[0], getG=G[2];
-    const rows=fb.apply(rowsAll);
+    const rows=fb.apply(all);
+    const st=fb.getState(), oneSeason=Array.isArray(st.sea)&&st.sea.length===1;
     const by=new Map();
-    rows.forEach(p=>{const g=getG(p)||"—"; if(!by.has(g))by.set(g,{ages:[],mins:[]});
-      if(p.age!=null)by.get(g).ages.push(+p.age); by.get(g).mins.push(p.min);});
-    let groups=[...by.entries()].map(([g,o])=>({g:String(g),
-      avg:o.ages.length?o.ages.reduce((x,y)=>x+y,0)/o.ages.length:0,
-      min:o.ages.length?Math.min(...o.ages):0,max:o.ages.length?Math.max(...o.ages):0,
-      avgMin:o.mins.length?o.mins.reduce((x,y)=>x+y,0)/o.mins.length:0,
-      n:o.ages.length})).filter(x=>x.n);
-    const k=state.sortS.k,d=state.sortS.dir;
-    groups.sort((a,b)=>{const va=k==="g"?norm(a.g):(k==="span"?a.min:a[k]),
-      vb=k==="g"?norm(b.g):(k==="span"?b.min:b[k]); return (va>vb?1:va<vb?-1:0)*d;});
-    maxAvg=1; for(const t of groups)if(t.avg>maxAvg)maxAvg=t.avg;
-    head.textContent=TX(`Ø Alter je ${G[1]} — ${nf(rows.length)} Spieler in ${nf(groups.length)} Gruppen`,
-                       `Average age by ${G[1].toLowerCase()} — ${nf(rows.length)} players in ${nf(groups.length)} groups`);
-    fb.count.innerHTML=`<b>${nf(rows.length)}</b> / ${nf(rowsAll.length)} ${TX("Spieler","players")}`;
-    vt.setRows(groups);                           // virtuell: auch 3 000 Vereins-Gruppen nie komplett als DOM
+    for(const e of rows){ if(e.age==null||e.min<=0)continue;
+      const key=(getG(e)||"—")+(oneSeason?"":" · "+e.season);
+      let o=by.get(key); if(!o){o={g:key,w:0,wa:0,u:0,min:99,max:0,pl:new Set()}; by.set(key,o);}
+      o.w+=e.min; o.wa+=e.min*e.age; if(e.age<=21)o.u+=e.min; if(e.age<o.min)o.min=e.age; if(e.age>o.max)o.max=e.age; o.pl.add(e.p.id); }
+    let groups=[...by.values()].filter(o=>o.w>=900).map(o=>({g:o.g,avg:o.wa/o.w,min:o.min,max:o.max,u21:100*o.u/o.w,n:o.pl.size,mins:o.w}));
+    const k=state.sortS.k,dd=state.sortS.dir;
+    groups.sort((a,b)=>{const va=k==="g"?norm(a.g):(k==="span"?a.min:a[k]), vb=k==="g"?norm(b.g):(k==="span"?b.min:b[k]); return (va>vb?1:va<vb?-1:0)*dd;});
+    lo=99;hi=0; for(const t of groups){ if(t.avg<lo)lo=t.avg; if(t.avg>hi)hi=t.avg; } lo=Math.floor(lo)-1; hi=Math.ceil(hi); if(hi<=lo)hi=lo+1;
+    head.textContent=TX(`Durchschnittsalter je ${G[1]}${oneSeason?" · Saison "+st.sea[0]:" und Saison"} — ${nf(groups.length)} Gruppen`,
+                        `Average age by ${G[1].toLowerCase()}${oneSeason?" · season "+st.sea[0]:" and season"} — ${nf(groups.length)} groups`);
+    fb.count.innerHTML=`<b>${nf(groups.length)}</b> ${TX("Gruppen","groups")}`;
+    vt.setRows(groups);
   }
   const scheduleDraw=coalesce(draw);
   onShow.stats=()=>vt.relayout();

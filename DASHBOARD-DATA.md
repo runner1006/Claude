@@ -197,3 +197,8 @@ aus der CSV. `minute` ist der Rohtext (z. B. `"90+2"`, `"(Elfm.)"`), Anzeige wie
 * Filter „Erwachsene oder Nachwuchs“ trifft jetzt jeden, der im gewählten Bereich gespielt hat (`hasE`/`hasJ`);
   neuer Filter „In der Akademie-Liga (ÖFB Jugendliga)“ (`aka`). Regler-Achsen: Potenz-Achse nach Schiefe,
   Nullspitze als eigener Balken (siehe Kopfkommentar in `histogram-range.js`).
+* **Statistik-Tab** (seit 2026-11-17) rechnet auf `data/squads.json` (lazy, 0,23 MB gz; in `_ALLOWED_DATA` und in der
+  Upload-Liste von `update_all.py`): `{"seasons","teams","competitions","cols":["pid","team","comp","season","min","n"],"rows"}`,
+  eine Zeile je Spieler × Verein × Bewerb × Saison mit Minuten > 0. Durchschnittsalter = minutengewichtet,
+  Alter = Startjahr der Saison − Geburtsjahr; Gruppen unter 900 Minuten ausgeblendet; Start: laufende Saison,
+  Erwachsenenfußball, gruppiert nach Verein. Vorher wurde nach der zusammengesetzten Vereinsliste je Spieler gruppiert.

@@ -185,6 +185,7 @@ def build(data_dir: str, ref: dt.date) -> None:
     BENCH_N = len(bench_rows)
 
     # ---- Einsaetze -> Aggregat je Spieler + Spiele je Spieler --------------------
+    squads: dict = {}
     agg: dict[str, dict] = {}
     games: dict[str, list[dict]] = defaultdict(list)
     n_app = n_skipped = 0
@@ -212,6 +213,10 @@ def build(data_dir: str, ref: dt.date) -> None:
             se = a["sea"].setdefault(m["season"], [0, 0])
             se[0] += r["minutes"] or 0
             se[1] += 1
+            if pid and r["team"] and comp:    # Kader je Verein/Bewerb/Saison (Statistik-Tab: echtes Vereinsalter)
+                sq = squads.setdefault((pid, r["team"], comp, m["season"]), [0, 0])
+                sq[0] += r["minutes"] or 0
+                sq[1] += 1
         if r["captain"]:
             a["cap"] = True
         if r["role"] == "starter":
@@ -314,6 +319,16 @@ def build(data_dir: str, ref: dt.date) -> None:
                       m["score_home"], m["score_away"], m["halftime"],
                       None if m["venue"] in (None, "None", "") else m["venue"],
                       m["spectators"], m["referee"], NEV.get(m["match_id"], 0), ch, ca, m["url"]])
+    # ---- squads.json: Minuten je Spieler x Verein x Bewerb x Saison (lazy fuer den Statistik-Tab) ----
+    s_seasons = sorted({k[3] for k in squads}); s_teams = sorted({k[1] for k in squads}, key=str.casefold)
+    s_comps = sorted({k[2] for k in squads}, key=str.casefold)
+    ssx = {x: i for i, x in enumerate(s_seasons)}; stx = {x: i for i, x in enumerate(s_teams)}
+    scx = {x: i for i, x in enumerate(s_comps)}
+    srows = [[k[0], stx[k[1]], scx[k[2]], ssx[k[3]], v[0], v[1]] for k, v in sorted(squads.items()) if v[0] > 0]
+    write_json(os.path.join(data_dir, "squads.json"),
+               {"v": VERSION, "built": built, "seasons": s_seasons, "teams": s_teams, "competitions": s_comps,
+                "cols": ["pid", "team", "comp", "season", "min", "n"], "rows": srows})
+
     write_json(os.path.join(data_dir, "matches_index.json"),
                {"v": VERSION, "built": built, "teams": mteams, "competitions": mcomps,
                 "cols": mcols, "rows": mrows})

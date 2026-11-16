@@ -52,7 +52,7 @@ def upload(env: dict) -> None:
     if not url or not tok:
         sys.exit("SERVER_URL/ADMIN_TOKEN fehlen (.env) — Upload nicht möglich.")
     # Reihenfolge: erst DB (Profile), dann die Startdateien des Dashboards
-    files = ["oefb.sqlite", "scout.json.gz", "matches_index.json.gz"]
+    files = ["oefb.sqlite", "scout.json.gz", "matches_index.json.gz", "squads.json.gz"]
     for name in files:
         p = os.path.join(ROOT, "data", name)
         if not os.path.exists(p):
