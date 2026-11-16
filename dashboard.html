@@ -337,6 +337,10 @@
   .toolbar{display:flex;align-items:center;gap:8px;margin-left:auto}
   .content-head .count{margin-left:0;font-size:12px}
   .content-head .count b{color:var(--text);font-weight:600}
+  .flabel[data-tip]{cursor:help;display:inline-flex;align-items:center;gap:6px;align-self:flex-start}
+  .qm{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;border-radius:50%;
+      border:1px solid var(--line2);font-size:9px;font-weight:600;letter-spacing:0;color:var(--muted)}
+  .flabel[data-tip]:hover .qm{border-color:var(--accent);color:var(--accent)}
   kbd{font:600 10px var(--font);border:1px solid var(--line2);border-radius:4px;padding:1px 5px;color:var(--muted)}
 </style>
 </head>
@@ -389,7 +393,13 @@ let LANG=(()=>{ try{ const q=new URLSearchParams(location.search).get("lang"); i
 const TX=(de,en)=>LANG==="en"?en:de;
 const LOC=()=>TX("de-AT","en-GB");
 /* Datenwerte bleiben intern deutsch (Filterlogik, Vertrag); nur die Anzeige wird uebersetzt */
-const catLabel=c=>c==="Jugend"?TX("Jugend","Youth"):c==="Erwachsen"?TX("Erwachsen","Senior"):c;
+const catLabel=c=>c==="Jugend"?TX("Nachwuchs (U15–U18)","Youth (U15–U18)"):c==="Erwachsen"?TX("Erwachsene","Senior (men's)"):c;
+/* Perzentil (0 = bester) als "Top x %" – verstaendlicher als "P0" */
+const topLabel=p=>"Top "+Math.max(1,Math.ceil(+p))+TX(" %","%");
+/* Landesverbands-Kuerzel aus dem OeFB-Profil ausschreiben */
+const VERBAND={W:"Wien",N:"Niederösterreich",O:"Oberösterreich",S:"Salzburg",T:"Tirol",V:"Vorarlberg",K:"Kärnten",St:"Steiermark",ST:"Steiermark",B:"Burgenland"};
+const VERBAND_EN={W:"Vienna",N:"Lower Austria",O:"Upper Austria",S:"Salzburg",T:"Tyrol",V:"Vorarlberg",K:"Carinthia",St:"Styria",ST:"Styria",B:"Burgenland"};
+const verbandLabel=v=>(LANG==="en"?VERBAND_EN:VERBAND)[v]||v||"";
 const POS_EN={tor:"Goalkeeper",abwehr:"Defence",mittelfeld:"Midfield",sturm:"Attack",weitere:"Other"};
 const POS_DE={tor:"Tor",abwehr:"Abwehr",mittelfeld:"Mittelfeld",sturm:"Sturm",weitere:"Weitere"};
 const posLabel=v=>{const k=String(v||"").toLowerCase(); return (LANG==="en"?POS_EN:POS_DE)[k]||v||"";};
@@ -409,7 +419,7 @@ const NAT_EN={"Österreich":"Austria","Kroatien":"Croatia","Slowenien":"Slovenia
   "Wales":"Wales","Schottland":"Scotland","Nordirland":"Northern Ireland","Jordanien":"Jordan","Libyen":"Libya","Sudan":"Sudan",
   "Eritrea":"Eritrea","Kuba":"Cuba","Thailand":"Thailand","Vietnam":"Vietnam","Pakistan":"Pakistan","Tschad":"Chad","Uganda":"Uganda"};
 const natLabel=v=>LANG==="en"?(NAT_EN[v]||v||""):(v||"");
-const roleLabel=v=>v==="starter"?TX("Startelf","Starter"):v==="bench"?TX("Bank","Bench"):(v||"");
+const roleLabel=v=>v==="starter"?TX("Startelf-Spieler","Has started"):v==="bench"?TX("nur Einwechsel/Bank","Substitute only"):(v||"");
 const resLabel=r=>LANG==="en"?({S:"W",U:"D",N:"L"}[r]||r):r;
 const nf=n=>Number(n).toLocaleString(LOC());
 
@@ -618,7 +628,9 @@ function makeFilterBar(host,rows,defs,onChange){
     }
     if(groups.length)groups[groups.length-1].keys.add(def.key);
     const field=el("div",{class:"field"});
-    field.append(el("span",{class:"flabel"},def.label));
+    const fl=el("span",{class:"flabel"},def.label);
+    if(def.help){ fl.dataset.tip=def.help; fl.dataset.tipTitle=def.label; fl.tabIndex=0; fl.append(el("span",{class:"qm"},"?")); }
+    field.append(fl);
     let inp;
     if(def.type==="text"){
       inp=el("input",{type:"search",class:"fctl",placeholder:def.placeholder||TX("suchen…","search…")});
@@ -863,23 +875,23 @@ let SCOUT_COLS=[];
 function buildScoutCols(){
   const cur=state.hasSea?state.curSeason:"";
   return [
-  {k:"name",l:"Name",always:true,s:"nname",flex:1.2,min:86,wrap:1},
-  {k:"nat",l:"Nat.",s:"nnat",flex:0.6,min:68,wrap:1},
+  {k:"name",l:"Name",always:true,s:"nname",flex:1.2,min:84,wrap:1},
+  {k:"nat",l:TX("Nation","Nation"),s:"nnat",flex:0.6,min:68,wrap:1},
   {k:"team",l:TX("Verein","Club"),s:"nteam",flex:1.5,min:90,wrap:1},
-  {k:"comp",l:TX("Bewerb","Comp."),s:"ncomp",flex:1.1,min:80,wrap:1,t:compLegend(),tl:TX("Bewerb","Competition")},
+  {k:"comp",l:TX("Liga","League"),s:"ncomp",flex:1.1,min:80,wrap:1,t:compLegend(),tl:TX("Bewerb","Competition")},
   {k:"by",l:TX("Jg.","Born"),num:1,w:44,t:help("by"),tl:TX("Jahrgang","Birth year")},
-  {k:"age",l:TX("Alter","Age"),num:1,w:44,t:help("age")},
+  {k:"age",l:TX("Alter","Age"),num:1,w:44,t:help("age"),hide:1},   // standardmäßig aus: Geburtsjahr steht daneben, Platz für "Min. 26/27"
   {k:"min",l:"Min.",num:1,w:50,t:help("min"),tl:TX("Minuten gesamt","Minutes total")},
-  {k:"cmin",l:cur?shortSeason(cur):TX("Saison","Season"),num:1,w:50,needSea:1,tl:TX("Minuten ","Minutes ")+cur,   // ohne Saisondaten (scout.json v1) ausgeblendet
+  {k:"cmin",l:cur?"Min. "+shortSeason(cur):TX("Saison","Season"),num:1,w:72,needSea:1,tl:TX("Minuten ","Minutes ")+cur,   // ohne Saisondaten (scout.json v1) ausgeblendet
    t:cur?TX(`Einsatzminuten in der Saison ${cur}. `,`Minutes played in season ${cur}. `)+help("cmin").replace(/^[^.]*\. /,""):help("cmin")},
   {k:"matches",l:TX("Sp.","Apps"),num:1,w:40,t:help("matches"),tl:TX("Einsätze","Appearances")},
   {k:"goals",l:TX("Tore","Gls"),num:1,w:36,t:help("goals"),tl:TX("Tore","Goals")},
   {k:"off",l:"Off",num:1,rat:1,w:58,t:help("off"),tl:TX("Offensiv-Rating","Offensive rating")},
   {k:"def",l:"Def",num:1,rat:1,w:58,t:help("def"),tl:TX("Defensiv-Rating","Defensive rating")},
-  {k:"total",l:"Total",num:1,rat:1,w:60,t:help("total")},
-  {k:"total_cur",l:TX("Total akt.","Total cur."),num:1,rat:1,w:72,t:help("total_cur"),needCur:1},   // zeitgewichtet; ohne Spalte in scout.json (< v3) ausgeblendet
-  {k:"peak",l:"Peak",num:1,rat:1,w:58,t:help("peak")},
-  {k:"pct_talent",l:"Talent%",num:1,rat:1,w:62,t:help("pct_talent"),tl:TX("Talent-Perzentil","Talent percentile")},
+  {k:"total",l:"Total",num:1,rat:1,w:60,t:help("total"),tl:TX("Gesamt-Rating (Total)","Overall rating (Total)")},
+  {k:"total_cur",l:TX("Total akt.","Total cur."),num:1,rat:1,w:72,t:help("total_cur"),needCur:1,tl:TX("Gesamt-Rating aktuell","Overall rating, recent form")},   // zeitgewichtet; ohne Spalte in scout.json (< v3) ausgeblendet
+  {k:"peak",l:"Peak",num:1,rat:1,w:58,t:help("peak"),tl:TX("Peak-Rating","Peak rating")},
+  {k:"pct_talent",l:"Talent%",num:1,rat:1,w:62,t:help("pct_talent"),tl:TX("Talent-Rang im Jahrgang (Top-%)","Talent rank in birth year (top %)")},
   {k:"pos",l:"Pos.",hide:1,s:"npos",w:86,t:help("pos"),tl:"Position"},   // standardmäßig ausgeblendet
   {k:"role",l:TX("Rolle","Role"),hide:1,s:"nrole",w:68,t:help("role")},  // standardmäßig ausgeblendet
   ];
@@ -904,29 +916,38 @@ function renderScout(){
   const fb=makeFilterBar(side,rowsAll,[
     {type:"section",key:"sc-player",label:TX("Spieler","Player")},
     {key:"name",type:"text",label:"Name",placeholder:TX("Spieler suchen…  ( / )","Search player…  ( / )"),get:p=>p.name,nget:p=>p.nname},
-    {key:"cat",type:"select",label:TX("Kategorie","Category"),options:["Erwachsen","Jugend"],get:p=>p.cat,disp:catLabel},
-    ...(state.hasSea?[{key:"sea",type:"select",label:TX("Saison (Einsatz in)","Season (played in)"),options:seaOpts,pred:setPred("seasonsArr")}]:[]),
-    {key:"comp",type:"select",label:TX("Bewerb","Competition"),options:compOpts,pred:setPred("compsArr")},
-    {key:"team",type:"select",label:TX("Verein","Club"),options:teamOpts,pred:setPred("teamsArr")},
-    {key:"pos",type:"select",label:"Position",get:p=>p.pos,disp:posLabel},
+    {key:"cat",type:"select",label:TX("Erwachsene oder Nachwuchs","Senior or youth football"),options:["Erwachsen","Jugend"],get:p=>p.cat,disp:catLabel,
+      help:TX("In welchem Bereich der Spieler eingesetzt wurde. Nachwuchs = ÖFB Jugendliga und Jugendregionalliga (U15, U16, U18). Erwachsene = Regionalliga, Landesliga, Oberliga. Wer in beiden gespielt hat, zählt zum Nachwuchs.",
+              "Where the player has played. Youth = ÖFB youth league and regional youth league (U15, U16, U18). Senior = Regionalliga, Landesliga, Oberliga (men's 3rd to 5th tier). Players with appearances in both count as youth.")},
+    ...(state.hasSea?[{key:"sea",type:"select",label:TX("Gespielt in Saison","Played in season"),options:seaOpts,pred:setPred("seasonsArr"),
+      help:TX("Zeigt nur Spieler mit mindestens einem Einsatz in einer der gewählten Saisonen.","Shows only players with at least one appearance in one of the selected seasons.")}]:[]),
+    {key:"comp",type:"select",label:TX("Liga / Bewerb","League / competition"),options:compOpts,pred:setPred("compsArr"),
+      help:TX("Spieler mit mindestens einem Einsatz in einem der gewählten Bewerbe (alle Saisonen).","Players with at least one appearance in one of the selected competitions (all seasons).")},
+    {key:"team",type:"select",label:TX("Verein","Club"),options:teamOpts,pred:setPred("teamsArr"),
+      help:TX("Alle Vereine, für die der Spieler seit 2023/24 in den erfassten Bewerben gespielt hat.","All clubs the player has played for in the recorded competitions since 2023/24.")},
+    {key:"pos",type:"select",label:"Position",get:p=>p.pos,disp:posLabel,
+      help:TX("Häufigste Position laut Spielbericht. Nur grob (Tor, Abwehr, Mittelfeld, Sturm) und nicht in jedem Bewerb erfasst.","Most frequent position in the match reports. Coarse only (goalkeeper, defence, midfield, attack) and not recorded in every competition.")},
     {key:"nat",type:"select",label:TX("Nationalität","Nationality"),get:p=>p.nat,disp:natLabel},
-    {key:"jg",type:"range",label:TX("Jahrgang","Birth year"),get:p=>p.by,scale:"quantile"},
-    {key:"age",type:"range",label:TX("Alter","Age"),get:p=>p.age,min:10},
-    {key:"cap",type:"bool",label:TX("Kapitän","Captain"),get:p=>p.cap},
-    {key:"role",type:"select",label:TX("Rolle","Role"),get:p=>p.role,disp:roleLabel},
-    {type:"section",key:"sc-play",label:TX("Einsatzzeit","Playing time")},
-    {key:"min",type:"range",label:TX("Minuten (gesamt)","Minutes (total)"),get:p=>p.min,format:min,scale:"log"},
-    ...(state.hasSea?[{key:"cmin",type:"range",label:TX("Minuten ","Minutes ")+cur,get:p=>p.cmin,format:min,scale:"log"}]:[]),
-    {key:"goals",type:"range",label:TX("Tore (gesamt)","Goals (total)"),get:p=>p.goals,scale:"log"},
-    {type:"section",key:"sc-rat",label:"Ratings"},
-    {key:"tal",type:"range",label:TX("Talent-Perzentil (0 = Top)","Talent percentile (0 = top)"),get:p=>p.pct_talent,
+    {key:"jg",type:"range",label:TX("Geburtsjahr","Year of birth"),get:p=>p.by,scale:"quantile"},
+    {key:"age",type:"range",label:TX("Alter (Jahre)","Age (years)"),get:p=>p.age,min:10},
+    {key:"cap",type:"bool",label:TX("War schon Kapitän","Has been captain"),get:p=>p.cap,
+      help:TX("Ja = mindestens einmal als Kapitän im Spielbericht.","Yes = listed as captain in at least one match report.")},
+    {key:"role",type:"select",label:TX("Startelf oder Bank","Starter or substitute"),get:p=>p.role,disp:roleLabel,
+      help:TX("Startelf-Spieler = mindestens einmal von Beginn an gespielt. Nur Einwechsel/Bank = nie in der Startelf.","Has started = in the starting XI at least once. Substitute only = never in the starting XI.")},
+    {type:"section",key:"sc-play",label:TX("Einsätze und Tore","Appearances and goals")},
+    {key:"min",type:"range",label:TX("Einsatzminuten seit 2023/24","Minutes played since 2023/24"),get:p=>p.min,format:min,scale:"log",help:help("min")},
+    ...(state.hasSea?[{key:"cmin",type:"range",label:TX("Einsatzminuten ","Minutes played ")+cur,get:p=>p.cmin,format:min,scale:"log",
+      help:TX("Minuten nur in der laufenden Saison. Damit findet man Spieler, die heuer neu viel spielen.","Minutes in the current season only. Use it to find players who are new and play a lot this season.")}]:[]),
+    {key:"goals",type:"range",label:TX("Tore seit 2023/24","Goals since 2023/24"),get:p=>p.goals,scale:"log"},
+    {type:"section",key:"sc-rat",label:TX("Bewertung (Plus-Minus)","Ratings (plus-minus)")},
+    {key:"tal",type:"range",label:TX("Talent-Rang im Jahrgang (Top-%)","Talent rank in birth year (top %)"),help:help("pct_talent"),get:p=>p.pct_talent,
       min:0,max:100,histo:false,format:v=>(+v).toFixed(0)+"%",
       presets:[["Top 10%",["","10"]],["Top 20%",["","20"]],["Top 30%",["","30"]],[TX("alle","all"),["",""]]]},
-    {key:"total",type:"range",label:TX("Total-Rating","Total rating"),get:p=>p.total,step:0.01,format:r2},
-    ...(state.hasCur?[{key:"total_cur",type:"range",label:TX("Total akt. (zeitgewichtet)","Total cur. (time-weighted)"),get:p=>p.total_cur,step:0.01,format:r2}]:[]),
-    {key:"peak",type:"range",label:TX("Peak-Rating","Peak rating"),get:p=>p.peak,step:0.01,format:r2},
-    {key:"off",type:"range",label:TX("Offensiv-Rating","Offensive rating"),get:p=>p.off,step:0.01,format:r2},
-    {key:"def",type:"range",label:TX("Defensiv-Rating","Defensive rating"),get:p=>p.def,step:0.01,format:r2},
+    {key:"total",type:"range",label:TX("Gesamt-Rating (Total)","Overall rating (Total)"),help:help("total"),get:p=>p.total,step:0.01,format:r2},
+    ...(state.hasCur?[{key:"total_cur",type:"range",label:TX("Gesamt-Rating aktuell (zeitgewichtet)","Overall rating, recent form (time-weighted)"),help:help("total_cur"),get:p=>p.total_cur,step:0.01,format:r2}]:[]),
+    {key:"peak",type:"range",label:TX("Peak-Rating (aufs beste Alter hochgerechnet)","Peak rating (projected to peak age)"),help:help("peak"),get:p=>p.peak,step:0.01,format:r2},
+    {key:"off",type:"range",label:TX("Offensiv-Rating","Offensive rating"),help:help("off"),get:p=>p.off,step:0.01,format:r2},
+    {key:"def",type:"range",label:TX("Defensiv-Rating","Defensive rating"),help:help("def"),get:p=>p.def,step:0.01,format:r2},
   ],()=>scheduleDraw());
 
   // Spalten-Auswahl (alle sichtbar per Default, abwählbar) + CSV-Export der gefilterten Liste
@@ -1023,25 +1044,25 @@ function renderStats(){
   }
   const {side,content}=tabScaffold(sec);
   const rowsAll=state.rows;                       // 1 Zeile je Spieler
-  const GROUPS=[["team",TX("Verein","Club"),p=>p.team],["comp",TX("Bewerb","Competition"),p=>p.comp],
-                ["cat",TX("Kategorie","Category"),p=>catLabel(p.cat)],["pos","Position",p=>posLabel(p.pos)],
-                ["role",TX("Rolle","Role"),p=>roleLabel(p.role)],["by",TX("Jahrgang","Birth year"),p=>p.by==null?"":p.by]];
+  const GROUPS=[["team",TX("Verein","Club"),p=>p.team],["comp",TX("Liga / Bewerb","League / competition"),p=>p.comp],
+                ["cat",TX("Erwachsene/Nachwuchs","Senior/youth"),p=>catLabel(p.cat)],["pos","Position",p=>posLabel(p.pos)],
+                ["role",TX("Startelf/Bank","Starter/substitute"),p=>roleLabel(p.role)],["by",TX("Geburtsjahr","Year of birth"),p=>p.by==null?"":p.by]];
   const grpSel=el("select",{class:"fctl",style:"width:auto"});
   GROUPS.forEach(g=>grpSel.append(el("option",{value:g[0]},g[1])));
   if(state.statGroup)grpSel.value=state.statGroup;
   const fb=makeFilterBar(side,rowsAll,[
-    {key:"cat",type:"select",label:TX("Kategorie","Category"),options:["Erwachsen","Jugend"],get:p=>p.cat,disp:catLabel},
-    {key:"comp",type:"select",label:TX("Bewerb","Competition"),get:p=>p.comp},
+    {key:"cat",type:"select",label:TX("Erwachsene oder Nachwuchs","Senior or youth football"),options:["Erwachsen","Jugend"],get:p=>p.cat,disp:catLabel},
+    {key:"comp",type:"select",label:TX("Liga / Bewerb","League / competition"),get:p=>p.comp},
     {key:"team",type:"select",label:TX("Verein","Club"),get:p=>p.team},
     {key:"pos",type:"select",label:"Position",get:p=>p.pos,disp:posLabel},
-    {key:"role",type:"select",label:TX("Rolle","Role"),get:p=>p.role,disp:roleLabel},
-    {key:"age",type:"range",label:TX("Alter","Age"),get:p=>p.age,min:10},
-    {key:"min",type:"range",label:TX("Minuten (gesamt)","Minutes (total)"),get:p=>p.min,format:v=>v+"'",scale:"quantile"},
+    {key:"role",type:"select",label:TX("Startelf oder Bank","Starter or substitute"),get:p=>p.role,disp:roleLabel},
+    {key:"age",type:"range",label:TX("Alter (Jahre)","Age (years)"),get:p=>p.age,min:10},
+    {key:"min",type:"range",label:TX("Einsatzminuten seit 2023/24","Minutes played since 2023/24"),get:p=>p.min,format:v=>v+"'",scale:"quantile"},
   ],()=>scheduleDraw());
   grpSel.onchange=()=>{state.statGroup=grpSel.value; draw();};
   const head=el("h3",{style:"margin:8px 0 10px;font-size:15px;font-weight:600"});
   const cols=[{k:"g",l:TX("Gruppe","Group"),flex:1.4,min:170},{k:"avg",l:TX("Ø Alter","Avg age"),w:84},{k:"bar",l:"",sortable:false,flex:1,min:110},
-              {k:"span",l:TX("Spanne","Range"),w:80},{k:"avgMin",l:TX("Ø Min.","Avg min."),w:84},{k:"n",l:TX("Spieler","Players"),w:78}];
+              {k:"span",l:TX("Alter von–bis","Age range"),w:96},{k:"avgMin",l:TX("Ø Minuten","Avg minutes"),w:96},{k:"n",l:TX("Spieler","Players"),w:78}];
   const tableWrap=el("div",{class:"tblscroll"});
   content.append(el("div",{class:"content-head"},el("span",{class:"flabel"},TX("Gruppieren nach","Group by")),grpSel,el("div",{class:"toolbar"},fb.count)),head,tableWrap);
   let maxAvg=1;
@@ -1188,7 +1209,7 @@ function drawCumChart(host,games,birthYear,cat,cohort){
   const fv=cum[n-1].v;
   s.append(sv("circle",{cx:xs(n-1),cy:Y(clip(fv)),r:4,fill:"#34B190"}));
   const pct=cohortOk&&cohort.pct!=null?cohort.pct:null;
-  rlabels.push({y:Y(clip(fv))-4,txt:fmtPM(fv,2)+"/90"+(pct!=null?` · P${pct.toFixed(0)}`:""),
+  rlabels.push({y:Y(clip(fv))-4,txt:fmtPM(fv,2)+"/90"+(pct!=null?` · ${topLabel(pct)}`:""),
     fill:pct!=null&&pct<=20?"#34B190":"#E3E9F4",size:12,bold:true});
   // Kollisionen: von oben nach unten mindestens 13px Abstand erzwingen
   rlabels.sort((a,b)=>a.y-b.y);
@@ -1276,7 +1297,7 @@ function renderProfile(wrap,data){
   const meta=[];
   if(pl.birth_year)meta.push(TX(`Jahrgang <b>${hesc(pl.birth_year)}</b>${pl.age?` (${hesc(pl.age)} J.)`:""}`,`Born <b>${hesc(pl.birth_year)}</b>${pl.age?` (age ${hesc(pl.age)})`:""}`));
   if(pl.nationality)meta.push(`${TX("Nationalität","Nationality")} <b>${hesc(natLabel(pl.nationality))}</b>`);
-  if(pl.verband)meta.push(`${TX("Verband","Association")} <b>${hesc(pl.verband)}</b>`);
+  if(pl.verband)meta.push(`${TX("Landesverband","Regional FA")} <b>${hesc(verbandLabel(pl.verband))}</b>`);
   if(pl.club)meta.push(`${TX("Verein","Club")} <b>${hesc(pl.club)}</b>`);
   if(pl.first_match)meta.push(`${TX("erstes Spiel","first match")} <b>${hesc(pl.first_match)}</b>`);
   if(pl.n_clubs)meta.push(`${hesc(pl.n_clubs)} ${TX("Vereine","clubs")}`);
@@ -1288,10 +1309,10 @@ function renderProfile(wrap,data){
       " ",nameCopy),
     el("div",{class:"pf-meta",html:meta.join(" · ")}));
   const badges=el("div",{class:"pf-badges"});
-  if(+car.games)badges.append(el("span",{class:"badge"},TX("Karriere: ","Career: "),el("b",{},esc(car.games)),TX(" Spiele · "," matches · "),el("b",{},esc(car.goals||0)),TX(" Tore · "," goals · "),el("b",{},String(Math.round(+car.minutes/90||0))),TX(" Spiele-Äquiv."," match equiv.")));
+  if(+car.games)badges.append(el("span",{class:"badge"},TX("Karriere: ","Career: "),el("b",{},esc(car.games)),TX(" Spiele · "," matches · "),el("b",{},esc(car.goals||0)),TX(" Tore · "," goals · "),el("b",{},String(Math.round(+car.minutes/90||0))),TX(" volle Spiele (Minuten ÷ 90)"," full matches (minutes ÷ 90)")));
   if(+car.yellow||+car.red)badges.append(el("span",{class:"badge"},`🟨 ${esc(car.yellow||0)} · 🟥 ${(+car.red||0)+(+car.yellowred||0)}`));
   if(rat&&rat.pct_talent!=null&&!isNaN(+rat.pct_talent))
-    badges.append(el("span",{class:"badge"+(+rat.pct_talent<=20?" hl":"")},TX("Talent-Perzentil ","Talent percentile "),el("b",{},(+rat.pct_talent).toFixed(1)+" %"),TX(" (Jahrgang, Peak+Minuten)"," (birth year, peak + minutes)")));
+    badges.append(el("span",{class:"badge"+(+rat.pct_talent<=20?" hl":"")},TX("Talent-Rang im Jahrgang: ","Talent rank in birth year: "),el("b",{},topLabel(rat.pct_talent)),TX(" (aus Peak-Rating und Minuten)"," (from peak rating and minutes)")));
   idBox.append(badges);
   // Rating-Einordnung: Wert + Perzentil-Balken + Verbal-Label je Dimension (Perzentile aus bench)
   const DIMS=[[TX("Offensiv","Offensive"),"off",2,TX("Beitrag zu eigenen Toren","contribution to own goals")],
@@ -1310,16 +1331,16 @@ function renderProfile(wrap,data){
         el("td",{},lab),
         el("td",{class:"num",style:"font-weight:600"},fmtPM(v,dec)),
         el("td",{},el("div",{class:"barbg"},el("div",{class:"bar",style:`width:${Math.max(2,100-p)}%`}))),
-        el("td",{class:"num",style:p<=20?"color:var(--good);font-weight:600":""},"P"+p.toFixed(0)),
+        el("td",{class:"num",style:p<=20?"color:var(--good);font-weight:600":""},topLabel(p)),
         el("td",{class:"lab"+(p<=20?" good":"")},pctLabel(p)),
         el("td",{class:"lab"},hint)));
     });
     if(nrows){
       const panel=el("div",{class:"bench"},el("table",{},tb2),
-        el("div",{class:"expl"},TX(`P = Perzentil unter allen ${benchN} Spielern mit ≥ 270 Min. im Datensatz (0 = bester). `+
+        el("div",{class:"expl"},TX(`Top x % = Rang unter allen ${benchN} Spielern mit ≥ 270 Min. im Datensatz (Top 1 % = die besten). `+
           `Off ≈ Beitrag zu eigenen Toren/90, Def ≈ Verhinderung von Gegentoren/90 — mitspieler- und gegner-adjustiert: `+
           `ein starker Def-Wert bedeutet, mit ihm am Feld kassieren seine Teams deutlich weniger, als Mitspieler und Gegner erwarten ließen.`,
-          `P = percentile among all ${benchN} players with ≥ 270 min in the dataset (0 = best). `+
+          `Top x% = rank among all ${benchN} players with ≥ 270 min in the dataset (top 1% = the best). `+
           `Off ≈ contribution to own goals/90, Def ≈ prevention of goals against/90 — adjusted for teammates and opponents: `+
           `a strong Def value means that with him on the pitch his teams concede clearly less than teammates and opponents would suggest.`)));
       idBox.append(panel);
@@ -1576,18 +1597,18 @@ function renderMatches(){
   const dateOpts=[...dIso.entries()].sort((a,b)=>a[1]<b[1]?-1:a[1]>b[1]?1:0).map(e=>e[0]);   // Datum nach ISO sortiert
   const fb=makeFilterBar(side,all,[
     {key:"q",type:"text",label:TX("Suche","Search"),placeholder:TX("Team, Bewerb, Datum, SR…  ( / )","Team, competition, date, referee…  ( / )"),get:m=>m.q,nget:m=>m.q},
-    {key:"cat",type:"select",label:TX("Kategorie","Category"),options:["Erwachsen","Jugend"],get:m=>m.cat,disp:catLabel},
-    {key:"comp",type:"select",label:TX("Bewerb","Competition"),get:m=>m.comp},
+    {key:"cat",type:"select",label:TX("Erwachsene oder Nachwuchs","Senior or youth football"),options:["Erwachsen","Jugend"],get:m=>m.cat,disp:catLabel},
+    {key:"comp",type:"select",label:TX("Liga / Bewerb","League / competition"),get:m=>m.comp},
     {key:"team",type:"select",label:"Team",options:teams,pred:v=>{const s=new Set(Array.isArray(v)?v:[v]);return m=>s.has(m.home)||s.has(m.away);}},
     {key:"date",type:"select",label:TX("Datum","Date"),options:dateOpts,get:m=>m.date},
-    {key:"goals",type:"range",label:TX("Tore gesamt","Total goals"),get:m=>m.goals},
-    {key:"ev",type:"range",label:TX("Ereignisse","Events"),get:m=>m.nev},
+    {key:"goals",type:"range",label:TX("Tore im Spiel","Goals in the match"),get:m=>m.goals},
+    {key:"ev",type:"range",label:TX("Erfasste Ereignisse (Tore, Karten, Wechsel)","Recorded events (goals, cards, substitutions)"),get:m=>m.nev},
     {key:"zus",type:"range",label:TX("Zuschauer","Spectators"),get:m=>+m.spect||0},
     {key:"ref",type:"text",label:TX("Schiedsrichter","Referee"),get:m=>m.ref,nget:m=>m.nref},
   ],()=>scheduleDraw());
 
-  const cols=[{k:"date",l:TX("Datum","Date"),w:96},{k:"time",l:TX("Zeit","Time"),w:60},{k:"home",l:TX("Heim","Home"),flex:1,min:150},{k:"score",l:TX("Stand","Score"),w:66},
-              {k:"away",l:TX("Gast","Away"),flex:1,min:150},{k:"comp",l:TX("Bewerb","Comp."),flex:0.9,min:124,t:compLegend(),tl:TX("Bewerb","Competition")},{k:"nev",l:"Events",w:74}];
+  const cols=[{k:"date",l:TX("Datum","Date"),w:96},{k:"time",l:TX("Zeit","Time"),w:60},{k:"home",l:TX("Heim","Home"),flex:1,min:150},{k:"score",l:TX("Ergebnis","Result"),w:76},
+              {k:"away",l:TX("Gast","Away"),flex:1,min:150},{k:"comp",l:TX("Liga","League"),flex:0.9,min:124,t:compLegend(),tl:TX("Bewerb","Competition")},{k:"nev",l:TX("Ereignisse","Events"),w:92,t:TX("Anzahl der im Spielbericht erfassten Ereignisse: Tore, Karten, Wechsel.","Number of events recorded in the match report: goals, cards, substitutions.")}];
   const tableWrap=el("div",{class:"tblscroll"});           // eigener Scroll-Container wie im Scouting
   content.append(el("div",{class:"content-head"},fb.count,el("span",{class:"count",style:"margin-left:auto"},TX("Zeile anklicken für Aufstellung und Ereignisse","Click a row for line-ups and events"))),tableWrap);
   let cur=[];
