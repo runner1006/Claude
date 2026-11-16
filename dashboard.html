@@ -345,6 +345,37 @@
   .preset-box select{border-color:var(--line2);font-weight:500}
   .preset-info{font-size:11.5px;line-height:1.45;color:var(--muted);margin-top:7px}
   .preset-info:empty{display:none}
+  /* ---- Profil V2 ---- */
+  .v2{display:flex;flex-direction:column;gap:14px;margin-bottom:18px}
+  .v2-eyebrow{font-size:10.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+  .v2-verdict{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:12px;padding:16px 18px}
+  .v2-verdict p{margin:0;font-size:17px;line-height:1.5;font-weight:500}
+  .v2-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media(max-width:860px){.v2-grid{grid-template-columns:1fr}}
+  .v2-q,.v2-sec{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px 17px}
+  .v2-big{font-size:22px;font-weight:600;letter-spacing:-.01em;line-height:1.25;margin-bottom:8px}
+  .v2-big.rel-ok{color:var(--good)}.v2-big.rel-mid{color:var(--warn)}.v2-big.rel-low{color:var(--bad)}
+  .v2-sub{font-size:13px;line-height:1.5;color:var(--muted);margin-top:6px}
+  .v2-sub b{color:var(--text);font-weight:600}
+  .v2-bar{display:grid;grid-template-columns:110px 1fr 170px;gap:6px 14px;align-items:center;margin-top:12px}
+  .v2-bar .v2-sub{grid-column:2/4;margin-top:0}
+  .v2-barlab{font-weight:600}.v2-barval{font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
+  .v2-bar .barbg{height:9px}
+  @media(max-width:600px){.v2-bar{grid-template-columns:1fr}.v2-bar .v2-sub{grid-column:1}.v2-barval{text-align:left}}
+  .v2-note{font-size:13px;line-height:1.5;color:var(--muted);border-top:1px solid var(--line);margin-top:14px;padding-top:12px}
+  .v2-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-top:4px}
+  .v2-fact .v{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+  .v2-fact .l{font-size:12.5px;color:var(--muted);line-height:1.4;margin-top:2px}
+  .v2-sim{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px 16px;margin-top:10px;font-size:13.5px}
+  .v2-sim small{color:var(--muted)}
+  details.pf-more{border-top:1px solid var(--line);padding-top:14px}
+  details.pf-more>summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14px;
+        border:1px solid var(--line);border-radius:8px;padding:8px 14px;color:var(--text)}
+  details.pf-more>summary::-webkit-details-marker{display:none}
+  details.pf-more>summary::after{content:"▾";color:var(--muted);font-size:11px}
+  details.pf-more[open]>summary::after{content:"▴"}
+  details.pf-more>summary:hover{border-color:var(--accent)}
+  details.pf-more>.bench{margin-top:16px}
   kbd{font:600 10px var(--font);border:1px solid var(--line2);border-radius:4px;padding:1px 5px;color:var(--muted)}
 </style>
 </head>
@@ -400,7 +431,9 @@ const LOC=()=>TX("de-AT","en-GB");
 /* Datenwerte bleiben intern deutsch (Filterlogik, Vertrag); nur die Anzeige wird uebersetzt */
 const catLabel=c=>c==="Jugend"?TX("Nachwuchs (U15–U18)","Youth (U15–U18)"):c==="Erwachsen"?TX("Erwachsene","Senior (men's)"):c;
 /* Perzentil (0 = bester) als "Top x %" – verstaendlicher als "P0" */
-const topLabel=p=>"Top "+Math.max(1,Math.ceil(+p))+TX(" %","%");
+const topLabel=p=>+p<=50?"Top "+Math.max(1,Math.ceil(+p))+TX(" %","%"):TX("untere ","bottom ")+Math.max(1,100-Math.floor(+p))+TX(" %","%");
+/* "besser als N von 100" aus einem Perzentil (0 = bester) */
+const betterThan=p=>Math.max(1,Math.min(99,Math.round(100-(+p))));
 /* Landesverbands-Kuerzel aus dem OeFB-Profil ausschreiben */
 const VERBAND={W:"Wien",N:"Niederösterreich",O:"Oberösterreich",S:"Salzburg",T:"Tirol",V:"Vorarlberg",K:"Kärnten",St:"Steiermark",ST:"Steiermark",B:"Burgenland"};
 const VERBAND_EN={W:"Vienna",N:"Lower Austria",O:"Upper Austria",S:"Salzburg",T:"Tyrol",V:"Vorarlberg",K:"Carinthia",St:"Styria",ST:"Styria",B:"Burgenland"};
@@ -1369,6 +1402,121 @@ async function openProfile(pid){
   body.innerHTML=""; renderProfile(body,data);
   setPerf("profile",performance.now()-t0);
 }
+/* ---------- Profil V2: drei Fragen statt fuenf Kennzahlen ----------
+   Gleiche Zahlen wie bisher, nur uebersetzt: Urteil in einem Satz, Haeufigkeiten ("besser als 95 von 100"),
+   Fussball-Einheiten (Tore Differenz je Saison), Ampel fuer die Datenbasis, Rohfakten "wenn er am Platz ist",
+   Vergleichsspieler. TALENT_CHECK = Rueckblick-Pilot (validierung/rueckblick_pilot.py, Stand 11/2026):
+   Nachwuchsspieler 2023/24 nach damaligem Talent-Rang -> Anteil mit Durchbruch (Profi oder Stamm Regionalliga) bis 2026. */
+const TALENT_CHECK={n:544,base:26,bands:[[2,57,28],[10,39,140],[20,33,245],[50,23,197],[100,15,102]]};   // [bis Perzentil, Quote %, n]
+function renderProfileSimple(wrap,c){
+  const {pl,rat,bench,games,pid}=c; if(!rat||!bench||bench.total==null||rat.total==null)return;
+  const row=pid?state.byId.get(pid):null, age=+pl.age||null, first=String(pl.name||"").split(" ")[0];
+  const pT=bench.total, pO=bench.off, pD=bench.def, pP=bench.peak, pC=bench.total_cur;
+  const mins=+rat.minutes||0, nG=+rat.matches||games.length;
+  const box=el("div",{class:"v2"});
+
+  // --- Datenbasis (Ampel) ---
+  const rel=mins>=2700?["ok",TX("Belastbar","Reliable"),TX("viele Spiele, der Wert schwankt kaum noch","many matches, the value hardly moves any more")]
+           :mins>=900?["mid",TX("Solide","Solid"),TX("genug Spiele für eine klare Tendenz","enough matches for a clear tendency")]
+           :["low",TX("Vorläufig","Preliminary"),TX("noch wenige Spiele, der Wert kann sich deutlich ändern","few matches so far, the value can still change a lot")];
+
+  // --- Urteil in einem Satz ---
+  const lvl=pT<=5?TX("einer der besten Spieler im gesamten Datensatz","one of the best players in the whole dataset")
+           :pT<=20?TX("klar überdurchschnittlich","clearly above average")
+           :pT<=40?TX("überdurchschnittlich","above average")
+           :pT<=60?TX("im Durchschnitt","about average"):TX("unter dem Durchschnitt","below average");
+  let where="";
+  if(pO!=null&&pD!=null){
+    if(pO<=20&&pD<=20)where=TX("Er wirkt in beide Richtungen: Mit ihm trifft sein Team öfter und kassiert weniger.","He makes a difference both ways: with him his team scores more and concedes less.");
+    else if(pO<=20&&pD>35)where=TX("Seine Stärke liegt offensiv: Mit ihm am Platz trifft sein Team deutlich öfter.","His strength is offensive: with him on the pitch his team scores clearly more.");
+    else if(pD<=20&&pO>35)where=TX("Seine Stärke liegt defensiv: Mit ihm am Platz kassiert sein Team deutlich weniger Tore.","His strength is defensive: with him on the pitch his team concedes clearly fewer goals.");
+  }
+  const relS=rel[0]==="low"?TX("Achtung: Die Datenbasis ist noch dünn.","Caution: the data basis is still thin."):"";
+  box.append(el("div",{class:"v2-verdict"},el("div",{class:"v2-eyebrow"},TX("Kurz gesagt","In short")),
+    el("p",{},TX(`${first} ist ${lvl}. `,`${first} is ${lvl}. `)+where+(relS?" "+relS:""))));
+
+  // --- Drei Fragen ---
+  const qcard=(q,big,sub,extra)=>{const d=el("div",{class:"v2-q"},el("div",{class:"v2-eyebrow"},q),el("div",{class:"v2-big"},big));
+    (Array.isArray(sub)?sub:[sub]).filter(Boolean).forEach(t=>d.append(el("div",{class:"v2-sub",html:t}))); if(extra)d.append(extra); return d;};
+  const season=rat.total*30, sgn=v=>(v>=0?"+":"−")+Math.abs(v).toFixed(Math.abs(v)<10?1:0).replace(".",TX(",","."));
+  let form="";
+  if(pC!=null){ const dlt=pT-pC;
+    form=dlt>=12?TX("Form: <b>zuletzt stärker</b> als sein Langzeitwert.","Form: <b>stronger recently</b> than his long-term value.")
+        :dlt<=-12?TX("Form: <b>zuletzt schwächer</b> als sein Langzeitwert.","Form: <b>weaker recently</b> than his long-term value.")
+        :TX("Form: <b>stabil</b>, zuletzt wie im Langzeitwert.","Form: <b>stable</b>, recently in line with his long-term value."); }
+  const q1=qcard(TX("Wie gut ist er jetzt?","How good is he now?"),
+    TX(`Besser als ${betterThan(pT)} von 100`,`Better than ${betterThan(pT)} of 100`),
+    [TX(`Verglichen mit allen ${nf(bench.n||0)} Spielern mit genug Einsatzzeit.`,`Compared with all ${nf(bench.n||0)} players with enough playing time.`),
+     TX(`Über eine Saison mit 30 Spielen bedeutet sein Wert rund <b>${sgn(season)} Tore</b> Tordifferenz für sein Team, verglichen mit einem Durchschnittsspieler.`,
+        `Over a 30-match season his value means about <b>${sgn(season)} goals</b> of goal difference for his team, compared with an average player.`),form]);
+
+  let q2;
+  if(age!=null&&age<=23&&pP!=null){
+    const tal=rat.pct_talent!=null?+rat.pct_talent:null;
+    const rk=row&&row.talRank?TX(`Platz ${row.talRank} von ${nf(row.talN)} im Jahrgang ${pl.birth_year}`,`Rank ${row.talRank} of ${nf(row.talN)} in birth year ${pl.birth_year}`)
+            :TX(`Besser als ${betterThan(pP)} von 100 (aufs beste Alter gerechnet)`,`Better than ${betterThan(pP)} of 100 (projected to peak age)`);
+    const subs=[TX(`Spieler werden bis etwa 26 besser. Rechnet man seinen heutigen Wert auf dieses Alter hoch, wäre er <b>besser als ${betterThan(pP)} von 100</b>.`,
+                   `Players improve until about 26. Projecting his current value to that age, he would be <b>better than ${betterThan(pP)} of 100</b>.`)];
+    if(age<=19&&tal!=null){ const b=TALENT_CHECK.bands.find(x=>tal<=x[0])||TALENT_CHECK.bands[TALENT_CHECK.bands.length-1];
+      subs.push(TX(`Rückblick: Von Nachwuchsspielern mit dieser Einstufung haben <b>${b[1]} von 100</b> binnen zwei Jahren den Sprung geschafft (Profiliga oder Stammspieler Regionalliga). Im Schnitt aller: ${TALENT_CHECK.base} von 100. Erste Auswertung, ${TALENT_CHECK.n} Spieler.`,
+                   `Looking back: of youth players rated like this, <b>${b[1]} of 100</b> made the step within two years (professional league or regular in the Regionalliga). Average of all: ${TALENT_CHECK.base} of 100. First evaluation, ${TALENT_CHECK.n} players.`)); }
+    q2=qcard(TX("Wie gut kann er werden?","How good can he become?"),rk,subs);
+  } else {
+    q2=qcard(TX("Wie gut kann er werden?","How good can he become?"),
+      age!=null&&age>=27?TX("Im besten Alter oder darüber","At peak age or beyond"):TX("Nahe am besten Alter","Close to peak age"),
+      [age!=null&&age>=30?TX("Ab etwa 30 lassen die Werte im Schnitt langsam nach. Für ihn zählt der heutige Wert, nicht das Potenzial.","From about 30, values decline slowly on average. For him the current value counts, not the potential.")
+                         :TX("Große Sprünge sind in diesem Alter selten. Der heutige Wert ist die beste Schätzung.","Big jumps are rare at this age. The current value is the best estimate.")]);
+  }
+  const q3=qcard(TX("Wie sicher ist das?","How reliable is this?"),rel[1],
+    [rel[2].charAt(0).toUpperCase()+rel[2].slice(1)+".",TX(`Basis: <b>${nf(mins)} Minuten</b> in ${nf(nG)} Spielen seit 2023/24.`,`Basis: <b>${nf(mins)} minutes</b> in ${nf(nG)} matches since 2023/24.`)]);
+  q3.querySelector(".v2-big").classList.add("rel-"+rel[0]);
+  box.append(el("div",{class:"v2-grid"},q1,q2,q3));
+
+  // --- Wo wirkt er? ---
+  if(pO!=null&&pD!=null){
+    const bar=(lab,p,txt)=>el("div",{class:"v2-bar"},el("div",{class:"v2-barlab"},lab),
+      el("div",{class:"barbg"},el("div",{class:"bar",style:`width:${Math.max(3,100-p)}%`})),
+      el("div",{class:"v2-barval"},TX(`besser als ${betterThan(p)} von 100`,`better than ${betterThan(p)} of 100`)),el("div",{class:"v2-sub"},txt));
+    box.append(el("div",{class:"v2-sec"},el("div",{class:"v2-eyebrow"},TX("Wo wirkt er?","Where does he make a difference?")),
+      bar(TX("Nach vorne","Going forward"),pO,TX("Erzielt sein Team mehr Tore, wenn er spielt? Gezählt werden alle Tore der Mannschaft, nicht nur seine eigenen.","Does his team score more when he plays? All team goals count, not just his own.")),
+      bar(TX("Nach hinten","Defending"),pD,TX("Kassiert sein Team weniger Tore, wenn er spielt?","Does his team concede fewer goals when he plays?")),
+      el("div",{class:"v2-note"},TX("Wichtig: Die Werte sind bereinigt. Wer in einer starken Mannschaft spielt, bekommt nichts geschenkt, und wer in einer schwachen spielt, wird nicht bestraft. Verglichen wird, wie das Team mit ihm abschneidet, gemessen an Mitspielern und Gegnern.",
+                                    "Important: the values are adjusted. Playing in a strong team earns no bonus, and playing in a weak team is not punished. What counts is how the team does with him, measured against teammates and opponents."))));
+  }
+
+  // --- Was passiert, wenn er am Platz ist? (Rohfakten aus den Spielen) ---
+  const vg=games.filter(g=>g.pm!=null);
+  if(vg.length){
+    const gf=vg.reduce((a,g)=>a+(g.gf||0),0), ga=vg.reduce((a,g)=>a+(g.ga||0),0), mm=vg.reduce((a,g)=>a+g.min,0);
+    const W=games.filter(g=>g.res==="S").length, D=games.filter(g=>g.res==="U").length, Lo=games.filter(g=>g.res==="N").length;
+    const raw90=mm?(gf-ga)/mm*90:0, own=games.reduce((a,g)=>a+(g.goals||0),0);
+    const fact=(v,l)=>el("div",{class:"v2-fact"},el("div",{class:"v"},v),el("div",{class:"l"},l));
+    const sec=el("div",{class:"v2-sec"},el("div",{class:"v2-eyebrow"},TX("Was passiert, wenn er am Platz ist?","What happens when he is on the pitch?")),
+      el("div",{class:"v2-facts"},
+        fact(`${gf}:${ga}`,TX(`Tore seines Teams, während er spielte (${nf(mm)} Min.)`,`Team goals while he was playing (${nf(mm)} min)`)),
+        fact(`${W}–${D}–${Lo}`,TX("Siege – Remis – Niederlagen in seinen Spielen","Wins – draws – losses in his matches")),
+        fact(String(own),TX("eigene Tore","own goals scored"))));
+    if(raw90<-0.1&&pT<=25)sec.append(el("div",{class:"v2-note"},TX(`Warum ist er trotzdem gut bewertet? Sein Team hat mit ihm am Platz zwar mehr Tore kassiert als erzielt. Gemessen an der Stärke seiner Mitspieler und Gegner war das aber besser als erwartet: Ohne ihn fiele die Bilanz schlechter aus.`,
+        `Why is he still rated well? With him on the pitch his team conceded more than it scored. Measured against the strength of his teammates and opponents, however, that was better than expected: without him the record would be worse.`)));
+    else if(raw90>0.5&&pT>50)sec.append(el("div",{class:"v2-note"},TX(`Warum ist er trotzdem nur durchschnittlich bewertet? Sein Team gewinnt meist, auch ohne ihn. Die gute Bilanz kommt vor allem von der Stärke der Mannschaft.`,
+        `Why is he still rated only average? His team mostly wins, also without him. The good record mainly reflects the strength of the team.`)));
+    box.append(sec);
+  }
+
+  // --- Vergleichsspieler (aehnlich bewertet, aehnliches Alter, gleicher Bereich) ---
+  if(row&&state.rows.length){
+    const cand=[]; for(const q of state.rows){ if(!q.id||q.id===row.id||q.total==null||q.min<900)continue;
+      if(row.hasE!==q.hasE&&row.hasJ!==q.hasJ)continue; if(row.age!=null&&q.age!=null&&Math.abs(q.age-row.age)>2)continue;
+      cand.push([Math.abs(q.total-row.total)+Math.abs((q.off||0)-(row.off||0))*0.5,q]); }
+    cand.sort((a,b)=>a[0]-b[0]);
+    if(cand.length){ const list=el("div",{class:"v2-sim"});
+      cand.slice(0,4).forEach(([,q])=>{ const a=el("span",{class:"plink","data-id":q.id},q.name); a.onclick=()=>openProfile(q.id);
+        list.append(el("div",{},a,el("small",{},` ${q.by||""} · ${q.teamsArr[0]||""}`))); });
+      box.append(el("div",{class:"v2-sec"},el("div",{class:"v2-eyebrow"},TX("Ähnlich bewertete Spieler","Similarly rated players")),
+        el("div",{class:"v2-sub"},TX("Gleiches Alter (±2 Jahre), ähnlicher Gesamtwert und ähnliches Offensiv-Profil.","Same age (±2 years), similar overall value and similar offensive profile.")),list)); }
+  }
+  wrap.append(box);
+}
 function renderProfile(wrap,data){
   const pl=data.player||{}, rat=data.rating||null, bench=data.bench||null, car=pl.career||{}, pid=pl.id?String(pl.id):null;
   // Spiele: Kategorie "J"/"E" -> Langform; fehlende Saison/Datum robust
@@ -1406,6 +1554,7 @@ function renderProfile(wrap,data){
      [TX("Total akt.","Total cur."),"total_cur",3,TX("zeitgewichtet, Halbwertszeit 1 Saison","time-weighted, half-life 1 season")],   // nur in Profilen ab v3 vorhanden
      ["Peak","peak",3,TX("aufs Leistungshoch projiziert","projected to peak age")]];
   const benchN=bench&&bench.n!=null?bench.n:(state.scout&&state.scout.stats?state.scout.stats.bench_n:0);
+  let benchPanel=null;
   if(rat&&bench){
     const tb2=el("tbody"); let nrows=0;
     DIMS.forEach(([lab,k,dec,hint])=>{
@@ -1428,13 +1577,22 @@ function renderProfile(wrap,data){
           `Top x% = rank among all ${benchN} players with ≥ 270 min in the dataset (top 1% = the best). `+
           `Off ≈ contribution to own goals/90, Def ≈ prevention of goals against/90 — adjusted for teammates and opponents: `+
           `a strong Def value means that with him on the pitch his teams concede clearly less than teammates and opponents would suggest.`)));
-      idBox.append(panel);
+      benchPanel=panel;                       // V2: die Zahlentabelle steht unter "Alle Zahlen und Verläufe"
     }
   }
   head.append(idBox);
   const aiBtn=el("button",{class:"copybtn big",title:TX("Prompt mit allen Profildaten für eine KI-Zusammenfassung kopieren","Copy a prompt with all profile data for an AI summary")},TX("KI-Prompt kopieren","Copy AI prompt"));
   head.append(aiBtn);
   wrap.append(head);
+
+  // ================= Profil V2: einfach erklaert (Zahlen und Verlaeufe darunter aufklappbar) =================
+  safe(()=>renderProfileSimple(wrap,{pl,rat,bench,games,pid}));
+  const more=el("details",{class:"pf-more"});
+  more.open=(()=>{try{return localStorage.getItem("oefb-pf-more")==="1";}catch(e){return false;}})();
+  more.addEventListener("toggle",()=>{try{localStorage.setItem("oefb-pf-more",more.open?"1":"0");}catch(e){}});
+  more.append(el("summary",{},TX("Alle Zahlen und Verläufe","All numbers and charts")));
+  wrap.append(more); wrap=more;
+  if(benchPanel)wrap.append(benchPanel);
 
   // --- Minuten-Split Nachwuchs / Erwachsene (+ Jahrgangs-Vergleich aus split) ---
   const minJ=games.filter(g=>g.cat==="Jugend").reduce((s,g)=>s+g.min,0);
