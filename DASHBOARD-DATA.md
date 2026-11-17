@@ -202,3 +202,7 @@ aus der CSV. `minute` ist der Rohtext (z. B. `"90+2"`, `"(Elfm.)"`), Anzeige wie
   eine Zeile je Spieler × Verein × Bewerb × Saison mit Minuten > 0. Durchschnittsalter = minutengewichtet,
   Alter = Startjahr der Saison − Geburtsjahr; Gruppen unter 900 Minuten ausgeblendet; Start: laufende Saison,
   Erwachsenenfußball, gruppiert nach Verein. Vorher wurde nach der zusammengesetzten Vereinsliste je Spieler gruppiert.
+* **Teams-Tab** (seit 2026-11-17, `renderTeams`): Teamliste je Saison links, rechts der Kader des gewählten Teams in
+  der gewählten Saison aus `squads.json` (Minuten/Einsätze für genau dieses Team), Zellen über `scoutCell()` wie im
+  Scouting, darunter ein XY-Diagramm mit wählbaren Achsen (`XY_PARAMS`, Standard: Einsatzminuten × Talent-Rang).
+  In der Statistik führt ein Klick auf eine Vereinszeile hierher (`openTeam(team, saison)`).
