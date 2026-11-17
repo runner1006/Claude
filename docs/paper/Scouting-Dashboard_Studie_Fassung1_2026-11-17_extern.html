@@ -1,0 +1,4285 @@
+<title>Bessere Spieler finden, wo es keine Eventdaten gibt</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Source+Sans+3:wght@400;600&display=swap">
+<style>
+:root{
+  --paper:#ffffff; --ink:#111111; --ink-2:#444444; --mute:#6b6b6b; --rule:#b8b8b8; --rule-soft:#e2e2e2; --zebra:#f6f6f6;
+  --ca:#1f5fa8; --cb:#b0492a; --cc:#2e7d4f;
+  --serif:"Source Serif 4","Source Serif Pro",Georgia,"Times New Roman",serif;
+  --sans:"Source Sans 3","Source Sans Pro",system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  color-scheme: light;
+}
+*{box-sizing:border-box}
+html{background:var(--paper)}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--serif);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.paper{max-width:760px;margin:0 auto;padding:40px 16px 80px}
+header.title{border-bottom:1px solid var(--ink);padding-bottom:18px;margin-bottom:26px}
+.pub{font-family:var(--sans);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin:0 0 14px}
+h1{font-family:var(--serif);font-weight:600;font-size:2rem;line-height:1.15;margin:0 0 8px;letter-spacing:-.01em}
+.sub{font-family:var(--serif);font-style:italic;font-size:1.08rem;color:var(--ink-2);margin:0 0 10px}
+.meta{font-family:var(--sans);font-size:.86rem;color:var(--mute);margin:0}
+h2{font-family:var(--serif);font-weight:600;font-size:1.42rem;line-height:1.2;margin:2.4rem 0 .8rem;padding-top:.4rem}
+h3{font-family:var(--serif);font-weight:600;font-size:1.08rem;margin:1.5rem 0 .5rem}
+p{margin:0 0 .9rem;text-align:left;hyphens:auto;-webkit-hyphens:auto}
+a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--rule);text-underline-offset:2px}
+code{font-family:var(--mono);font-size:.86em;background:none;color:var(--ink)}
+var{font-style:italic}
+sub,sup{line-height:0;font-size:.75em}
+.abstract{font-size:.97rem;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:14px 0;margin:0 0 24px}
+.abstract h2{font-family:var(--sans);font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;margin:0 0 8px;padding:0;color:var(--mute)}
+.abstract p{margin:0}
+nav.toc{font-family:var(--sans);font-size:.93rem;margin:0 0 30px}
+nav.toc h2{font-family:var(--sans);font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;margin:0 0 8px;padding:0;color:var(--mute)}
+nav.toc ol{list-style:none;margin:0;padding:0;columns:2;column-gap:28px}
+nav.toc li{margin:0 0 4px;break-inside:avoid}
+nav.toc a{text-decoration:none}
+nav.toc a:hover{text-decoration:underline}
+.formula{font-family:var(--serif);font-size:.98rem;line-height:1.7;margin:.6rem 0 1rem;padding:6px 0 6px 18px;border-left:2px solid var(--rule-soft);overflow-x:auto}
+.tabcap{font-family:var(--sans);font-size:.86rem;color:var(--ink-2);line-height:1.4;margin:1.1rem 0 6px}
+.tbl{overflow-x:auto;margin:0 0 1.4rem}
+table{width:100%;border-collapse:collapse;font-family:var(--sans);font-size:.86rem;line-height:1.35}
+.tabcap .lab,figcaption .lab{font-weight:600;color:var(--ink)}
+th{font-weight:600;text-align:left;border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);padding:5px 8px 5px 0;vertical-align:bottom}
+td{border-bottom:1px solid var(--rule-soft);padding:4px 8px 4px 0;vertical-align:top}
+tbody tr:last-child td{border-bottom:1px solid var(--ink)}
+th.n,td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl.wide table{font-size:.8rem}
+figure{margin:1.2rem 0 1.6rem}
+figure svg{width:100%;height:auto;display:block;font-family:var(--sans)}
+figcaption{font-family:var(--sans);font-size:.86rem;color:var(--ink-2);line-height:1.4;margin-top:6px}
+ol.korr li,ul.grenzen li{margin:0 0 .6rem}
+dl.formeln dt,dl.glossar dt{font-family:var(--sans);font-weight:600;font-size:.92rem;margin:.8rem 0 .15rem}
+dl.formeln dd,dl.glossar dd{margin:0;font-size:.95rem}
+section.main h2{color:#34B190}
+.einordnung{font-family:var(--sans);font-size:.92rem;background:#f5faf8;border-left:3px solid #34B190;padding:10px 14px;margin:0 0 1rem}
+.einordnung strong{color:#1f7a62}
+.kern{font-family:var(--sans);font-size:.95rem;border:1px solid #34B190;padding:10px 14px;margin:1rem 0}
+.kern h4{margin:0 0 4px;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:#1f7a62}
+ol.refs{padding-left:1.2rem;font-size:.92rem}ol.refs li{margin:0 0 .45rem}.refuse{font-family:var(--sans);font-size:.8rem;color:var(--mute)}
+figure svg{max-width:100%;height:auto}
+footer{font-family:var(--sans);font-size:.82rem;color:var(--mute);border-top:1px solid var(--rule);margin-top:40px;padding-top:12px}
+@media (max-width:520px){body{font-size:16px}h1{font-size:1.6rem}nav.toc ol{columns:1}.paper{padding:24px 16px 60px}}
+@media print{
+  @page{margin:24mm 16mm 20mm}
+  body{font-size:10.5pt;line-height:1.45;color:#000;background:#fff}
+  .paper{max-width:none;padding:0}
+  nav.toc{break-after:page}
+  footer{display:none}
+  section.main{break-before:page}
+  section.main:first-of-type{break-before:auto}
+  h2,h3,.tabcap{break-after:avoid}
+  .tbl,figure,tr{break-inside:avoid}
+  a{color:#000;text-decoration:none}
+  a[href^="http"]::after{content:" (" attr(href) ")";font-size:.85em;color:#333}
+  table{font-size:8.5pt}
+  .tbl.wide table{font-size:7.8pt}
+}
+</style>
+<div class="paper">
+<header class="title">
+  <p class="pub">Strykerlabs Football Intelligence · Studie · extern</p>
+  <h1>Bessere Spieler finden, wo es keine Eventdaten gibt</h1>
+  <p class="sub">Das Scouting-Dashboard für den österreichischen Amateur- und Nachwuchsfußball: Aufbau, Methode und Nachweis der Aussagekraft — Studie, Fassung 1, 17.11.2026</p>
+  <p class="meta">Autor: Strykerlabs Football Intelligence Hub · Herausgeber: Strykerlabs GmbH · Glacisstraße 43a/1/5, 8010 Graz</p>
+</header>
+<section class="abstract"><h2>Zusammenfassung</h2><p>Unterhalb der Profiligen gibt es weder Eventdaten noch Wettquoten. Es gibt aber für jedes Spiel einen Spielbericht mit Ergebnis, Aufstellung, Wechseln und Tor-Minuten. Das Scouting-Dashboard macht daraus eine Bewertung für 13.629 Spieler aus 12.883 Spielen in 28 Bewerben seit 2023/24. Der Wert eines Spielers ist der Unterschied, den er für die Tordifferenz seiner Mannschaft macht, bereinigt um Mitspieler und Gegner.</p><p>Zwei Prüfungen ohne Blick in die Zukunft belegen die Aussagekraft. <strong>Erstens</strong> sagt die Summe der Spielerwerte einer Startelf Ergebnisse voraus: Ist die Heimelf klar stärker besetzt, gewinnt sie 58 % der Spiele, ist sie klar schwächer, nur 32 %. Im Erwachsenenfußball sind die Spielerwerte dabei so treffsicher wie eine reine Mannschaftsstärke mit demselben Wissensstand, und sie sagen zusätzlich, <em>welche</em> Spieler die Stärke ausmachen. Eine um 0,10 Tore je Spiel bessere Startelf bringt rund 1,7 Punkte in 30 Spielen. <strong>Zweitens</strong> erkennt das Rating spätere Aufsteiger früh: Von den besten 2 % des Nachwuchses schafften 9 von 11 binnen zwei Jahren den Durchbruch, im Durchschnitt aller waren es 26 %. Von den zehn bestbewerteten Nachwuchsspielern spielen heute 7 in einer Profiliga.</p></section>
+<nav class="toc"><h2>Inhalt</h2><ol><li><a href="#problem">1 Ausgangslage und Ziel</a></li><li><a href="#dashboard">2 Was das Dashboard kann</a></li><li><a href="#methode">3 Wie aus Ergebnissen Spielerwerte werden</a></li><li><a href="#konnex">4 Von Spielerwerten zur Gewinnwahrscheinlichkeit</a></li><li><a href="#prognose">5 Nachweis 1: Die Startelf-Stärke sagt Ergebnisse voraus</a></li><li><a href="#talent">6 Nachweis 2: Das Rating erkennt spätere Aufsteiger früh</a></li><li><a href="#vorteil">7 Warum das ohne Eventdaten funktioniert</a></li><li><a href="#grenzen">8 Grenzen</a></li><li><a href="#literatur">9 Literatur und Quellen</a></li></ol></nav>
+<section class="main" id="problem"><h2>1 Ausgangslage und Ziel</h2><style>.kern{break-inside:avoid}</style>
+<p>Wer Spieler aus der Regionalliga, einer Landesliga oder einer Akademie beurteilen will, steht vor einer Lücke. In den Profiligen
+gibt es Eventdaten zu jedem Pass und Wettquoten zu jedem Spiel. Darunter gibt es beides nicht. Scouting stützt sich dort auf
+Beobachtung vor Ort, auf Tore und auf Empfehlungen. Das ist teuer, lückenhaft und bevorzugt Stürmer, weil nur Tore gezählt werden.</p>
+<p><strong>Ziel</strong> des Dashboards ist eine belastbare Vorauswahl: Aus Tausenden Spielern jene finden, bei denen sich das genaue
+Hinsehen lohnt. Dafür muss die Bewertung drei Dinge leisten. Sie muss für <em>jede</em> Liga verfügbar sein, sie muss Verteidiger und
+Mittelfeldspieler genauso erfassen wie Torschützen, und sie muss nachweislich etwas über die Zukunft sagen.</p>
+<figure><svg xmlns:xlink="http://www.w3.org/1999/xlink" style="width:100%;height:auto" viewBox="0 0 471.96 197.352" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-11-17T01:21:14.842845</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.9.4, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 197.352 
+L 471.96 197.352 
+L 471.96 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 14.97852 78.2028 
+L 95.50908 78.2028 
+Q 100.08468 78.2028 100.08468 73.8468 
+L 100.08468 32.0292 
+Q 100.08468 27.6732 95.50908 27.6732 
+L 14.97852 27.6732 
+Q 10.40292 27.6732 10.40292 32.0292 
+L 10.40292 73.8468 
+Q 10.40292 78.2028 14.97852 78.2028 
+z
+" clip-path="url(#p9d623ad61d)" style="fill: #e3e6e8"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 14.97852 132.6528 
+L 95.50908 132.6528 
+Q 100.08468 132.6528 100.08468 128.2968 
+L 100.08468 86.4792 
+Q 100.08468 82.1232 95.50908 82.1232 
+L 14.97852 82.1232 
+Q 10.40292 82.1232 10.40292 86.4792 
+L 10.40292 128.2968 
+Q 10.40292 132.6528 14.97852 132.6528 
+z
+" clip-path="url(#p9d623ad61d)" style="fill: #e3e6e8"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 14.97852 187.1028 
+L 95.50908 187.1028 
+Q 100.08468 187.1028 100.08468 182.7468 
+L 100.08468 140.9292 
+Q 100.08468 136.5732 95.50908 136.5732 
+L 14.97852 136.5732 
+Q 10.40292 136.5732 10.40292 140.9292 
+L 10.40292 182.7468 
+Q 10.40292 187.1028 14.97852 187.1028 
+z
+" clip-path="url(#p9d623ad61d)" style="fill: #e3e6e8"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 129.36852 104.3388 
+L 214.47468 104.3388 
+Q 219.05028 104.3388 219.05028 99.9828 
+L 219.05028 49.4532 
+Q 219.05028 45.0972 214.47468 45.0972 
+L 129.36852 45.0972 
+Q 124.79292 45.0972 124.79292 49.4532 
+L 124.79292 99.9828 
+Q 124.79292 104.3388 129.36852 104.3388 
+z
+" clip-path="url(#p9d623ad61d)" style="fill: #1f5fa8"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 129.36852 174.0348 
+L 214.47468 174.0348 
+Q 219.05028 174.0348 219.05028 169.6788 
+L 219.05028 119.1492 
+Q 219.05028 114.7932 214.47468 114.7932 
+L 129.36852 114.7932 
+Q 124.79292 114.7932 124.79292 119.1492 
+L 124.79292 169.6788 
+Q 124.79292 174.0348 129.36852 174.0348 
+z
+" clip-path="url(#p9d623ad61d)" style="fill: #1f5fa8"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 248.33412 65.1348 
+L 342.59148 65.1348 
+Q 347.16708 65.1348 347.16708 60.7788 
+L 347.16708 32.0292 
+Q 347.16708 27.6732 342.59148 27.6732 
+L 248.33412 27.6732 
+Q 243.75852 27.6732 243.75852 32.0292 
+L 243.75852 60.7788 
+Q 243.75852 65.1348 248.33412 65.1348 
+z
+" clip-path="url(#p9d623ad61d)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 248.33412 106.5168 
+L 342.59148 106.5168 
+Q 347.16708 106.5168 347.16708 102.1608 
+L 347.16708 73.4112 
+Q 347.16708 69.0552 342.59148 69.0552 
+L 248.33412 69.0552 
+Q 243.75852 69.0552 243.75852 73.4112 
+L 243.75852 102.1608 
+Q 243.75852 106.5168 248.33412 106.5168 
+z
+" clip-path="url(#p9d623ad61d)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 248.33412 147.8988 
+L 342.59148 147.8988 
+Q 347.16708 147.8988 347.16708 143.5428 
+L 347.16708 114.7932 
+Q 347.16708 110.4372 342.59148 110.4372 
+L 248.33412 110.4372 
+Q 243.75852 110.4372 243.75852 114.7932 
+L 243.75852 143.5428 
+Q 243.75852 147.8988 248.33412 147.8988 
+z
+" clip-path="url(#p9d623ad61d)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 248.33412 189.2808 
+L 342.59148 189.2808 
+Q 347.16708 189.2808 347.16708 184.9248 
+L 347.16708 156.1752 
+Q 347.16708 151.8192 342.59148 151.8192 
+L 248.33412 151.8192 
+Q 243.75852 151.8192 243.75852 156.1752 
+L 243.75852 184.9248 
+Q 243.75852 189.2808 248.33412 189.2808 
+z
+" clip-path="url(#p9d623ad61d)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_11">
+    <path d="M 376.45092 78.2028 
+L 456.98148 78.2028 
+Q 461.55708 78.2028 461.55708 73.8468 
+L 461.55708 32.0292 
+Q 461.55708 27.6732 456.98148 27.6732 
+L 376.45092 27.6732 
+Q 371.87532 27.6732 371.87532 32.0292 
+L 371.87532 73.8468 
+Q 371.87532 78.2028 376.45092 78.2028 
+z
+" clip-path="url(#p9d623ad61d)" style="fill: #ffffff; stroke: #34b190; stroke-width: 1.3; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_12">
+    <path d="M 376.45092 132.6528 
+L 456.98148 132.6528 
+Q 461.55708 132.6528 461.55708 128.2968 
+L 461.55708 86.4792 
+Q 461.55708 82.1232 456.98148 82.1232 
+L 376.45092 82.1232 
+Q 371.87532 82.1232 371.87532 86.4792 
+L 371.87532 128.2968 
+Q 371.87532 132.6528 376.45092 132.6528 
+z
+" clip-path="url(#p9d623ad61d)" style="fill: #ffffff; stroke: #34b190; stroke-width: 1.3; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_13">
+    <path d="M 376.45092 187.1028 
+L 456.98148 187.1028 
+Q 461.55708 187.1028 461.55708 182.7468 
+L 461.55708 140.9292 
+Q 461.55708 136.5732 456.98148 136.5732 
+L 376.45092 136.5732 
+Q 371.87532 136.5732 371.87532 140.9292 
+L 371.87532 182.7468 
+Q 371.87532 187.1028 376.45092 187.1028 
+z
+" clip-path="url(#p9d623ad61d)" style="fill: #ffffff; stroke: #34b190; stroke-width: 1.3; stroke-linejoin: miter"/>
+   </g>
+   <g id="text_1">
+    <text style="fill: #6b6b6b; font: 8px 'Helvetica'; text-anchor: start" x="11.7756" y="13.734" transform="rotate(-0 11.7756 13.734)">Daten</text>
+   </g>
+   <g id="text_2">
+    <text style="fill: #6b6b6b; font: 8px 'Helvetica'; text-anchor: start" x="126.1656" y="13.734" transform="rotate(-0 126.1656 13.734)">Modell</text>
+   </g>
+   <g id="text_3">
+    <text style="fill: #6b6b6b; font: 8px 'Helvetica'; text-anchor: start" x="245.1312" y="13.734" transform="rotate(-0 245.1312 13.734)">Dashboard</text>
+   </g>
+   <g id="text_4">
+    <text style="fill: #6b6b6b; font: 8px 'Helvetica'; text-anchor: start" x="373.248" y="13.734" transform="rotate(-0 373.248 13.734)">Entscheidung</text>
+   </g>
+   <g id="text_5">
+    <text style="fill: #111111; font: 700 8.4px 'Helvetica'; text-anchor: middle" x="55.2438" y="48.323198" transform="rotate(-0 55.2438 48.323198)">Ergebnisse</text>
+   </g>
+   <g id="text_6">
+    <text style="fill: #111111; font: 6.4px 'Helvetica'; text-anchor: middle" x="55.2438" y="65.16252" transform="rotate(-0 55.2438 65.16252)">Endstand je Spiel</text>
+   </g>
+   <g id="text_7">
+    <text style="fill: #111111; font: 700 8.4px 'Helvetica'; text-anchor: middle" x="55.2438" y="102.80601" transform="rotate(-0 55.2438 102.80601)">Aufstellungen</text>
+   </g>
+   <g id="text_8">
+    <text style="fill: #111111; font: 6.4px 'Helvetica'; text-anchor: middle" x="55.2438" y="119.55802" transform="rotate(-0 55.2438 119.55802)">wer spielte wann</text>
+   </g>
+   <g id="text_9">
+    <text style="fill: #111111; font: 700 8.4px 'Helvetica'; text-anchor: middle" x="55.2438" y="157.267166" transform="rotate(-0 55.2438 157.267166)">Tor-Minuten</text>
+   </g>
+   <g id="text_10">
+    <text style="fill: #111111; font: 6.4px 'Helvetica'; text-anchor: middle" x="55.2438" y="174.00802" transform="rotate(-0 55.2438 174.00802)">wann fiel welches Tor</text>
+   </g>
+   <g id="text_11">
+    <text style="fill: #ffffff; font: 700 8.4px 'Helvetica'; text-anchor: middle" x="171.9216" y="69.009518" transform="rotate(-0 171.9216 69.009518)">Spielerwert</text>
+   </g>
+   <g id="text_12">
+    <text style="fill: #ffffff; font: 6.4px 'Helvetica'" transform="translate(136.7096 85.23356)">Plus-Minus, bereinigt um</text>
+    <text style="fill: #ffffff; font: 6.4px 'Helvetica'" transform="translate(140.4411 92.30876)">Mitspieler und Gegner</text>
+   </g>
+   <g id="text_13">
+    <text style="fill: #ffffff; font: 700 8.4px 'Helvetica'; text-anchor: middle" x="171.9216" y="138.623486" transform="rotate(-0 171.9216 138.623486)">Mannschaftsstärke</text>
+   </g>
+   <g id="text_14">
+    <text style="fill: #ffffff; font: 6.4px 'Helvetica'" transform="translate(143.4671 154.99906)">Startelf-Summe und</text>
+    <text style="fill: #ffffff; font: 6.4px 'Helvetica'" transform="translate(149.6886 161.92026)">Ergebnisverlauf</text>
+   </g>
+   <g id="text_15">
+    <text style="fill: #ffffff; font: 700 7.8px 'Helvetica'; text-anchor: middle" x="295.4628" y="43.536218" transform="rotate(-0 295.4628 43.536218)">Scouting</text>
+   </g>
+   <g id="text_16">
+    <text style="fill: #ffffff; font: 6.4px 'Helvetica'; text-anchor: middle" x="295.4628" y="55.65806" transform="rotate(-0 295.4628 55.65806)">Filter, Vorlagen, Rangliste</text>
+   </g>
+   <g id="text_17">
+    <text style="fill: #ffffff; font: 700 7.8px 'Helvetica'; text-anchor: middle" x="295.4628" y="84.968186" transform="rotate(-0 295.4628 84.968186)">Spielerprofil</text>
+   </g>
+   <g id="text_18">
+    <text style="fill: #ffffff; font: 6.4px 'Helvetica'; text-anchor: middle" x="295.4628" y="97.04756" transform="rotate(-0 295.4628 97.04756)">drei Fragen, ein Urteil</text>
+   </g>
+   <g id="text_19">
+    <text style="fill: #ffffff; font: 700 7.8px 'Helvetica'; text-anchor: middle" x="295.4628" y="126.274014" transform="rotate(-0 295.4628 126.274014)">Teams und Statistik</text>
+   </g>
+   <g id="text_20">
+    <text style="fill: #ffffff; font: 6.4px 'Helvetica'; text-anchor: middle" x="295.4628" y="138.42956" transform="rotate(-0 295.4628 138.42956)">Kader, Alter, Einsatz Junger</text>
+   </g>
+   <g id="text_21">
+    <text style="fill: #ffffff; font: 700 7.8px 'Helvetica'; text-anchor: middle" x="295.4628" y="167.732186" transform="rotate(-0 295.4628 167.732186)">Spiele</text>
+   </g>
+   <g id="text_22">
+    <text style="fill: #ffffff; font: 6.4px 'Helvetica'; text-anchor: middle" x="295.4628" y="179.83656" transform="rotate(-0 295.4628 179.83656)">Aufstellungen, Ereignisse</text>
+   </g>
+   <g id="text_23">
+    <text style="fill: #111111; font: 700 8.4px 'Helvetica'; text-anchor: middle" x="416.7162" y="48.409823" transform="rotate(-0 416.7162 48.409823)">Verpflichten</text>
+   </g>
+   <g id="text_24">
+    <text style="fill: #111111; font: 6.4px 'Helvetica'" transform="translate(392.3432 61.68642)">wen beobachten,</text>
+    <text style="fill: #111111; font: 6.4px 'Helvetica'" transform="translate(402.1282 68.52962)">wen holen</text>
+   </g>
+   <g id="text_25">
+    <text style="fill: #111111; font: 700 8.4px 'Helvetica'; text-anchor: middle" x="416.7162" y="102.817166" transform="rotate(-0 416.7162 102.817166)">Fördern</text>
+   </g>
+   <g id="text_26">
+    <text style="fill: #111111; font: 6.4px 'Helvetica'" transform="translate(393.9552 116.13642)">wer ist bereit für</text>
+    <text style="fill: #111111; font: 6.4px 'Helvetica'" transform="translate(387.5447 122.97962)">den nächsten Schritt</text>
+   </g>
+   <g id="text_27">
+    <text style="fill: #111111; font: 700 8.4px 'Helvetica'; text-anchor: middle" x="416.7162" y="157.267166" transform="rotate(-0 416.7162 157.267166)">Einordnen</text>
+   </g>
+   <g id="text_28">
+    <text style="fill: #111111; font: 6.4px 'Helvetica'" transform="translate(394.8437 170.58642)">wie stark ist ein</text>
+    <text style="fill: #111111; font: 6.4px 'Helvetica'" transform="translate(397.1592 177.42962)">Team wirklich</text>
+   </g>
+   <g id="patch_14">
+    <path d="M 100.54224 52.938 
+Q 112.4388 63.828 123.510673 73.963089 
+" style="fill: none; stroke: #888888; stroke-linecap: round"/>
+    <path d="M 122.070614 70.204601 
+L 123.510673 73.963089 
+L 119.639847 72.860043 
+z
+" style="fill: #888888; stroke: #888888; stroke-linecap: round"/>
+   </g>
+   <g id="patch_15">
+    <path d="M 100.54224 107.388 
+Q 112.4388 91.053 123.677165 75.621758 
+" style="fill: none; stroke: #888888; stroke-linecap: round"/>
+    <path d="M 120.102795 77.472131 
+L 123.677165 75.621758 
+L 123.012841 79.591478 
+z
+" style="fill: #888888; stroke: #888888; stroke-linecap: round"/>
+   </g>
+   <g id="patch_16">
+    <path d="M 100.54224 161.838 
+Q 112.4388 153.126 123.433333 145.074566 
+" style="fill: none; stroke: #888888; stroke-linecap: round"/>
+    <path d="M 119.465371 145.749311 
+L 123.433333 145.074566 
+L 121.592352 148.653782 
+z
+" style="fill: #888888; stroke: #888888; stroke-linecap: round"/>
+   </g>
+   <g id="patch_17">
+    <path d="M 219.50784 74.718 
+Q 231.4044 60.561 242.581684 47.259945 
+" style="fill: none; stroke: #888888; stroke-linecap: round"/>
+    <path d="M 238.887613 48.858021 
+L 242.581684 47.259945 
+L 241.643702 51.174046 
+z
+" style="fill: #888888; stroke: #888888; stroke-linecap: round"/>
+   </g>
+   <g id="patch_18">
+    <path d="M 219.50784 74.718 
+Q 231.4044 81.252 242.321004 87.247775 
+" style="fill: none; stroke: #888888; stroke-linecap: round"/>
+    <path d="M 240.032134 83.937024 
+L 242.321004 87.247775 
+L 238.299081 87.09242 
+z
+" style="fill: #888888; stroke: #888888; stroke-linecap: round"/>
+   </g>
+   <g id="patch_19">
+    <path d="M 219.50784 144.414 
+Q 231.4044 136.791 242.359603 129.771197 
+" style="fill: none; stroke: #888888; stroke-linecap: round"/>
+    <path d="M 238.357362 130.197897 
+L 242.359603 129.771197 
+L 240.299619 133.229009 
+z
+" style="fill: #888888; stroke: #888888; stroke-linecap: round"/>
+   </g>
+   <g id="patch_20">
+    <path d="M 219.50784 144.414 
+Q 231.4044 157.482 242.548316 169.723244 
+" style="fill: none; stroke: #888888; stroke-linecap: round"/>
+    <path d="M 241.455899 165.849405 
+L 242.548316 169.723244 
+L 238.793795 168.272873 
+z
+" style="fill: #888888; stroke: #888888; stroke-linecap: round"/>
+   </g>
+   <g id="patch_21">
+    <path d="M 347.62464 46.404 
+Q 359.5212 49.671 370.33964 52.64193 
+" style="fill: none; stroke: #888888; stroke-linecap: round"/>
+    <path d="M 367.344825 49.952862 
+L 370.33964 52.64193 
+L 366.391497 53.424341 
+z
+" style="fill: #888888; stroke: #888888; stroke-linecap: round"/>
+   </g>
+   <g id="patch_22">
+    <path d="M 347.62464 87.786 
+Q 359.5212 97.587 370.554852 106.677092 
+" style="fill: none; stroke: #888888; stroke-linecap: round"/>
+    <path d="M 368.920882 102.998758 
+L 370.554852 106.677092 
+L 366.631803 105.777267 
+z
+" style="fill: #888888; stroke: #888888; stroke-linecap: round"/>
+   </g>
+   <g id="patch_23">
+    <path d="M 347.62464 129.168 
+Q 359.5212 145.503 370.759565 160.934242 
+" style="fill: none; stroke: #888888; stroke-linecap: round"/>
+    <path d="M 370.095241 156.964522 
+L 370.759565 160.934242 
+L 367.185195 159.083869 
+z
+" style="fill: #888888; stroke: #888888; stroke-linecap: round"/>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p9d623ad61d">
+   <rect x="7.2" y="7.2" width="457.56" height="182.952"/>
+  </clipPath>
+ </defs>
+</svg>
+<figcaption><span class="lab">Abbildung 1.</span> Aufbau. Aus drei Angaben des Spielberichts rechnet das Modell Spielerwerte und Mannschaftsstärken. Das Dashboard macht sie in vier Bereichen zugänglich. Am Ende stehen drei Arten von Entscheidungen.</figcaption></figure>
+<p class="tabcap"><span class="lab">Tabelle 1.</span> Die drei Fragen dieses Papiers.</p><div class="tbl"><table><thead><tr><th class="l">Nr.</th><th class="l">Frage</th><th class="l">Antwort in Abschnitt</th></tr></thead><tbody><tr><td class="l">1</td><td class="l">Was kann das Dashboard, und wie ist es aufgebaut?</td><td class="l">2</td></tr><tr><td class="l">2</td><td class="l">Wie hängen Spielerwert, Mannschaftsstärke, Gewinnwahrscheinlichkeit und Punkte zusammen?</td><td class="l">3 und 4</td></tr><tr><td class="l">3</td><td class="l">Stimmen die Bewertungen? Sagen sie Ergebnisse und spätere Karrieren voraus?</td><td class="l">5 und 6</td></tr></tbody></table></div>
+<div class="kern"><h4>Kernaussagen</h4><ul><li>Unterhalb der Profiligen fehlen Eventdaten und Wettquoten, Spielberichte gibt es aber für jedes Spiel.</li><li>Das Dashboard liefert eine Vorauswahl, keine fertige Entscheidung.</li></ul></div>
+</section><section class="main" id="dashboard"><h2>2 Was das Dashboard kann</h2>
+<p>Das Dashboard ist eine Webanwendung in Deutsch und Englisch. Es lädt in unter einer Sekunde und braucht keine Installation.
+Es umfasst 15.089 Spieler, davon 13.629 mit Bewertung, aus den Regionalligen, den höchsten Ligen aller neun
+Bundesländer, drei steirischen Oberligen und den Akademie- und Nachwuchsligen U15 bis U18.</p>
+<p class="tabcap"><span class="lab">Tabelle 2.</span> Die Bereiche des Dashboards.</p><div class="tbl wide"><table><thead><tr><th class="l">Bereich</th><th class="l">Was man sieht</th><th class="l">Wofür</th></tr></thead><tbody><tr><td class="l">Scouting</td><td class="l">Rangliste aller Spieler mit Filtern nach Alter, Liga, Einsatzzeit, Position und Bewertung. Acht fertige Filter-Vorlagen, zum Beispiel „Top-Talente bis 18“, „Hidden Talents außerhalb der Akademien“ oder „Auffällig in dieser Saison“.</td><td class="l">Vorauswahl in Minuten statt Tagen</td></tr><tr><td class="l">Spielerprofil</td><td class="l">Ein Urteil in einem Satz und drei Fragen: Wie gut ist er jetzt? Wie gut kann er werden? Wie sicher ist das? Dazu die Wirkung nach vorne und hinten, die Bilanz seiner Mannschaft mit ihm am Platz und ähnlich bewertete Spieler.</td><td class="l">Einordnung ohne Statistikkenntnis</td></tr><tr><td class="l">Teams und Statistik</td><td class="l">Kader je Mannschaft und Saison, Durchschnittsalter nach Einsatzzeit, Anteil der Minuten von Spielern bis 21, Kader als Diagramm aus Einsatzzeit und Talent-Rang.</td><td class="l">Welche Klubs setzen auf Junge, wer kommt nicht zum Zug</td></tr><tr><td class="l">Spiele</td><td class="l">Alle Spiele mit Aufstellungen, Wechseln und Ereignissen.</td><td class="l">Nachprüfen einzelner Einsätze</td></tr><tr><td class="l">Methodik</td><td class="l">Die Rechenschritte in sieben Bildern.</td><td class="l">Nachvollziehbarkeit</td></tr></tbody></table></div>
+<figure><svg xmlns:xlink="http://www.w3.org/1999/xlink" style="width:100%;height:auto" viewBox="0 0 466.9625 183.066102" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-11-17T01:21:14.868710</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.9.4, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 183.066102 
+L 466.9625 183.066102 
+L 466.9625 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 46.8425 151.344 
+L 459.7625 151.344 
+L 459.7625 7.2 
+L 46.8425 7.2 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1">
+      <path d="M 96.893409 151.344 
+L 96.893409 7.2 
+" clip-path="url(#pa47644fb01)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_2">
+      <defs>
+       <path id="m9326c2aa52" d="M 0 0 
+L 0 3.5 
+" style="stroke: #444444; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#m9326c2aa52" x="96.893409" y="151.344" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_1">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="96.893409" y="164.800094" transform="rotate(-0 96.893409 164.800094)">2023/24</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_3">
+      <path d="M 201.166136 151.344 
+L 201.166136 7.2 
+" clip-path="url(#pa47644fb01)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_4">
+      <g>
+       <use xlink:href="#m9326c2aa52" x="201.166136" y="151.344" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_2">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="201.166136" y="164.800094" transform="rotate(-0 201.166136 164.800094)">2024/25</text>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_5">
+      <path d="M 305.438864 151.344 
+L 305.438864 7.2 
+" clip-path="url(#pa47644fb01)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_6">
+      <g>
+       <use xlink:href="#m9326c2aa52" x="305.438864" y="151.344" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_3">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="305.438864" y="164.800094" transform="rotate(-0 305.438864 164.800094)">2025/26</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_7">
+      <path d="M 409.711591 151.344 
+L 409.711591 7.2 
+" clip-path="url(#pa47644fb01)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_8">
+      <g>
+       <use xlink:href="#m9326c2aa52" x="409.711591" y="151.344" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_4">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="409.711591" y="164.800094" transform="rotate(-0 409.711591 164.800094)">2026/27</text>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_9">
+      <path d="M 46.8425 151.344 
+L 459.7625 151.344 
+" clip-path="url(#pa47644fb01)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_10">
+      <defs>
+       <path id="m119489c5c6" d="M 0 0 
+L -3.5 0 
+" style="stroke: #444444; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#m119489c5c6" x="46.8425" y="151.344" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_5">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="39.8425" y="154.572047" transform="rotate(-0 39.8425 154.572047)">0</text>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_11">
+      <path d="M 46.8425 121.766292 
+L 459.7625 121.766292 
+" clip-path="url(#pa47644fb01)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_12">
+      <g>
+       <use xlink:href="#m119489c5c6" x="46.8425" y="121.766292" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_6">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="39.8425" y="124.994339" transform="rotate(-0 39.8425 124.994339)">1000</text>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_13">
+      <path d="M 46.8425 92.188585 
+L 459.7625 92.188585 
+" clip-path="url(#pa47644fb01)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_14">
+      <g>
+       <use xlink:href="#m119489c5c6" x="46.8425" y="92.188585" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_7">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="39.8425" y="95.416632" transform="rotate(-0 39.8425 95.416632)">2000</text>
+     </g>
+    </g>
+    <g id="ytick_4">
+     <g id="line2d_15">
+      <path d="M 46.8425 62.610877 
+L 459.7625 62.610877 
+" clip-path="url(#pa47644fb01)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_16">
+      <g>
+       <use xlink:href="#m119489c5c6" x="46.8425" y="62.610877" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_8">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="39.8425" y="65.838924" transform="rotate(-0 39.8425 65.838924)">3000</text>
+     </g>
+    </g>
+    <g id="ytick_5">
+     <g id="line2d_17">
+      <path d="M 46.8425 33.03317 
+L 459.7625 33.03317 
+" clip-path="url(#pa47644fb01)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_18">
+      <g>
+       <use xlink:href="#m119489c5c6" x="46.8425" y="33.03317" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_9">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="39.8425" y="36.261217" transform="rotate(-0 39.8425 36.261217)">4000</text>
+     </g>
+    </g>
+    <g id="text_10">
+     <text style="fill: #333333; font: 9px 'Helvetica'; text-anchor: middle" x="13.831875" y="79.272" transform="rotate(-90 13.831875 79.272)">ausgewertete Spiele</text>
+    </g>
+   </g>
+   <g id="patch_3">
+    <path d="M 65.611591 151.344 
+L 128.175227 151.344 
+L 128.175227 71.454612 
+L 65.611591 71.454612 
+z
+" clip-path="url(#pa47644fb01)" style="fill: #1f5fa8"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 169.884318 151.344 
+L 232.447955 151.344 
+L 232.447955 71.129257 
+L 169.884318 71.129257 
+z
+" clip-path="url(#pa47644fb01)" style="fill: #1f5fa8"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 274.157045 151.344 
+L 336.720682 151.344 
+L 336.720682 51.667126 
+L 274.157045 51.667126 
+z
+" clip-path="url(#pa47644fb01)" style="fill: #1f5fa8"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 378.429773 151.344 
+L 440.993409 151.344 
+L 440.993409 103.487269 
+L 378.429773 103.487269 
+z
+" clip-path="url(#pa47644fb01)" style="fill: #1f5fa8"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 65.611591 71.454612 
+L 128.175227 71.454612 
+L 128.175227 51.134727 
+L 65.611591 51.134727 
+z
+" clip-path="url(#pa47644fb01)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 169.884318 71.129257 
+L 232.447955 71.129257 
+L 232.447955 50.18824 
+L 169.884318 50.18824 
+z
+" clip-path="url(#pa47644fb01)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 274.157045 51.667126 
+L 336.720682 51.667126 
+L 336.720682 29.188068 
+L 274.157045 29.188068 
+z
+" clip-path="url(#pa47644fb01)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 378.429773 103.487269 
+L 440.993409 103.487269 
+L 440.993409 95.3534 
+L 378.429773 95.3534 
+z
+" clip-path="url(#pa47644fb01)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_11">
+    <path d="M 46.8425 151.344 
+L 46.8425 7.2 
+" style="fill: none; stroke: #888888; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_12">
+    <path d="M 46.8425 151.344 
+L 459.7625 151.344 
+" style="fill: none; stroke: #888888; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="text_11">
+    <text style="font: 8px 'Helvetica'; text-anchor: middle" x="96.893409" y="49.064287" transform="rotate(-0 96.893409 49.064287)">3.388</text>
+   </g>
+   <g id="text_12">
+    <text style="font: 8px 'Helvetica'; text-anchor: middle" x="201.166136" y="48.117801" transform="rotate(-0 201.166136 48.117801)">3.420</text>
+   </g>
+   <g id="text_13">
+    <text style="font: 8px 'Helvetica'; text-anchor: middle" x="305.438864" y="27.117628" transform="rotate(-0 305.438864 27.117628)">4.130</text>
+   </g>
+   <g id="text_14">
+    <text style="font: 8px 'Helvetica'; text-anchor: middle" x="409.711591" y="93.28296" transform="rotate(-0 409.711591 93.28296)">1.893</text>
+   </g>
+   <g id="text_15">
+    <text style="fill: #6b6b6b; font: 7px 'Helvetica'; text-anchor: middle" x="409.711591" y="174.40704" transform="rotate(-0 409.711591 174.40704)">laufende Saison</text>
+   </g>
+   <g id="legend_1">
+    <g id="patch_13">
+     <path d="M 53.5925 19.330078 
+L 68.5925 19.330078 
+L 68.5925 14.080078 
+L 53.5925 14.080078 
+z
+" style="fill: #1f5fa8"/>
+    </g>
+    <g id="text_16">
+     <text style="font: 7.5px 'Helvetica'; text-anchor: start" x="74.5925" y="19.330078" transform="rotate(-0 74.5925 19.330078)">Erwachsenenfußball</text>
+    </g>
+    <g id="patch_14">
+     <path d="M 157.5425 19.330078 
+L 172.5425 19.330078 
+L 172.5425 14.080078 
+L 157.5425 14.080078 
+z
+" style="fill: #34b190"/>
+    </g>
+    <g id="text_17">
+     <text style="font: 7.5px 'Helvetica'; text-anchor: start" x="178.5425" y="19.330078" transform="rotate(-0 178.5425 19.330078)">Nachwuchs</text>
+    </g>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="pa47644fb01">
+   <rect x="46.8425" y="7.2" width="412.92" height="144.144"/>
+  </clipPath>
+ </defs>
+</svg>
+<figcaption><span class="lab">Abbildung 2.</span> Datenumfang je Saison. Insgesamt 12.883 Spiele, die laufende Saison wird nach jeder Runde ergänzt.</figcaption></figure>
+<p><strong>Die Kennzahlen in einfachen Worten.</strong> Jede Zahl im Dashboard beantwortet eine Frage, die ein Sportdirektor ohnehin stellt.</p>
+<p class="tabcap"><span class="lab">Tabelle 3.</span> Kennzahlen und ihre Bedeutung.</p><div class="tbl wide"><table><thead><tr><th class="l">Kennzahl</th><th class="l">Frage dahinter</th><th class="l">Lesart</th></tr></thead><tbody><tr><td class="l">Gesamtwert</td><td class="l">Macht er seine Mannschaft besser?</td><td class="l">Tore Tordifferenz je 90 Minuten gegenüber einem Durchschnittsspieler. +0,15 heißt rund +4,5 Tore über 30 Spiele.</td></tr><tr><td class="l">Offensiv und Defensiv</td><td class="l">Wo wirkt er?</td><td class="l">Erzielt die Mannschaft mit ihm mehr Tore, kassiert sie mit ihm weniger? Es zählen alle Tore der Mannschaft, nicht nur seine eigenen.</td></tr><tr><td class="l">Aktueller Wert</td><td class="l">Wie ist seine Form?</td><td class="l">Dieselbe Rechnung, jüngere Spiele zählen mehr. Eine Saison zurück zählt halb.</td></tr><tr><td class="l">Peak-Wert</td><td class="l">Wie gut kann er werden?</td><td class="l">Der heutige Wert, hochgerechnet auf das beste Fußballalter um 26.</td></tr><tr><td class="l">Talent-Rang</td><td class="l">Wo steht er in seinem Jahrgang?</td><td class="l">Platz im Geburtsjahrgang aus Peak-Wert und Einsatzzeit, zum Beispiel „Platz 12 von 990“.</td></tr><tr><td class="l">Verlässlichkeit</td><td class="l">Wie sicher ist das?</td><td class="l">Ampel aus den Einsatzminuten: belastbar, solide oder vorläufig.</td></tr></tbody></table></div>
+<div class="kern"><h4>Kernaussagen</h4><ul><li>Vier Bereiche: Scouting, Spielerprofil, Teams und Statistik, Spiele.</li><li>Jede Kennzahl ist in eine Frage und einen Satz übersetzt, die Rohzahlen bleiben aufklappbar.</li></ul></div>
+</section><section class="main" id="methode"><h2>3 Wie aus Ergebnissen Spielerwerte werden</h2>
+<p>Die Methode heißt Plus-Minus und stammt aus Basketball und Eishockey. Für den Fußball haben sie Hvattum (2020) und
+Hvattum, Kriegl und Čulík (2023) ausgearbeitet. Der Gedanke ist einfach: Man beobachtet nicht, was ein Spieler am Ball tut, sondern
+was mit dem Ergebnis passiert, während er am Platz steht.</p>
+<figure><svg xmlns:xlink="http://www.w3.org/1999/xlink" style="width:100%;height:auto" viewBox="0 0 438.48 153" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-11-17T01:21:14.887610</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.9.4, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 153 
+L 438.48 153 
+L 438.48 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 56.802214 127.782 
+L 282.725786 127.782 
+Q 285.754929 127.782 285.754929 124.086 
+L 285.754929 38.154 
+Q 285.754929 34.458 282.725786 34.458 
+L 56.802214 34.458 
+Q 53.773071 34.458 53.773071 38.154 
+L 53.773071 124.086 
+Q 53.773071 127.782 56.802214 127.782 
+z
+" clip-path="url(#pe2baf8c328)" style="fill: #eef5f2; stroke: #cfd8d4; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 291.055929 127.782 
+L 411.969214 127.782 
+Q 414.998357 127.782 414.998357 124.086 
+L 414.998357 38.154 
+Q 414.998357 34.458 411.969214 34.458 
+L 291.055929 34.458 
+Q 288.026786 34.458 288.026786 38.154 
+L 288.026786 124.086 
+Q 288.026786 127.782 291.055929 127.782 
+z
+" clip-path="url(#pe2baf8c328)" style="fill: #e3efe9; stroke: #cfd8d4; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="line2d_1">
+    <path d="M 286.890857 131.94 
+L 286.890857 30.3 
+" clip-path="url(#pe2baf8c328)" style="fill: none; stroke-dasharray: 5.2,3.9; stroke-dashoffset: 0; stroke: #b0492a; stroke-width: 1.3"/>
+   </g>
+   <g id="text_1">
+    <text style="fill: #6b6b6b; font: 7.6px 'Helvetica'; text-anchor: middle" x="169.764" y="23.37" transform="rotate(-0 169.764 23.37)">Abschnitt 1: 0. bis 58. Minute</text>
+   </g>
+   <g id="text_2">
+    <text style="fill: #6b6b6b; font: 7.6px 'Helvetica'; text-anchor: middle" x="351.512571" y="23.37" transform="rotate(-0 351.512571 23.37)">Abschnitt 2: 58. bis 90. Minute</text>
+   </g>
+   <g id="text_3">
+    <text style="font: 700 8.4px 'Helvetica'; text-anchor: start" x="10.986429" y="62.64" transform="rotate(-0 10.986429 62.64)">Heim</text>
+   </g>
+   <g id="text_4">
+    <text style="font: 700 8.4px 'Helvetica'; text-anchor: start" x="10.986429" y="104.22" transform="rotate(-0 10.986429 104.22)">Gast</text>
+   </g>
+   <g id="text_5">
+    <g id="patch_4">
+     <path d="M 139.204453 69.056719 
+L 200.323547 69.056719 
+Q 203.053547 69.056719 203.053547 66.326719 
+L 203.053547 58.953281 
+Q 203.053547 56.223281 200.323547 56.223281 
+L 139.204453 56.223281 
+Q 136.474453 56.223281 136.474453 58.953281 
+L 136.474453 66.326719 
+Q 136.474453 69.056719 139.204453 69.056719 
+z
+" style="fill: #ffffff; stroke: #b9c4bf; stroke-width: 0.8; stroke-linejoin: miter"/>
+    </g>
+    <text style="font: 7.8px 'Helvetica'; text-anchor: middle" x="169.764" y="64.700906" transform="rotate(-0 169.764 64.700906)">Spieler A, B, C …</text>
+   </g>
+   <g id="text_6">
+    <g id="patch_5">
+     <path d="M 315.52715 68.980547 
+L 387.497993 68.980547 
+Q 390.227993 68.980547 390.227993 66.250547 
+L 390.227993 59.029453 
+Q 390.227993 56.299453 387.497993 56.299453 
+L 315.52715 56.299453 
+Q 312.79715 56.299453 312.79715 59.029453 
+L 312.79715 66.250547 
+Q 312.79715 68.980547 315.52715 68.980547 
+z
+" style="fill: #ffffff; stroke: #b9c4bf; stroke-width: 0.8; stroke-linejoin: miter"/>
+    </g>
+    <text style="font: 7.8px 'Helvetica'; text-anchor: middle" x="351.512571" y="64.624734" transform="rotate(-0 351.512571 64.624734)">A, B und der Neue D</text>
+   </g>
+   <g id="text_7">
+    <g id="patch_6">
+     <path d="M 141.365297 110.686688 
+L 198.162703 110.686688 
+Q 200.892703 110.686688 200.892703 107.956688 
+L 200.892703 100.483313 
+Q 200.892703 97.753313 198.162703 97.753313 
+L 141.365297 97.753313 
+Q 138.635297 97.753313 138.635297 100.483313 
+L 138.635297 107.956688 
+Q 138.635297 110.686688 141.365297 110.686688 
+z
+" style="fill: #ffffff; stroke: #b9c4bf; stroke-width: 0.8; stroke-linejoin: miter"/>
+    </g>
+    <text style="font: 7.8px 'Helvetica'; text-anchor: middle" x="169.764" y="106.230938" transform="rotate(-0 169.764 106.230938)">elf Gegenspieler</text>
+   </g>
+   <g id="text_8">
+    <g id="patch_7">
+     <path d="M 323.113868 110.686688 
+L 379.911275 110.686688 
+Q 382.641275 110.686688 382.641275 107.956688 
+L 382.641275 100.483313 
+Q 382.641275 97.753313 379.911275 97.753313 
+L 323.113868 97.753313 
+Q 320.383868 97.753313 320.383868 100.483313 
+L 320.383868 107.956688 
+Q 320.383868 110.686688 323.113868 110.686688 
+z
+" style="fill: #ffffff; stroke: #b9c4bf; stroke-width: 0.8; stroke-linejoin: miter"/>
+    </g>
+    <text style="font: 7.8px 'Helvetica'; text-anchor: middle" x="351.512571" y="106.230938" transform="rotate(-0 351.512571 106.230938)">elf Gegenspieler</text>
+   </g>
+   <g id="text_9">
+    <text style="fill: #b0492a; font: 7.4px 'Helvetica'; text-anchor: middle" x="286.890857" y="141.18" transform="rotate(-0 286.890857 141.18)">Wechsel: C geht, D kommt</text>
+   </g>
+   <g id="text_10">
+    <g id="patch_8">
+     <path d="M 140.281404 49.217062 
+L 150.78031 49.217062 
+Q 152.53031 49.217062 152.53031 47.467062 
+L 152.53031 40.986594 
+Q 152.53031 39.236594 150.78031 39.236594 
+L 140.281404 39.236594 
+Q 138.531404 39.236594 138.531404 40.986594 
+L 138.531404 47.467062 
+Q 138.531404 49.217062 140.281404 49.217062 
+z
+" style="fill: #34b190"/>
+    </g>
+    <text style="fill: #ffffff; font: 7px 'Helvetica'; text-anchor: middle" x="145.530857" y="46.008" transform="rotate(-0 145.530857 46.008)">Tor</text>
+   </g>
+   <g id="text_11">
+    <g id="patch_9">
+     <path d="M 334.146547 49.217062 
+L 344.645453 49.217062 
+Q 346.395453 49.217062 346.395453 47.467062 
+L 346.395453 40.986594 
+Q 346.395453 39.236594 344.645453 39.236594 
+L 334.146547 39.236594 
+Q 332.396547 39.236594 332.396547 40.986594 
+L 332.396547 47.467062 
+Q 332.396547 49.217062 334.146547 49.217062 
+z
+" style="fill: #34b190"/>
+    </g>
+    <text style="fill: #ffffff; font: 7px 'Helvetica'; text-anchor: middle" x="339.396" y="46.008" transform="rotate(-0 339.396 46.008)">Tor</text>
+   </g>
+   <g id="text_12">
+    <g id="patch_10">
+     <path d="M 370.496261 90.797063 
+L 380.995167 90.797063 
+Q 382.745167 90.797063 382.745167 89.047063 
+L 382.745167 82.566594 
+Q 382.745167 80.816594 380.995167 80.816594 
+L 370.496261 80.816594 
+Q 368.746261 80.816594 368.746261 82.566594 
+L 368.746261 89.047063 
+Q 368.746261 90.797063 370.496261 90.797063 
+z
+" style="fill: #34b190"/>
+    </g>
+    <text style="fill: #ffffff; font: 7px 'Helvetica'; text-anchor: middle" x="375.745714" y="87.588" transform="rotate(-0 375.745714 87.588)">Tor</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="pe2baf8c328">
+   <rect x="7.2" y="7.2" width="424.08" height="138.6"/>
+  </clipPath>
+ </defs>
+</svg>
+<figcaption><span class="lab">Abbildung 3.</span> Ein Spiel wird an jedem Wechsel und jeder Roten Karte geteilt. In jedem Abschnitt stehen dieselben 22 Spieler am Platz, und man weiß, wie viele Tore gefallen sind. Über Tausende Spiele mit wechselnden Aufstellungen lässt sich der Anteil jedes Einzelnen herausrechnen.</figcaption></figure>
+<p><strong>Schritt 1: Abschnitte bilden.</strong> Jedes Spiel wird an jeder Ein- und Auswechslung geteilt. Aus 12.883 Spielen
+entstehen so mehrere Zehntausend Abschnitte mit fester Besetzung.</p>
+<p><strong>Schritt 2: Alle gleichzeitig bewerten.</strong> Eine Rechnung sucht für alle Spieler zugleich jene Werte, die die gefallenen
+Tore am besten erklären. Weil alle 22 Spieler eines Abschnitts gemeinsam im Modell stehen, wird niemand dafür belohnt, in einer
+starken Mannschaft zu spielen, und niemand dafür bestraft, in einer schwachen zu stehen. Heimvorteil und Überzahl sind eigene Größen.</p>
+<p><strong>Schritt 3: Vorsicht bei wenig Daten.</strong> Wer wenig gespielt hat, bleibt nahe am Durchschnitt. Erst viele Minuten
+erlauben einen Wert, der sich deutlich davon entfernt. Das verhindert Zufallstreffer nach drei guten Spielen.</p>
+<p><strong>Schritt 4: Alter berücksichtigen.</strong> Spieler werden bis etwa 26 besser. Der Peak-Wert rechnet den heutigen Wert auf
+dieses Alter hoch, damit ein 17-Jähriger mit einem 27-Jährigen vergleichbar wird. Der Talent-Rang ordnet danach innerhalb des
+Geburtsjahrgangs.</p>
+<div class="kern"><h4>Kernaussagen</h4><ul><li>Bewertet wird die Wirkung auf das Ergebnis, nicht die Aktion am Ball.</li><li>Mitspieler, Gegner, Heimvorteil und Überzahl sind herausgerechnet.</li><li>Wenig Einsatzzeit führt zu einem vorsichtigen Wert nahe am Durchschnitt.</li></ul></div>
+</section><section class="main" id="konnex"><h2>4 Von Spielerwerten zur Gewinnwahrscheinlichkeit</h2>
+<p>Im Profifußball ist die Wettquote die beste verfügbare Schätzung dafür, wie wahrscheinlich eine Mannschaft gewinnt. Sie bündelt
+das Wissen vieler Marktteilnehmer. Aus der Quote folgt die Gewinnwahrscheinlichkeit, daraus die erwarteten Punkte. Wer eine Mannschaft
+bewerten will, fragt deshalb: Liegt sie über oder unter dem, was der Markt erwartet hat?</p>
+<p>Unterhalb der Profiligen gibt es diesen Markt nicht. Das Dashboard kommt zur selben Größe auf dem umgekehrten Weg. Es beginnt bei
+den Spielern und baut die Mannschaft daraus auf.</p>
+<figure><svg xmlns:xlink="http://www.w3.org/1999/xlink" style="width:100%;height:auto" viewBox="0 0 471.96 191.808" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-11-17T01:21:14.908628</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.9.4, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 191.808 
+L 471.96 191.808 
+L 471.96 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 14.97852 75.05856 
+L 104.66028 75.05856 
+Q 109.23588 75.05856 109.23588 70.62336 
+L 109.23588 34.69824 
+Q 109.23588 30.26304 104.66028 30.26304 
+L 14.97852 30.26304 
+Q 10.40292 30.26304 10.40292 34.69824 
+L 10.40292 70.62336 
+Q 10.40292 75.05856 14.97852 75.05856 
+z
+" clip-path="url(#pc1bfc68bd4)" style="fill: #e3e6e8"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 188.85132 75.05856 
+L 283.10868 75.05856 
+Q 287.68428 75.05856 287.68428 70.62336 
+L 287.68428 34.69824 
+Q 287.68428 30.26304 283.10868 30.26304 
+L 188.85132 30.26304 
+Q 184.27572 30.26304 184.27572 34.69824 
+L 184.27572 70.62336 
+Q 184.27572 75.05856 188.85132 75.05856 
+z
+" clip-path="url(#pc1bfc68bd4)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 367.29972 75.05856 
+L 456.98148 75.05856 
+Q 461.55708 75.05856 461.55708 70.62336 
+L 461.55708 34.69824 
+Q 461.55708 30.26304 456.98148 30.26304 
+L 367.29972 30.26304 
+Q 362.72412 30.26304 362.72412 34.69824 
+L 362.72412 70.62336 
+Q 362.72412 75.05856 367.29972 75.05856 
+z
+" clip-path="url(#pc1bfc68bd4)" style="fill: #ffffff; stroke: #34b190; stroke-width: 1.3; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 14.97852 168.19776 
+L 81.78228 168.19776 
+Q 86.35788 168.19776 86.35788 163.76256 
+L 86.35788 121.18464 
+Q 86.35788 116.74944 81.78228 116.74944 
+L 14.97852 116.74944 
+Q 10.40292 116.74944 10.40292 121.18464 
+L 10.40292 163.76256 
+Q 10.40292 168.19776 14.97852 168.19776 
+z
+" clip-path="url(#pc1bfc68bd4)" style="fill: #1f5fa8"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 106.49052 168.19776 
+L 173.29428 168.19776 
+Q 177.86988 168.19776 177.86988 163.76256 
+L 177.86988 121.18464 
+Q 177.86988 116.74944 173.29428 116.74944 
+L 106.49052 116.74944 
+Q 101.91492 116.74944 101.91492 121.18464 
+L 101.91492 163.76256 
+Q 101.91492 168.19776 106.49052 168.19776 
+z
+" clip-path="url(#pc1bfc68bd4)" style="fill: #1f5fa8"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 198.00252 168.19776 
+L 273.95748 168.19776 
+Q 278.53308 168.19776 278.53308 163.76256 
+L 278.53308 121.18464 
+Q 278.53308 116.74944 273.95748 116.74944 
+L 198.00252 116.74944 
+Q 193.42692 116.74944 193.42692 121.18464 
+L 193.42692 163.76256 
+Q 193.42692 168.19776 198.00252 168.19776 
+z
+" clip-path="url(#pc1bfc68bd4)" style="fill: #1f5fa8"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 298.66572 168.19776 
+L 365.46948 168.19776 
+Q 370.04508 168.19776 370.04508 163.76256 
+L 370.04508 121.18464 
+Q 370.04508 116.74944 365.46948 116.74944 
+L 298.66572 116.74944 
+Q 294.09012 116.74944 294.09012 121.18464 
+L 294.09012 163.76256 
+Q 294.09012 168.19776 298.66572 168.19776 
+z
+" clip-path="url(#pc1bfc68bd4)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 390.17772 168.19776 
+L 456.98148 168.19776 
+Q 461.55708 168.19776 461.55708 163.76256 
+L 461.55708 121.18464 
+Q 461.55708 116.74944 456.98148 116.74944 
+L 390.17772 116.74944 
+Q 385.60212 116.74944 385.60212 121.18464 
+L 385.60212 163.76256 
+Q 385.60212 168.19776 390.17772 168.19776 
+z
+" clip-path="url(#pc1bfc68bd4)" style="fill: #ffffff; stroke: #34b190; stroke-width: 1.3; stroke-linejoin: miter"/>
+   </g>
+   <g id="text_1">
+    <text style="fill: #6b6b6b; font: 8px 'Helvetica'; text-anchor: start" x="11.7756" y="18.288" transform="rotate(-0 11.7756 18.288)">Profifußball: von oben, über den Markt</text>
+   </g>
+   <g id="text_2">
+    <text style="fill: #111111; font: 700 8.4px 'Helvetica'; text-anchor: middle" x="59.8194" y="48.89939" transform="rotate(-0 59.8194 48.89939)">Wettquoten</text>
+   </g>
+   <g id="text_3">
+    <text style="fill: #111111; font: 6.4px 'Helvetica'; text-anchor: middle" x="59.8194" y="63.558868" transform="rotate(-0 59.8194 63.558868)">viele Marktteilnehmer</text>
+   </g>
+   <g id="text_4">
+    <text style="fill: #ffffff; font: 700 8px 'Helvetica'; text-anchor: middle" x="235.98" y="48.797609" transform="rotate(-0 235.98 48.797609)">Gewinnwahrscheinlichkeit</text>
+   </g>
+   <g id="text_5">
+    <text style="fill: #ffffff; font: 6.4px 'Helvetica'; text-anchor: middle" x="235.98" y="63.613368" transform="rotate(-0 235.98 63.613368)">je Spiel</text>
+   </g>
+   <g id="text_6">
+    <text style="fill: #111111; font: 700 8.4px 'Helvetica'; text-anchor: middle" x="412.1406" y="48.89939" transform="rotate(-0 412.1406 48.89939)">erwartete Punkte</text>
+   </g>
+   <g id="text_7">
+    <text style="fill: #111111; font: 6.4px 'Helvetica'; text-anchor: middle" x="412.1406" y="63.613368" transform="rotate(-0 412.1406 63.613368)">je Spiel und Saison</text>
+   </g>
+   <g id="patch_10">
+    <path d="M 109.69344 52.88256 
+Q 146.7558 52.88256 182.700126 52.88256 
+" style="fill: none; stroke: #888888; stroke-linecap: round"/>
+    <path d="M 179.100126 51.08256 
+L 182.700126 52.88256 
+L 179.100126 54.68256 
+z
+" style="fill: #888888; stroke: #888888; stroke-linecap: round"/>
+   </g>
+   <g id="patch_11">
+    <path d="M 288.14184 52.88256 
+Q 325.2042 52.88256 361.148526 52.88256 
+" style="fill: none; stroke: #888888; stroke-linecap: round"/>
+    <path d="M 357.548526 51.08256 
+L 361.148526 52.88256 
+L 357.548526 54.68256 
+z
+" style="fill: #888888; stroke: #888888; stroke-linecap: round"/>
+   </g>
+   <g id="text_8">
+    <text style="fill: #6b6b6b; font: 6.6px 'Helvetica'; text-anchor: middle" x="146.7558" y="45.78624" transform="rotate(-0 146.7558 45.78624)">Quote umrechnen</text>
+   </g>
+   <g id="text_9">
+    <text style="fill: #6b6b6b; font: 8px 'Helvetica'; text-anchor: start" x="11.7756" y="98.1216" transform="rotate(-0 11.7756 98.1216)">Unterhalb der Profiligen: von unten, über die Spieler</text>
+   </g>
+   <g id="text_10">
+    <text style="fill: #ffffff; font: 700 8.4px 'Helvetica'; text-anchor: middle" x="48.3804" y="137.86283" transform="rotate(-0 48.3804 137.86283)">Spielerwerte</text>
+   </g>
+   <g id="text_11">
+    <text style="fill: #ffffff; font: 6.4px 'Helvetica'; text-anchor: middle" x="48.3804" y="154.827284" transform="rotate(-0 48.3804 154.827284)">Tore je 90 Minuten</text>
+   </g>
+   <g id="text_12">
+    <text style="fill: #ffffff; font: 700 8.4px 'Helvetica'; text-anchor: middle" x="139.8924" y="137.780798" transform="rotate(-0 139.8924 137.780798)">Startelf-Stärke</text>
+   </g>
+   <g id="text_13">
+    <text style="fill: #ffffff; font: 6.4px 'Helvetica'; text-anchor: middle" x="139.8924" y="154.835284" transform="rotate(-0 139.8924 154.835284)">Summe der elf Werte</text>
+   </g>
+   <g id="text_14">
+    <text style="fill: #ffffff; font: 700 8.4px 'Helvetica'; text-anchor: middle" x="235.98" y="137.780798" transform="rotate(-0 235.98 137.780798)">Tordifferenz</text>
+   </g>
+   <g id="text_15">
+    <text style="fill: #ffffff; font: 6.4px 'Helvetica'; text-anchor: middle" x="235.98" y="154.889784" transform="rotate(-0 235.98 154.889784)">erwartet, je Spiel</text>
+   </g>
+   <g id="text_16">
+    <text style="fill: #ffffff; font: 700 7.6px 'Helvetica'" transform="translate(310.528131 140.31045)">Sieg, Remis,</text>
+    <text style="fill: #ffffff; font: 700 7.6px 'Helvetica'" transform="translate(313.690444 148.5555)">Niederlage</text>
+   </g>
+   <g id="text_17">
+    <text style="fill: #111111; font: 700 8.4px 'Helvetica'; text-anchor: middle" x="423.5796" y="137.780798" transform="rotate(-0 423.5796 137.780798)">Punkte</text>
+   </g>
+   <g id="text_18">
+    <text style="fill: #111111; font: 6.4px 'Helvetica'; text-anchor: middle" x="423.5796" y="154.889784" transform="rotate(-0 423.5796 154.889784)">je Spiel und Saison</text>
+   </g>
+   <g id="patch_12">
+    <path d="M 86.81544 142.4736 
+Q 94.1364 142.4736 100.339326 142.4736 
+" style="fill: none; stroke: #888888; stroke-linecap: round"/>
+    <path d="M 96.739326 140.6736 
+L 100.339326 142.4736 
+L 96.739326 144.2736 
+z
+" style="fill: #888888; stroke: #888888; stroke-linecap: round"/>
+   </g>
+   <g id="patch_13">
+    <path d="M 178.32744 142.4736 
+Q 185.6484 142.4736 191.851326 142.4736 
+" style="fill: none; stroke: #888888; stroke-linecap: round"/>
+    <path d="M 188.251326 140.6736 
+L 191.851326 142.4736 
+L 188.251326 144.2736 
+z
+" style="fill: #888888; stroke: #888888; stroke-linecap: round"/>
+   </g>
+   <g id="patch_14">
+    <path d="M 278.99064 142.4736 
+Q 286.3116 142.4736 292.514526 142.4736 
+" style="fill: none; stroke: #888888; stroke-linecap: round"/>
+    <path d="M 288.914526 140.6736 
+L 292.514526 142.4736 
+L 288.914526 144.2736 
+z
+" style="fill: #888888; stroke: #888888; stroke-linecap: round"/>
+   </g>
+   <g id="patch_15">
+    <path d="M 370.50264 142.4736 
+Q 377.8236 142.4736 384.026526 142.4736 
+" style="fill: none; stroke: #888888; stroke-linecap: round"/>
+    <path d="M 380.426526 140.6736 
+L 384.026526 142.4736 
+L 380.426526 144.2736 
+z
+" style="fill: #888888; stroke: #888888; stroke-linecap: round"/>
+   </g>
+   <g id="patch_16">
+    <path d="M 235.98 76.38912 
+Q 277.1604 95.904 317.33047 114.940097 
+" style="fill: none; stroke-dasharray: 3,2; stroke-dashoffset: 0; stroke: #34b190; stroke-linecap: round"/>
+    <path d="M 314.848095 111.771846 
+L 317.33047 114.940097 
+L 313.306444 115.025046 
+z
+" style="fill: #34b190; stroke-dasharray: 3,2; stroke-dashoffset: 0; stroke: #34b190; stroke-linecap: round"/>
+   </g>
+   <g id="text_19">
+    <text style="fill: #34b190; font: 6.8px 'Helvetica'; text-anchor: start" x="288.5994" y="93.24288" transform="rotate(-0 288.5994 93.24288)">dieselbe Größe</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="pc1bfc68bd4">
+   <rect x="7.2" y="7.2" width="457.56" height="177.408"/>
+  </clipPath>
+ </defs>
+</svg>
+<figcaption><span class="lab">Abbildung 4.</span> Zwei Wege zur selben Größe. Im Profifußball liefert der Wettmarkt die Gewinnwahrscheinlichkeit von oben. Wo es keinen Markt gibt, entsteht sie von unten aus den Spielerwerten. Der zweite Weg hat einen Zusatznutzen: Er zeigt, welche Spieler die Stärke ausmachen.</figcaption></figure>
+<p><strong>Die Kette in vier Gliedern.</strong></p>
+<ol>
+<li><strong>Spielerwert.</strong> Jeder Spieler hat einen Wert in Toren je 90 Minuten.</li>
+<li><strong>Startelf-Stärke.</strong> Die Summe der elf Werte ist die Stärke der Aufstellung. Das Modell ist so gebaut, dass diese
+Summe direkt eine erwartete Tordifferenz ergibt.</li>
+<li><strong>Gewinnwahrscheinlichkeit.</strong> Aus dem Unterschied zweier Startelfs folgen die Wahrscheinlichkeiten für Sieg, Remis und
+Niederlage.</li>
+<li><strong>Punkte.</strong> Drei Punkte mal Siegwahrscheinlichkeit plus ein Punkt mal Remiswahrscheinlichkeit ergibt die erwarteten Punkte.</li>
+</ol>
+<p><strong>Was daraus folgt.</strong> Eine Mannschaft erhöht ihre Gewinnwahrscheinlichkeit, wenn sie Spieler mit höherem Wert aufstellt.
+Umgekehrt gilt: Mannschaften, die mehr gewinnen als erwartet, haben Spieler am Platz, die mehr beitragen, als man ihnen zugetraut hat.
+Das Modell ordnet diesen Überschuss den Spielern zu, die am Platz standen, als er entstand. Ein Spieler, bei dessen Einsätzen die
+Tordifferenz seiner Mannschaft regelmäßig besser ausfällt als mit den übrigen Mitspielern und gegen dieselben Gegner zu erwarten war,
+bekommt einen hohen Wert. Genau diese Spieler sucht ein Scout.</p>
+<p><strong>Mannschaftsstärke und Spielerwert sind zwei Sichten.</strong> Eine reine Mannschaftsstärke aus Ergebnissen, wie sie ein
+Elo-Wert misst, beantwortet „Wie stark ist dieses Team?“. Sie kann nicht sagen, wer dafür verantwortlich ist. Der Spielerwert
+beantwortet genau das. Abschnitt 5 prüft, ob beide Sichten zum selben Ergebnis kommen.</p>
+<div class="kern"><h4>Kernaussagen</h4><ul><li>Wettquoten liefern die Gewinnwahrscheinlichkeit von oben, Spielerwerte liefern sie von unten.</li><li>Die Summe der elf Spielerwerte ist eine erwartete Tordifferenz und damit eine Gewinnwahrscheinlichkeit.</li><li>Nur der Weg über die Spieler zeigt, wer die Stärke einer Mannschaft ausmacht.</li></ul></div>
+</section><section class="main" id="prognose"><h2>5 Nachweis 1: Die Startelf-Stärke sagt Ergebnisse voraus</h2>
+<p><strong>Aufbau der Prüfung.</strong> Die Spielerwerte wurden nur aus Spielen bis Juni 2025 gerechnet, also aus zwei Saisonen. Danach
+wurden sie eingefroren. Geprüft wurde an 6.021 späteren Spielen der Saisonen 2025/26 und 2026/27, die das Modell nie
+gesehen hat. Für jedes Spiel wurde nur die Startelf verwendet, wie sie vor dem Anpfiff bekannt ist. Im Schnitt hatten
+69 % der Starter bereits einen Wert, alle anderen zählten als Durchschnittsspieler.</p>
+<figure><svg xmlns:xlink="http://www.w3.org/1999/xlink" style="width:100%;height:auto" viewBox="0 0 461.842344 237.426253" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-11-17T01:21:14.934122</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.9.4, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 237.426253 
+L 461.842344 237.426253 
+L 461.842344 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 41.722344 173.52 
+L 454.642344 173.52 
+L 454.642344 7.2 
+L 41.722344 7.2 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1">
+      <path d="M 85.679392 173.52 
+L 85.679392 7.2 
+" clip-path="url(#pd385f8878f)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_2">
+      <defs>
+       <path id="m08de9b40e6" d="M 0 0 
+L 0 3.5 
+" style="stroke: #444444; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#m08de9b40e6" x="85.679392" y="173.52" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_1">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="85.679392" y="186.976094" transform="rotate(-0 85.679392 186.976094)">klar schwächer</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_3">
+      <path d="M 166.930868 173.52 
+L 166.930868 7.2 
+" clip-path="url(#pd385f8878f)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_4">
+      <g>
+       <use xlink:href="#m08de9b40e6" x="166.930868" y="173.52" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_2">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="166.930868" y="186.976094" transform="rotate(-0 166.930868 186.976094)">etwas schwächer</text>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_5">
+      <path d="M 248.182344 173.52 
+L 248.182344 7.2 
+" clip-path="url(#pd385f8878f)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_6">
+      <g>
+       <use xlink:href="#m08de9b40e6" x="248.182344" y="173.52" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_3">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="248.182344" y="186.997187" transform="rotate(-0 248.182344 186.997187)">etwa gleich</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_7">
+      <path d="M 329.43382 173.52 
+L 329.43382 7.2 
+" clip-path="url(#pd385f8878f)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_8">
+      <g>
+       <use xlink:href="#m08de9b40e6" x="329.43382" y="173.52" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_4">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="329.43382" y="186.976094" transform="rotate(-0 329.43382 186.976094)">etwas stärker</text>
+     </g>
+    </g>
+    <g id="xtick_5">
+     <g id="line2d_9">
+      <path d="M 410.685295 173.52 
+L 410.685295 7.2 
+" clip-path="url(#pd385f8878f)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_10">
+      <g>
+       <use xlink:href="#m08de9b40e6" x="410.685295" y="173.52" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_5">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="410.685295" y="186.976094" transform="rotate(-0 410.685295 186.976094)">klar stärker</text>
+     </g>
+    </g>
+    <g id="text_6">
+     <text style="fill: #333333; font: 9px 'Helvetica'; text-anchor: middle" x="248.182344" y="199.620313" transform="rotate(-0 248.182344 199.620313)">Startelf der Heimmannschaft im Vergleich zum Gegner, nach Spielerwerten vor Saisonbeginn</text>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_11">
+      <path d="M 41.722344 173.52 
+L 454.642344 173.52 
+" clip-path="url(#pd385f8878f)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_12">
+      <defs>
+       <path id="m269f12769e" d="M 0 0 
+L -3.5 0 
+" style="stroke: #444444; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#m269f12769e" x="41.722344" y="173.52" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_7">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="34.722344" y="176.748047" transform="rotate(-0 34.722344 176.748047)">0</text>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_13">
+      <path d="M 41.722344 137.675172 
+L 454.642344 137.675172 
+" clip-path="url(#pd385f8878f)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_14">
+      <g>
+       <use xlink:href="#m269f12769e" x="41.722344" y="137.675172" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_8">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="34.722344" y="140.903219" transform="rotate(-0 34.722344 140.903219)">25</text>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_15">
+      <path d="M 41.722344 101.830345 
+L 454.642344 101.830345 
+" clip-path="url(#pd385f8878f)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_16">
+      <g>
+       <use xlink:href="#m269f12769e" x="41.722344" y="101.830345" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_9">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="34.722344" y="105.058392" transform="rotate(-0 34.722344 105.058392)">50</text>
+     </g>
+    </g>
+    <g id="ytick_4">
+     <g id="line2d_17">
+      <path d="M 41.722344 65.985517 
+L 454.642344 65.985517 
+" clip-path="url(#pd385f8878f)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_18">
+      <g>
+       <use xlink:href="#m269f12769e" x="41.722344" y="65.985517" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_10">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="34.722344" y="69.213564" transform="rotate(-0 34.722344 69.213564)">75</text>
+     </g>
+    </g>
+    <g id="ytick_5">
+     <g id="line2d_19">
+      <path d="M 41.722344 30.14069 
+L 454.642344 30.14069 
+" clip-path="url(#pd385f8878f)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_20">
+      <g>
+       <use xlink:href="#m269f12769e" x="41.722344" y="30.14069" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_11">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="34.722344" y="33.368737" transform="rotate(-0 34.722344 33.368737)">100</text>
+     </g>
+    </g>
+    <g id="text_12">
+     <text style="fill: #333333; font: 9px 'Helvetica'; text-anchor: middle" x="13.831875" y="90.36" transform="rotate(-90 13.831875 90.36)">Anteil der Spiele in %</text>
+    </g>
+   </g>
+   <g id="patch_3">
+    <path d="M 60.491435 173.52 
+L 110.86735 173.52 
+L 110.86735 127.925379 
+L 60.491435 127.925379 
+z
+" clip-path="url(#pd385f8878f)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 141.74291 173.52 
+L 192.118825 173.52 
+L 192.118825 112.727172 
+L 141.74291 112.727172 
+z
+" clip-path="url(#pd385f8878f)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 222.994386 173.52 
+L 273.370301 173.52 
+L 273.370301 108.425793 
+L 222.994386 108.425793 
+z
+" clip-path="url(#pd385f8878f)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 304.245862 173.52 
+L 354.621777 173.52 
+L 354.621777 98.962759 
+L 304.245862 98.962759 
+z
+" clip-path="url(#pd385f8878f)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 385.497338 173.52 
+L 435.873253 173.52 
+L 435.873253 89.643103 
+L 385.497338 89.643103 
+z
+" clip-path="url(#pd385f8878f)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 60.491435 127.925379 
+L 110.86735 127.925379 
+L 110.86735 99.392897 
+L 60.491435 99.392897 
+z
+" clip-path="url(#pd385f8878f)" style="fill: #9aa4ad"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 141.74291 112.727172 
+L 192.118825 112.727172 
+L 192.118825 82.187379 
+L 141.74291 82.187379 
+z
+" clip-path="url(#pd385f8878f)" style="fill: #9aa4ad"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 222.994386 108.425793 
+L 273.370301 108.425793 
+L 273.370301 81.327103 
+L 222.994386 81.327103 
+z
+" clip-path="url(#pd385f8878f)" style="fill: #9aa4ad"/>
+   </g>
+   <g id="patch_11">
+    <path d="M 304.245862 98.962759 
+L 354.621777 98.962759 
+L 354.621777 71.147172 
+L 304.245862 71.147172 
+z
+" clip-path="url(#pd385f8878f)" style="fill: #9aa4ad"/>
+   </g>
+   <g id="patch_12">
+    <path d="M 385.497338 89.643103 
+L 435.873253 89.643103 
+L 435.873253 61.970897 
+L 385.497338 61.970897 
+z
+" clip-path="url(#pd385f8878f)" style="fill: #9aa4ad"/>
+   </g>
+   <g id="patch_13">
+    <path d="M 60.491435 99.392897 
+L 110.86735 99.392897 
+L 110.86735 30.14069 
+L 60.491435 30.14069 
+z
+" clip-path="url(#pd385f8878f)" style="fill: #b0492a"/>
+   </g>
+   <g id="patch_14">
+    <path d="M 141.74291 82.187379 
+L 192.118825 82.187379 
+L 192.118825 30.14069 
+L 141.74291 30.14069 
+z
+" clip-path="url(#pd385f8878f)" style="fill: #b0492a"/>
+   </g>
+   <g id="patch_15">
+    <path d="M 222.994386 81.327103 
+L 273.370301 81.327103 
+L 273.370301 30.284069 
+L 222.994386 30.284069 
+z
+" clip-path="url(#pd385f8878f)" style="fill: #b0492a"/>
+   </g>
+   <g id="patch_16">
+    <path d="M 304.245862 71.147172 
+L 354.621777 71.147172 
+L 354.621777 30.14069 
+L 304.245862 30.14069 
+z
+" clip-path="url(#pd385f8878f)" style="fill: #b0492a"/>
+   </g>
+   <g id="patch_17">
+    <path d="M 385.497338 61.970897 
+L 435.873253 61.970897 
+L 435.873253 30.14069 
+L 385.497338 30.14069 
+z
+" clip-path="url(#pd385f8878f)" style="fill: #b0492a"/>
+   </g>
+   <g id="patch_18">
+    <path d="M 41.722344 173.52 
+L 41.722344 7.2 
+" style="fill: none; stroke: #888888; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_19">
+    <path d="M 41.722344 173.52 
+L 454.642344 173.52 
+" style="fill: none; stroke: #888888; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="text_13">
+    <text style="fill: #ffffff; font: 700 8.5px 'Helvetica'; text-anchor: middle" x="85.679392" y="152.885541" transform="rotate(-0 85.679392 152.885541)">32 %</text>
+   </g>
+   <g id="text_14">
+    <text style="font: 8px 'Helvetica'; text-anchor: middle" x="85.679392" y="24.405517" transform="rotate(-0 85.679392 24.405517)">1,15 Punkte</text>
+   </g>
+   <g id="text_15">
+    <text style="fill: #ffffff; font: 700 8.5px 'Helvetica'; text-anchor: middle" x="166.930868" y="145.286438" transform="rotate(-0 166.930868 145.286438)">42 %</text>
+   </g>
+   <g id="text_16">
+    <text style="font: 8px 'Helvetica'; text-anchor: middle" x="166.930868" y="24.405517" transform="rotate(-0 166.930868 24.405517)">1,48 Punkte</text>
+   </g>
+   <g id="text_17">
+    <text style="fill: #ffffff; font: 700 8.5px 'Helvetica'; text-anchor: middle" x="248.182344" y="143.135748" transform="rotate(-0 248.182344 143.135748)">45 %</text>
+   </g>
+   <g id="text_18">
+    <text style="font: 8px 'Helvetica'; text-anchor: middle" x="248.182344" y="24.405517" transform="rotate(-0 248.182344 24.405517)">1,55 Punkte</text>
+   </g>
+   <g id="text_19">
+    <text style="fill: #ffffff; font: 700 8.5px 'Helvetica'; text-anchor: middle" x="329.43382" y="138.404231" transform="rotate(-0 329.43382 138.404231)">52 %</text>
+   </g>
+   <g id="text_20">
+    <text style="font: 8px 'Helvetica'; text-anchor: middle" x="329.43382" y="24.405517" transform="rotate(-0 329.43382 24.405517)">1,75 Punkte</text>
+   </g>
+   <g id="text_21">
+    <text style="fill: #ffffff; font: 700 8.5px 'Helvetica'; text-anchor: middle" x="410.685295" y="133.744403" transform="rotate(-0 410.685295 133.744403)">58 %</text>
+   </g>
+   <g id="text_22">
+    <text style="font: 8px 'Helvetica'; text-anchor: middle" x="410.685295" y="24.405517" transform="rotate(-0 410.685295 24.405517)">1,95 Punkte</text>
+   </g>
+   <g id="legend_1">
+    <g id="patch_20">
+     <path d="M 153.128047 225.566878 
+L 168.128047 225.566878 
+L 168.128047 220.316878 
+L 153.128047 220.316878 
+z
+" style="fill: #34b190"/>
+    </g>
+    <g id="text_23">
+     <text style="font: 7.5px 'Helvetica'; text-anchor: start" x="174.128047" y="225.566878" transform="rotate(-0 174.128047 225.566878)">Heimsieg</text>
+    </g>
+    <g id="patch_21">
+     <path d="M 220.386641 225.566878 
+L 235.386641 225.566878 
+L 235.386641 220.316878 
+L 220.386641 220.316878 
+z
+" style="fill: #9aa4ad"/>
+    </g>
+    <g id="text_24">
+     <text style="font: 7.5px 'Helvetica'; text-anchor: start" x="241.386641" y="225.566878" transform="rotate(-0 241.386641 225.566878)">Remis</text>
+    </g>
+    <g id="patch_22">
+     <path d="M 277.637422 225.566878 
+L 292.637422 225.566878 
+L 292.637422 220.316878 
+L 277.637422 220.316878 
+z
+" style="fill: #b0492a"/>
+    </g>
+    <g id="text_25">
+     <text style="font: 7.5px 'Helvetica'; text-anchor: start" x="298.637422" y="225.566878" transform="rotate(-0 298.637422 225.566878)">Auswärtssieg</text>
+    </g>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="pd385f8878f">
+   <rect x="41.722344" y="7.2" width="412.92" height="166.32"/>
+  </clipPath>
+ </defs>
+</svg>
+<figcaption><span class="lab">Abbildung 5.</span> Ergebnisse nach Stärke der Startelf. Die 6.021 Spiele sind in fünf gleich große Gruppen geteilt. Ist die Heimelf nach den alten Spielerwerten klar stärker, gewinnt sie 58 % der Spiele und holt 1,95 Punkte je Spiel. Ist sie klar schwächer, sind es 32 % und 1,15 Punkte.</figcaption></figure>
+<p><strong>Die Werte stimmen auch in der Höhe.</strong> Das Modell behauptet: Ein Tor Unterschied in der Startelf-Summe bedeutet ein Tor
+Unterschied im Ergebnis. Gemessen wurden 1,18 Tore (Unsicherheit ± 0,12). Die Spielerwerte sind
+also in echten Toren zu lesen und eher vorsichtig als übertrieben.</p>
+<p><strong>Vergleich mit der reinen Mannschaftsstärke.</strong> Als Messlatte dient eine Mannschaftsstärke, die nur aus Ergebnissen
+lernt (Elo). Verglichen wird der Prognosefehler für Sieg, Remis und Niederlage an den Spielen der Saison 2026/27. Die Umrechnung in
+Wahrscheinlichkeiten wurde an der Saison 2025/26 eingestellt.</p>
+<figure><svg xmlns:xlink="http://www.w3.org/1999/xlink" style="width:100%;height:auto" viewBox="0 0 571.191219 210.266719" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-11-17T01:21:14.983721</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.9.4, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 210.266719 
+L 571.191219 210.266719 
+L 571.191219 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 88.231219 175.181875 
+L 319.501219 175.181875 
+L 319.501219 19.831875 
+L 88.231219 19.831875 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1">
+      <path d="M 92.448909 175.181875 
+L 92.448909 19.831875 
+" clip-path="url(#p2572f0e9c6)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_2">
+      <defs>
+       <path id="md9805897ac" d="M 0 0 
+L 0 3.5 
+" style="stroke: #444444; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#md9805897ac" x="92.448909" y="175.181875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_1">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="92.448909" y="188.637969" transform="rotate(-0 92.448909 188.637969)">0.210</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_3">
+      <path d="M 127.596325 175.181875 
+L 127.596325 19.831875 
+" clip-path="url(#p2572f0e9c6)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_4">
+      <g>
+       <use xlink:href="#md9805897ac" x="127.596325" y="175.181875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_2">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="127.596325" y="188.637969" transform="rotate(-0 127.596325 188.637969)">0.215</text>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_5">
+      <path d="M 162.743742 175.181875 
+L 162.743742 19.831875 
+" clip-path="url(#p2572f0e9c6)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_6">
+      <g>
+       <use xlink:href="#md9805897ac" x="162.743742" y="175.181875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_3">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="162.743742" y="188.637969" transform="rotate(-0 162.743742 188.637969)">0.220</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_7">
+      <path d="M 197.891158 175.181875 
+L 197.891158 19.831875 
+" clip-path="url(#p2572f0e9c6)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_8">
+      <g>
+       <use xlink:href="#md9805897ac" x="197.891158" y="175.181875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_4">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="197.891158" y="188.637969" transform="rotate(-0 197.891158 188.637969)">0.225</text>
+     </g>
+    </g>
+    <g id="xtick_5">
+     <g id="line2d_9">
+      <path d="M 233.038574 175.181875 
+L 233.038574 19.831875 
+" clip-path="url(#p2572f0e9c6)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_10">
+      <g>
+       <use xlink:href="#md9805897ac" x="233.038574" y="175.181875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_5">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="233.038574" y="188.637969" transform="rotate(-0 233.038574 188.637969)">0.230</text>
+     </g>
+    </g>
+    <g id="xtick_6">
+     <g id="line2d_11">
+      <path d="M 268.185991 175.181875 
+L 268.185991 19.831875 
+" clip-path="url(#p2572f0e9c6)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_12">
+      <g>
+       <use xlink:href="#md9805897ac" x="268.185991" y="175.181875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_6">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="268.185991" y="188.637969" transform="rotate(-0 268.185991 188.637969)">0.235</text>
+     </g>
+    </g>
+    <g id="xtick_7">
+     <g id="line2d_13">
+      <path d="M 303.333407 175.181875 
+L 303.333407 19.831875 
+" clip-path="url(#p2572f0e9c6)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_14">
+      <g>
+       <use xlink:href="#md9805897ac" x="303.333407" y="175.181875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_7">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="303.333407" y="188.637969" transform="rotate(-0 303.333407 188.637969)">0.240</text>
+     </g>
+    </g>
+    <g id="text_8">
+     <text style="fill: #333333; font: 9px 'Helvetica'; text-anchor: middle" x="203.866219" y="201.075469" transform="rotate(-0 203.866219 201.075469)">Prognosefehler (kleiner ist besser)</text>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_15">
+      <defs>
+       <path id="m3e693fe581" d="M 0 0 
+L -3.5 0 
+" style="stroke: #444444; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#m3e693fe581" x="88.231219" y="36.369527" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_9">
+      <text style="fill: #444444; font: 7.4px 'Helvetica'" transform="translate(31.866281 35.516215)">einfache Regel</text>
+      <text style="fill: #444444; font: 7.4px 'Helvetica'" transform="translate(8.034813 43.696915)">(immer gleiche Quote)</text>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_16">
+      <g>
+       <use xlink:href="#m3e693fe581" x="88.231219" y="66.938201" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_10">
+      <text style="fill: #444444; font: 7.4px 'Helvetica'" transform="translate(40.103406 66.18317)">Spielerwerte</text>
+      <text style="fill: #444444; font: 7.4px 'Helvetica'" transform="translate(7.2 74.230207)">(Stand vor der Saison)</text>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_17">
+      <g>
+       <use xlink:href="#m3e693fe581" x="88.231219" y="97.506875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_11">
+      <text style="fill: #444444; font: 7.4px 'Helvetica'" transform="translate(19.130188 96.679578)">Mannschaftsstärke</text>
+      <text style="fill: #444444; font: 7.4px 'Helvetica'" transform="translate(7.2 104.726616)">(Stand vor der Saison)</text>
+     </g>
+    </g>
+    <g id="ytick_4">
+     <g id="line2d_18">
+      <g>
+       <use xlink:href="#m3e693fe581" x="88.231219" y="128.075549" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_12">
+      <text style="fill: #444444; font: 7.4px 'Helvetica'" transform="translate(19.130188 127.277158)">Mannschaftsstärke</text>
+      <text style="fill: #444444; font: 7.4px 'Helvetica'" transform="translate(14.603469 135.254821)">(laufend aktualisiert)</text>
+     </g>
+    </g>
+    <g id="ytick_5">
+     <g id="line2d_19">
+      <g>
+       <use xlink:href="#m3e693fe581" x="88.231219" y="158.644223" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_13">
+      <text style="fill: #444444; font: 7.4px 'Helvetica'" transform="translate(33.725531 157.945269)">Spielerwerte +</text>
+      <text style="fill: #444444; font: 7.4px 'Helvetica'" transform="translate(19.130188 165.857719)">Mannschaftsstärke</text>
+     </g>
+    </g>
+   </g>
+   <g id="patch_3">
+    <path d="M -1383.742581 26.893239 
+L 263.265352 26.893239 
+L 263.265352 45.845816 
+L -1383.742581 45.845816 
+z
+" clip-path="url(#p2572f0e9c6)" style="fill: #9aa4ad"/>
+   </g>
+   <g id="patch_4">
+    <path d="M -1383.742581 57.461912 
+L 244.988696 57.461912 
+L 244.988696 76.41449 
+L -1383.742581 76.41449 
+z
+" clip-path="url(#p2572f0e9c6)" style="fill: #1f5fa8"/>
+   </g>
+   <g id="patch_5">
+    <path d="M -1383.742581 88.030586 
+L 243.582799 88.030586 
+L 243.582799 106.983164 
+L -1383.742581 106.983164 
+z
+" clip-path="url(#p2572f0e9c6)" style="fill: #7aa5d6"/>
+   </g>
+   <g id="patch_6">
+    <path d="M -1383.742581 118.59926 
+L 175.396811 118.59926 
+L 175.396811 137.551838 
+L -1383.742581 137.551838 
+z
+" clip-path="url(#p2572f0e9c6)" style="fill: #7aa5d6"/>
+   </g>
+   <g id="patch_7">
+    <path d="M -1383.742581 149.167934 
+L 172.585018 149.167934 
+L 172.585018 168.120511 
+L -1383.742581 168.120511 
+z
+" clip-path="url(#p2572f0e9c6)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 88.231219 175.181875 
+L 88.231219 19.831875 
+" style="fill: none; stroke: #888888; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 88.231219 175.181875 
+L 319.501219 175.181875 
+" style="fill: none; stroke: #888888; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="text_14">
+    <text style="font: 7.8px 'Helvetica'; text-anchor: start" x="267.483042" y="38.354262" transform="rotate(-0 267.483042 38.354262)">0,2343</text>
+   </g>
+   <g id="text_15">
+    <text style="font: 7.8px 'Helvetica'; text-anchor: start" x="249.206386" y="68.922936" transform="rotate(-0 249.206386 68.922936)">0,2317</text>
+   </g>
+   <g id="text_16">
+    <text style="font: 7.8px 'Helvetica'; text-anchor: start" x="247.800489" y="99.491609" transform="rotate(-0 247.800489 99.491609)">0,2315</text>
+   </g>
+   <g id="text_17">
+    <text style="font: 7.8px 'Helvetica'; text-anchor: start" x="179.614501" y="130.060283" transform="rotate(-0 179.614501 130.060283)">0,2218</text>
+   </g>
+   <g id="text_18">
+    <text style="font: 7.8px 'Helvetica'; text-anchor: start" x="176.802708" y="160.628957" transform="rotate(-0 176.802708 160.628957)">0,2214</text>
+   </g>
+   <g id="text_19">
+    <text style="font: 9px 'Helvetica'; text-anchor: start" x="88.231219" y="13.831875" transform="rotate(-0 88.231219 13.831875)">Erwachsenenfußball · 1.618 Spiele der Saison 2026/27</text>
+   </g>
+  </g>
+  <g id="axes_2">
+   <g id="patch_10">
+    <path d="M 332.721219 175.181875 
+L 563.991219 175.181875 
+L 563.991219 19.831875 
+L 332.721219 19.831875 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="matplotlib.axis_3">
+    <g id="xtick_8">
+     <g id="line2d_20">
+      <path d="M 357.424092 175.181875 
+L 357.424092 19.831875 
+" clip-path="url(#p9041bb927e)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_21">
+      <g>
+       <use xlink:href="#md9805897ac" x="357.424092" y="175.181875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_20">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="357.424092" y="188.637969" transform="rotate(-0 357.424092 188.637969)">0.20</text>
+     </g>
+    </g>
+    <g id="xtick_9">
+     <g id="line2d_22">
+      <path d="M 400.015252 175.181875 
+L 400.015252 19.831875 
+" clip-path="url(#p9041bb927e)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_23">
+      <g>
+       <use xlink:href="#md9805897ac" x="400.015252" y="175.181875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_21">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="400.015252" y="188.637969" transform="rotate(-0 400.015252 188.637969)">0.21</text>
+     </g>
+    </g>
+    <g id="xtick_10">
+     <g id="line2d_24">
+      <path d="M 442.606412 175.181875 
+L 442.606412 19.831875 
+" clip-path="url(#p9041bb927e)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_25">
+      <g>
+       <use xlink:href="#md9805897ac" x="442.606412" y="175.181875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_22">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="442.606412" y="188.637969" transform="rotate(-0 442.606412 188.637969)">0.22</text>
+     </g>
+    </g>
+    <g id="xtick_11">
+     <g id="line2d_26">
+      <path d="M 485.197572 175.181875 
+L 485.197572 19.831875 
+" clip-path="url(#p9041bb927e)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_27">
+      <g>
+       <use xlink:href="#md9805897ac" x="485.197572" y="175.181875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_23">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="485.197572" y="188.637969" transform="rotate(-0 485.197572 188.637969)">0.23</text>
+     </g>
+    </g>
+    <g id="xtick_12">
+     <g id="line2d_28">
+      <path d="M 527.788733 175.181875 
+L 527.788733 19.831875 
+" clip-path="url(#p9041bb927e)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_29">
+      <g>
+       <use xlink:href="#md9805897ac" x="527.788733" y="175.181875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_24">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="527.788733" y="188.637969" transform="rotate(-0 527.788733 188.637969)">0.24</text>
+     </g>
+    </g>
+    <g id="text_25">
+     <text style="fill: #333333; font: 9px 'Helvetica'; text-anchor: middle" x="448.356219" y="201.075469" transform="rotate(-0 448.356219 201.075469)">Prognosefehler (kleiner ist besser)</text>
+    </g>
+   </g>
+   <g id="matplotlib.axis_4">
+    <g id="ytick_6">
+     <g id="line2d_30">
+      <g>
+       <use xlink:href="#m3e693fe581" x="332.721219" y="36.369527" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_7">
+     <g id="line2d_31">
+      <g>
+       <use xlink:href="#m3e693fe581" x="332.721219" y="66.938201" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_8">
+     <g id="line2d_32">
+      <g>
+       <use xlink:href="#m3e693fe581" x="332.721219" y="97.506875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_9">
+     <g id="line2d_33">
+      <g>
+       <use xlink:href="#m3e693fe581" x="332.721219" y="128.075549" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_10">
+     <g id="line2d_34">
+      <g>
+       <use xlink:href="#m3e693fe581" x="332.721219" y="158.644223" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+    </g>
+   </g>
+   <g id="patch_11">
+    <path d="M -494.399113 26.893239 
+L 529.918291 26.893239 
+L 529.918291 45.845816 
+L -494.399113 45.845816 
+z
+" clip-path="url(#p9041bb927e)" style="fill: #9aa4ad"/>
+   </g>
+   <g id="patch_12">
+    <path d="M -494.399113 57.461912 
+L 485.623484 57.461912 
+L 485.623484 76.41449 
+L -494.399113 76.41449 
+z
+" clip-path="url(#p9041bb927e)" style="fill: #1f5fa8"/>
+   </g>
+   <g id="patch_13">
+    <path d="M -494.399113 88.030586 
+L 391.49702 88.030586 
+L 391.49702 106.983164 
+L -494.399113 106.983164 
+z
+" clip-path="url(#p9041bb927e)" style="fill: #7aa5d6"/>
+   </g>
+   <g id="patch_14">
+    <path d="M -494.399113 118.59926 
+L 384.682434 118.59926 
+L 384.682434 137.551838 
+L -494.399113 137.551838 
+z
+" clip-path="url(#p9041bb927e)" style="fill: #7aa5d6"/>
+   </g>
+   <g id="patch_15">
+    <path d="M -494.399113 149.167934 
+L 383.830611 149.167934 
+L 383.830611 168.120511 
+L -494.399113 168.120511 
+z
+" clip-path="url(#p9041bb927e)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_16">
+    <path d="M 332.721219 175.181875 
+L 332.721219 19.831875 
+" style="fill: none; stroke: #888888; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_17">
+    <path d="M 332.721219 175.181875 
+L 563.991219 175.181875 
+" style="fill: none; stroke: #888888; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="text_26">
+    <text style="font: 7.8px 'Helvetica'; text-anchor: start" x="532.47376" y="38.354262" transform="rotate(-0 532.47376 38.354262)">0,2405</text>
+   </g>
+   <g id="text_27">
+    <text style="font: 7.8px 'Helvetica'; text-anchor: start" x="488.178954" y="68.922936" transform="rotate(-0 488.178954 68.922936)">0,2301</text>
+   </g>
+   <g id="text_28">
+    <text style="font: 7.8px 'Helvetica'; text-anchor: start" x="394.052489" y="99.491609" transform="rotate(-0 394.052489 99.491609)">0,2080</text>
+   </g>
+   <g id="text_29">
+    <text style="font: 7.8px 'Helvetica'; text-anchor: start" x="387.237904" y="130.060283" transform="rotate(-0 387.237904 130.060283)">0,2064</text>
+   </g>
+   <g id="text_30">
+    <text style="font: 7.8px 'Helvetica'; text-anchor: start" x="386.386081" y="160.628957" transform="rotate(-0 386.386081 160.628957)">0,2062</text>
+   </g>
+   <g id="text_31">
+    <text style="font: 9px 'Helvetica'; text-anchor: start" x="332.721219" y="13.831875" transform="rotate(-0 332.721219 13.831875)">Nachwuchs · 275 Spiele der Saison 2026/27</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p2572f0e9c6">
+   <rect x="88.231219" y="19.831875" width="231.27" height="155.35"/>
+  </clipPath>
+  <clipPath id="p9041bb927e">
+   <rect x="332.721219" y="19.831875" width="231.27" height="155.35"/>
+  </clipPath>
+ </defs>
+</svg>
+<figcaption><span class="lab">Abbildung 6.</span> Prognosefehler im Vergleich, kleiner ist besser. Im Erwachsenenfußball sind Spielerwerte und Mannschaftsstärke bei gleichem Wissensstand gleich gut. Eine laufend aktualisierte Mannschaftsstärke ist besser, weil sie die Ergebnisse der laufenden Saison kennt. Im Nachwuchs trägt die Mannschaftsstärke deutlich mehr, weil Akademien über Jahre ähnlich stark bleiben, die Kader aber jedes Jahr wechseln.</figcaption></figure>
+<p class="tabcap"><span class="lab">Tabelle 4.</span> Prognosefehler (Ranked Probability Score) im Erwachsenenfußball, Saison 2026/27.</p><div class="tbl"><table><thead><tr><th class="l">Prognose aus</th><th class="l">Wissensstand</th><th class="r">Fehler</th><th class="r">richtig getippt</th></tr></thead><tbody><tr><td class="l">einfache Regel, immer dieselbe Quote</td><td class="l">Saison 2025/26</td><td class="r">0,2343</td><td class="r">46,3 %</td></tr><tr><td class="l">Spielerwerte der Startelf</td><td class="l">bis Juni 2025</td><td class="r">0,2317</td><td class="r">47,5 %</td></tr><tr><td class="l">Mannschaftsstärke</td><td class="l">bis Juni 2025</td><td class="r">0,2315</td><td class="r">47,3 %</td></tr><tr><td class="l">Mannschaftsstärke</td><td class="l">bis zum Vortag</td><td class="r">0,2218</td><td class="r">50,4 %</td></tr><tr><td class="l">Spielerwerte und Mannschaftsstärke</td><td class="l">gemischt</td><td class="r">0,2214</td><td class="r">50,3 %</td></tr></tbody></table></div>
+<p><strong>Lesart.</strong> Die Spielerwerte sind kein Wettmodell. Für die Prognose des nächsten Spiels ist eine laufend aktualisierte
+Mannschaftsstärke überlegen, und das ist zu erwarten. Entscheidend ist etwas anderes: Werte, die über ein Jahr alt sind und nur zwei
+Drittel der Starter abdecken, erklären Ergebnisse so gut wie die Mannschaftsstärke desselben Stands. Die Stärke einer Mannschaft steckt
+also zu einem großen Teil in den Einzelwerten ihrer Spieler, und nur diese lassen sich auf einen anderen Klub übertragen.</p>
+<figure><svg xmlns:xlink="http://www.w3.org/1999/xlink" style="width:100%;height:auto" viewBox="0 0 451.832656 186.499156" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-11-17T01:21:15.011406</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.9.4, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 186.499156 
+L 451.832656 186.499156 
+L 451.832656 -0 
+L 0 -0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 31.712656 151.344 
+L 444.632656 151.344 
+L 444.632656 7.2 
+L 31.712656 7.2 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1">
+      <path d="M 90.701228 151.344 
+L 90.701228 7.2 
+" clip-path="url(#pe69ca664fd)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_2">
+      <defs>
+       <path id="m72a00e0116" d="M 0 0 
+L 0 3.5 
+" style="stroke: #444444; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#m72a00e0116" x="90.701228" y="151.344" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_1">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="90.701228" y="164.800094" transform="rotate(-0 90.701228 164.800094)">+0,05</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_3">
+      <path d="M 189.015513 151.344 
+L 189.015513 7.2 
+" clip-path="url(#pe69ca664fd)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_4">
+      <g>
+       <use xlink:href="#m72a00e0116" x="189.015513" y="151.344" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_2">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="189.015513" y="164.800094" transform="rotate(-0 189.015513 164.800094)">+0,10</text>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_5">
+      <path d="M 287.329799 151.344 
+L 287.329799 7.2 
+" clip-path="url(#pe69ca664fd)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_6">
+      <g>
+       <use xlink:href="#m72a00e0116" x="287.329799" y="151.344" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_3">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="287.329799" y="164.800094" transform="rotate(-0 287.329799 164.800094)">+0,20</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_7">
+      <path d="M 385.644085 151.344 
+L 385.644085 7.2 
+" clip-path="url(#pe69ca664fd)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_8">
+      <g>
+       <use xlink:href="#m72a00e0116" x="385.644085" y="151.344" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_4">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="385.644085" y="164.800094" transform="rotate(-0 385.644085 164.800094)">+0,30</text>
+     </g>
+    </g>
+    <g id="text_5">
+     <text style="fill: #333333; font: 9px 'Helvetica'; text-anchor: middle" x="238.172656" y="177.307906" transform="rotate(-0 238.172656 177.307906)">Verbesserung der Startelf in Toren je 90 Minuten (Summe der Spielerwerte)</text>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_9">
+      <path d="M 31.712656 151.344 
+L 444.632656 151.344 
+" clip-path="url(#pe69ca664fd)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_10">
+      <defs>
+       <path id="m3058fab169" d="M 0 0 
+L -3.5 0 
+" style="stroke: #444444; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#m3058fab169" x="31.712656" y="151.344" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_6">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="24.712656" y="154.572047" transform="rotate(-0 24.712656 154.572047)">0</text>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_11">
+      <path d="M 31.712656 131.462069 
+L 444.632656 131.462069 
+" clip-path="url(#pe69ca664fd)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_12">
+      <g>
+       <use xlink:href="#m3058fab169" x="31.712656" y="131.462069" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_7">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="24.712656" y="134.690116" transform="rotate(-0 24.712656 134.690116)">1</text>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_13">
+      <path d="M 31.712656 111.580138 
+L 444.632656 111.580138 
+" clip-path="url(#pe69ca664fd)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_14">
+      <g>
+       <use xlink:href="#m3058fab169" x="31.712656" y="111.580138" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_8">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="24.712656" y="114.808185" transform="rotate(-0 24.712656 114.808185)">2</text>
+     </g>
+    </g>
+    <g id="ytick_4">
+     <g id="line2d_15">
+      <path d="M 31.712656 91.698207 
+L 444.632656 91.698207 
+" clip-path="url(#pe69ca664fd)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_16">
+      <g>
+       <use xlink:href="#m3058fab169" x="31.712656" y="91.698207" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_9">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="24.712656" y="94.926254" transform="rotate(-0 24.712656 94.926254)">3</text>
+     </g>
+    </g>
+    <g id="ytick_5">
+     <g id="line2d_17">
+      <path d="M 31.712656 71.816276 
+L 444.632656 71.816276 
+" clip-path="url(#pe69ca664fd)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_18">
+      <g>
+       <use xlink:href="#m3058fab169" x="31.712656" y="71.816276" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_10">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="24.712656" y="75.044323" transform="rotate(-0 24.712656 75.044323)">4</text>
+     </g>
+    </g>
+    <g id="ytick_6">
+     <g id="line2d_19">
+      <path d="M 31.712656 51.934345 
+L 444.632656 51.934345 
+" clip-path="url(#pe69ca664fd)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_20">
+      <g>
+       <use xlink:href="#m3058fab169" x="31.712656" y="51.934345" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_11">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="24.712656" y="55.162392" transform="rotate(-0 24.712656 55.162392)">5</text>
+     </g>
+    </g>
+    <g id="ytick_7">
+     <g id="line2d_21">
+      <path d="M 31.712656 32.052414 
+L 444.632656 32.052414 
+" clip-path="url(#pe69ca664fd)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_22">
+      <g>
+       <use xlink:href="#m3058fab169" x="31.712656" y="32.052414" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_12">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="24.712656" y="35.280461" transform="rotate(-0 24.712656 35.280461)">6</text>
+     </g>
+    </g>
+    <g id="ytick_8">
+     <g id="line2d_23">
+      <path d="M 31.712656 12.170483 
+L 444.632656 12.170483 
+" clip-path="url(#pe69ca664fd)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_24">
+      <g>
+       <use xlink:href="#m3058fab169" x="31.712656" y="12.170483" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_13">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="24.712656" y="15.39853" transform="rotate(-0 24.712656 15.39853)">7</text>
+     </g>
+    </g>
+    <g id="text_14">
+     <text style="fill: #333333; font: 9px 'Helvetica'; text-anchor: middle" x="13.831875" y="79.272" transform="rotate(-90 13.831875 79.272)">zusätzliche Punkte in 30 Spielen</text>
+    </g>
+   </g>
+   <g id="patch_3">
+    <path d="M 63.664799 151.344 
+L 117.737656 151.344 
+L 117.737656 135.438455 
+L 63.664799 135.438455 
+z
+" clip-path="url(#pe69ca664fd)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 161.979085 151.344 
+L 216.051942 151.344 
+L 216.051942 117.544717 
+L 161.979085 117.544717 
+z
+" clip-path="url(#pe69ca664fd)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 260.293371 151.344 
+L 314.366228 151.344 
+L 314.366228 83.745434 
+L 260.293371 83.745434 
+z
+" clip-path="url(#pe69ca664fd)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 358.607656 151.344 
+L 412.680513 151.344 
+L 412.680513 51.934345 
+L 358.607656 51.934345 
+z
+" clip-path="url(#pe69ca664fd)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 31.712656 151.344 
+L 31.712656 7.2 
+" style="fill: none; stroke: #888888; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 31.712656 151.344 
+L 444.632656 151.344 
+" style="fill: none; stroke: #888888; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="text_15">
+    <text style="font: 7.6px 'Helvetica'" transform="translate(70.314228 123.591716)">+0,8 Punkte</text>
+    <text style="font: 7.6px 'Helvetica'" transform="translate(56.161009 132.456166)">Siegchance +0,9 PP</text>
+   </g>
+   <g id="text_16">
+    <text style="font: 7.6px 'Helvetica'" transform="translate(168.628513 105.697978)">+1,7 Punkte</text>
+    <text style="font: 7.6px 'Helvetica'" transform="translate(154.475295 114.562428)">Siegchance +1,9 PP</text>
+   </g>
+   <g id="text_17">
+    <text style="font: 7.6px 'Helvetica'" transform="translate(266.942799 71.898695)">+3,4 Punkte</text>
+    <text style="font: 7.6px 'Helvetica'" transform="translate(252.78958 80.763145)">Siegchance +3,8 PP</text>
+   </g>
+   <g id="text_18">
+    <text style="font: 7.6px 'Helvetica'" transform="translate(365.257085 40.087605)">+5,0 Punkte</text>
+    <text style="font: 7.6px 'Helvetica'" transform="translate(351.103866 48.952055)">Siegchance +5,7 PP</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="pe69ca664fd">
+   <rect x="31.712656" y="7.2" width="412.92" height="144.144"/>
+  </clipPath>
+ </defs>
+</svg>
+<figcaption><span class="lab">Abbildung 7.</span> Was ein besserer Spieler in Punkten wert ist. Grundlage sind 4.986 Spiele im Erwachsenenfußball. Ein Spieler, der die Startelf um 0,10 Tore je Spiel verbessert, bringt rund 1,7 Punkte in 30 Spielen. Drei solche Spieler entsprechen etwa fünf Punkten. PP = Prozentpunkte.</figcaption></figure>
+<div class="kern"><h4>Kernaussagen</h4><ul><li>Klar stärkere Startelf: 58 % Heimsiege. Klar schwächere: 32 %.</li><li>Ein Tor Unterschied in den Spielerwerten entspricht gemessen 1,18 Toren im Ergebnis.</li><li>Bei gleichem Wissensstand sind Spielerwerte so treffsicher wie eine Mannschaftsstärke, zeigen aber zusätzlich, wer sie trägt.</li><li>+0,10 Tore je Spiel in der Startelf sind rund 1,7 Punkte je Saison.</li></ul></div>
+</section><section class="main" id="talent"><h2>6 Nachweis 2: Das Rating erkennt spätere Aufsteiger früh</h2>
+<p><strong>Aufbau der Prüfung.</strong> Die Frage eines Klubs lautet: Wenn das Dashboard einen Nachwuchsspieler ganz oben zeigt, wie oft
+wird aus so einem Spieler etwas? Dazu wurden die Bewertungen zu einem früheren Zeitpunkt eingefroren und mit dem verglichen, was danach
+geschah. Geprüft wurden zwei Zeitfenster.</p>
+<p class="tabcap"><span class="lab">Tabelle 5.</span> Die beiden Zeitfenster.</p><div class="tbl"><table><thead><tr><th class="l"></th><th class="l">Bewertung aus</th><th class="l">Ergebnis gemessen</th><th class="r">Spieler</th><th class="r">Durchbruch im Schnitt</th></tr></thead><tbody><tr><td class="l">Fenster 1</td><td class="l">Saison 2023/24</td><td class="l">ab Saison 2025/26</td><td class="r">544</td><td class="r">25,9 %</td></tr><tr><td class="l">Fenster 2</td><td class="l">Saisonen 2023/24 und 2024/25</td><td class="l">ab Saison 2026/27</td><td class="r">578</td><td class="r">20,9 %</td></tr></tbody></table></div>
+<p>Einbezogen sind Nachwuchsspieler mit mindestens 900 Einsatzminuten in der letzten Saison vor dem Stichtag. <strong>Durchbruch</strong>
+heißt: Der Spieler steht heute im Kader eines Klubs der Bundesliga oder 2. Liga, oder er ist Stammspieler in einer Regionalliga
+(mindestens 900 Minuten in Fenster 1, mindestens 300 Minuten in Fenster 2, weil die Saison 2026/27 erst zu einem Drittel gespielt ist).</p>
+<figure><svg xmlns:xlink="http://www.w3.org/1999/xlink" style="width:100%;height:auto" viewBox="0 0 570.816562 217.472113" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-11-17T01:21:15.060712</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.9.4, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 217.472113 
+L 570.816562 217.472113 
+L 570.816562 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 41.546563 188.109875 
+L 295.971563 188.109875 
+L 295.971563 19.831875 
+L 41.546563 19.831875 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1">
+      <path d="M 71.576098 188.109875 
+L 71.576098 19.831875 
+" clip-path="url(#p98b2109e42)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_2">
+      <defs>
+       <path id="mf4b798b31a" d="M 0 0 
+L 0 3.5 
+" style="stroke: #444444; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#mf4b798b31a" x="71.576098" y="188.109875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_1">
+      <text style="fill: #444444; font: 7.6px 'Helvetica'" transform="translate(65.028817 200.561688)">Top</text>
+      <text style="fill: #444444; font: 7.6px 'Helvetica'" transform="translate(65.028223 208.687988)">2 %</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_3">
+      <path d="M 120.16758 188.109875 
+L 120.16758 19.831875 
+" clip-path="url(#p98b2109e42)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_4">
+      <g>
+       <use xlink:href="#mf4b798b31a" x="120.16758" y="188.109875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_2">
+      <text style="fill: #444444; font: 7.6px 'Helvetica'" transform="translate(113.620299 200.561688)">Top</text>
+      <text style="fill: #444444; font: 7.6px 'Helvetica'" transform="translate(111.506549 208.687988)">10 %</text>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_5">
+      <path d="M 168.759062 188.109875 
+L 168.759062 19.831875 
+" clip-path="url(#p98b2109e42)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_6">
+      <g>
+       <use xlink:href="#mf4b798b31a" x="168.759062" y="188.109875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_3">
+      <text style="fill: #444444; font: 7.6px 'Helvetica'" transform="translate(162.211781 200.561688)">Top</text>
+      <text style="fill: #444444; font: 7.6px 'Helvetica'" transform="translate(160.098031 208.687988)">20 %</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_7">
+      <path d="M 217.350545 188.109875 
+L 217.350545 19.831875 
+" clip-path="url(#p98b2109e42)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_8">
+      <g>
+       <use xlink:href="#mf4b798b31a" x="217.350545" y="188.109875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_4">
+      <text style="fill: #444444; font: 7.6px 'Helvetica'" transform="translate(207.211076 200.561688)">20 bis</text>
+      <text style="fill: #444444; font: 7.6px 'Helvetica'" transform="translate(208.689513 208.687988)">50 %</text>
+     </g>
+    </g>
+    <g id="xtick_5">
+     <g id="line2d_9">
+      <path d="M 265.942027 188.109875 
+L 265.942027 19.831875 
+" clip-path="url(#p98b2109e42)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_10">
+      <g>
+       <use xlink:href="#mf4b798b31a" x="265.942027" y="188.109875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_5">
+      <text style="fill: #444444; font: 7.6px 'Helvetica'" transform="translate(255.168433 200.561688)">untere</text>
+      <text style="fill: #444444; font: 7.6px 'Helvetica'" transform="translate(256.015714 208.687988)">Hälfte</text>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_11">
+      <path d="M 41.546563 188.109875 
+L 295.971563 188.109875 
+" clip-path="url(#p98b2109e42)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_12">
+      <defs>
+       <path id="m9c4451a26f" d="M 0 0 
+L -3.5 0 
+" style="stroke: #444444; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#m9c4451a26f" x="41.546563" y="188.109875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_6">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="34.546563" y="191.337922" transform="rotate(-0 34.546563 191.337922)">0</text>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_13">
+      <path d="M 41.546563 154.454275 
+L 295.971563 154.454275 
+" clip-path="url(#p98b2109e42)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_14">
+      <g>
+       <use xlink:href="#m9c4451a26f" x="41.546563" y="154.454275" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_7">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="34.546563" y="157.682322" transform="rotate(-0 34.546563 157.682322)">20</text>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_15">
+      <path d="M 41.546563 120.798675 
+L 295.971563 120.798675 
+" clip-path="url(#p98b2109e42)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_16">
+      <g>
+       <use xlink:href="#m9c4451a26f" x="41.546563" y="120.798675" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_8">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="34.546563" y="124.026722" transform="rotate(-0 34.546563 124.026722)">40</text>
+     </g>
+    </g>
+    <g id="ytick_4">
+     <g id="line2d_17">
+      <path d="M 41.546563 87.143075 
+L 295.971563 87.143075 
+" clip-path="url(#p98b2109e42)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_18">
+      <g>
+       <use xlink:href="#m9c4451a26f" x="41.546563" y="87.143075" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_9">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="34.546563" y="90.371122" transform="rotate(-0 34.546563 90.371122)">60</text>
+     </g>
+    </g>
+    <g id="ytick_5">
+     <g id="line2d_19">
+      <path d="M 41.546563 53.487475 
+L 295.971563 53.487475 
+" clip-path="url(#p98b2109e42)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_20">
+      <g>
+       <use xlink:href="#m9c4451a26f" x="41.546563" y="53.487475" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_10">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="34.546563" y="56.715522" transform="rotate(-0 34.546563 56.715522)">80</text>
+     </g>
+    </g>
+    <g id="ytick_6">
+     <g id="line2d_21">
+      <path d="M 41.546563 19.831875 
+L 295.971563 19.831875 
+" clip-path="url(#p98b2109e42)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_22">
+      <g>
+       <use xlink:href="#m9c4451a26f" x="41.546563" y="19.831875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_11">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="34.546563" y="23.059922" transform="rotate(-0 34.546563 23.059922)">100</text>
+     </g>
+    </g>
+    <g id="text_12">
+     <text style="fill: #333333; font: 9px 'Helvetica'; text-anchor: middle" x="13.656094" y="103.970875" transform="rotate(-90 13.656094 103.970875)">Anteil mit Durchbruch in %</text>
+    </g>
+   </g>
+   <g id="patch_3">
+    <path d="M 53.111335 188.109875 
+L 71.576098 188.109875 
+L 71.576098 50.458471 
+L 53.111335 50.458471 
+z
+" clip-path="url(#p98b2109e42)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 101.702817 188.109875 
+L 120.16758 188.109875 
+L 120.16758 113.394443 
+L 101.702817 113.394443 
+z
+" clip-path="url(#p98b2109e42)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 150.294299 188.109875 
+L 168.759062 188.109875 
+L 168.759062 121.808343 
+L 150.294299 121.808343 
+z
+" clip-path="url(#p98b2109e42)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 198.885781 188.109875 
+L 217.350545 188.109875 
+L 217.350545 141.665147 
+L 198.885781 141.665147 
+z
+" clip-path="url(#p98b2109e42)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 247.477263 188.109875 
+L 265.942027 188.109875 
+L 265.942027 155.295665 
+L 247.477263 155.295665 
+z
+" clip-path="url(#p98b2109e42)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 71.576098 188.109875 
+L 90.040862 188.109875 
+L 90.040862 142.169981 
+L 71.576098 142.169981 
+z
+" clip-path="url(#p98b2109e42)" style="fill: #9aa4ad"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 120.16758 188.109875 
+L 138.632344 188.109875 
+L 138.632344 128.876019 
+L 120.16758 128.876019 
+z
+" clip-path="url(#p98b2109e42)" style="fill: #9aa4ad"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 168.759062 188.109875 
+L 187.223826 188.109875 
+L 187.223826 127.866351 
+L 168.759062 127.866351 
+z
+" clip-path="url(#p98b2109e42)" style="fill: #9aa4ad"/>
+   </g>
+   <g id="patch_11">
+    <path d="M 217.350545 188.109875 
+L 235.815308 188.109875 
+L 235.815308 139.645811 
+L 217.350545 139.645811 
+z
+" clip-path="url(#p98b2109e42)" style="fill: #9aa4ad"/>
+   </g>
+   <g id="patch_12">
+    <path d="M 265.942027 188.109875 
+L 284.40679 188.109875 
+L 284.40679 154.117719 
+L 265.942027 154.117719 
+z
+" clip-path="url(#p98b2109e42)" style="fill: #9aa4ad"/>
+   </g>
+   <g id="LineCollection_1">
+    <path d="M 62.343717 100.100481 
+L 62.343717 28.414053 
+" clip-path="url(#p98b2109e42)" style="fill: none; stroke: #555555; stroke-width: 0.8"/>
+    <path d="M 110.935199 134.260915 
+L 110.935199 91.181747 
+" clip-path="url(#p98b2109e42)" style="fill: none; stroke: #555555; stroke-width: 0.8"/>
+    <path d="M 159.526681 136.280251 
+L 159.526681 105.990211 
+" clip-path="url(#p98b2109e42)" style="fill: none; stroke: #555555; stroke-width: 0.8"/>
+    <path d="M 208.118163 152.266661 
+L 208.118163 129.380853 
+" clip-path="url(#p98b2109e42)" style="fill: none; stroke: #555555; stroke-width: 0.8"/>
+    <path d="M 256.709645 162.531619 
+L 256.709645 146.713487 
+" clip-path="url(#p98b2109e42)" style="fill: none; stroke: #555555; stroke-width: 0.8"/>
+   </g>
+   <g id="line2d_23">
+    <defs>
+     <path id="m72552e0b59" d="M 2 0 
+L -2 -0 
+" style="stroke: #555555"/>
+    </defs>
+    <g clip-path="url(#p98b2109e42)">
+     <use xlink:href="#m72552e0b59" x="62.343717" y="100.100481" style="fill: #555555; stroke: #555555"/>
+     <use xlink:href="#m72552e0b59" x="110.935199" y="134.260915" style="fill: #555555; stroke: #555555"/>
+     <use xlink:href="#m72552e0b59" x="159.526681" y="136.280251" style="fill: #555555; stroke: #555555"/>
+     <use xlink:href="#m72552e0b59" x="208.118163" y="152.266661" style="fill: #555555; stroke: #555555"/>
+     <use xlink:href="#m72552e0b59" x="256.709645" y="162.531619" style="fill: #555555; stroke: #555555"/>
+    </g>
+   </g>
+   <g id="line2d_24">
+    <g clip-path="url(#p98b2109e42)">
+     <use xlink:href="#m72552e0b59" x="62.343717" y="28.414053" style="fill: #555555; stroke: #555555"/>
+     <use xlink:href="#m72552e0b59" x="110.935199" y="91.181747" style="fill: #555555; stroke: #555555"/>
+     <use xlink:href="#m72552e0b59" x="159.526681" y="105.990211" style="fill: #555555; stroke: #555555"/>
+     <use xlink:href="#m72552e0b59" x="208.118163" y="129.380853" style="fill: #555555; stroke: #555555"/>
+     <use xlink:href="#m72552e0b59" x="256.709645" y="146.713487" style="fill: #555555; stroke: #555555"/>
+    </g>
+   </g>
+   <g id="line2d_25">
+    <path d="M 41.546563 144.525873 
+L 295.971563 144.525873 
+" clip-path="url(#p98b2109e42)" style="fill: none; stroke-dasharray: 4.4,3.3; stroke-dashoffset: 0; stroke: #b0492a; stroke-width: 1.1"/>
+   </g>
+   <g id="patch_13">
+    <path d="M 41.546563 188.109875 
+L 41.546563 19.831875 
+" style="fill: none; stroke: #888888; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_14">
+    <path d="M 41.546563 188.109875 
+L 295.971563 188.109875 
+" style="fill: none; stroke: #888888; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="text_13">
+    <text style="fill: #ffffff; font: 700 7.4px 'Helvetica'" transform="translate(64.22667 183.902925) rotate(-90)">82 %</text>
+   </g>
+   <g id="text_14">
+    <text style="fill: #ffffff; font: 700 7.4px 'Helvetica'" transform="translate(112.818152 183.902925) rotate(-90)">44 %</text>
+   </g>
+   <g id="text_15">
+    <text style="fill: #ffffff; font: 700 7.4px 'Helvetica'" transform="translate(161.409634 183.902925) rotate(-90)">39 %</text>
+   </g>
+   <g id="text_16">
+    <text style="fill: #ffffff; font: 700 7.4px 'Helvetica'" transform="translate(210.001116 183.902925) rotate(-90)">28 %</text>
+   </g>
+   <g id="text_17">
+    <text style="fill: #ffffff; font: 700 7.4px 'Helvetica'" transform="translate(258.592598 183.902925) rotate(-90)">20 %</text>
+   </g>
+   <g id="text_18">
+    <text style="fill: #b0492a; font: 7.2px 'Helvetica'; text-anchor: end" x="292.667342" y="34.976895" transform="rotate(-0 292.667342 34.976895)">gestrichelt: Durchschnitt 25,9 %</text>
+   </g>
+   <g id="text_19">
+    <text style="font: 9px 'Helvetica'; text-anchor: start" x="41.546563" y="13.831875" transform="rotate(-0 41.546563 13.831875)">Fenster 1: 544 Spieler, Jahrgänge 2005 bis 2008</text>
+   </g>
+   <g id="legend_1">
+    <g id="patch_15">
+     <path d="M 187.149938 48.645363 
+L 201.949938 48.645363 
+L 201.949938 43.465363 
+L 187.149938 43.465363 
+z
+" style="fill: #34b190"/>
+    </g>
+    <g id="text_20">
+     <text style="font: 7.4px 'Helvetica'; text-anchor: start" x="207.869938" y="48.645363" transform="rotate(-0 207.869938 48.645363)">nach Talent-Rang</text>
+    </g>
+    <g id="patch_16">
+     <path d="M 187.149938 59.290956 
+L 201.949938 59.290956 
+L 201.949938 54.110956 
+L 187.149938 54.110956 
+z
+" style="fill: #9aa4ad"/>
+    </g>
+    <g id="text_21">
+     <text style="font: 7.4px 'Helvetica'; text-anchor: start" x="207.869938" y="59.290956" transform="rotate(-0 207.869938 59.290956)">nur nach Einsatzminuten</text>
+    </g>
+   </g>
+  </g>
+  <g id="axes_2">
+   <g id="patch_17">
+    <path d="M 309.191563 188.109875 
+L 563.616562 188.109875 
+L 563.616562 19.831875 
+L 309.191563 19.831875 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="matplotlib.axis_3">
+    <g id="xtick_6">
+     <g id="line2d_26">
+      <path d="M 339.221098 188.109875 
+L 339.221098 19.831875 
+" clip-path="url(#p4cdfa2469c)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_27">
+      <g>
+       <use xlink:href="#mf4b798b31a" x="339.221098" y="188.109875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_22">
+      <text style="fill: #444444; font: 7.6px 'Helvetica'" transform="translate(332.673817 200.561688)">Top</text>
+      <text style="fill: #444444; font: 7.6px 'Helvetica'" transform="translate(332.673223 208.687988)">2 %</text>
+     </g>
+    </g>
+    <g id="xtick_7">
+     <g id="line2d_28">
+      <path d="M 387.81258 188.109875 
+L 387.81258 19.831875 
+" clip-path="url(#p4cdfa2469c)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_29">
+      <g>
+       <use xlink:href="#mf4b798b31a" x="387.81258" y="188.109875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_23">
+      <text style="fill: #444444; font: 7.6px 'Helvetica'" transform="translate(381.265299 200.561688)">Top</text>
+      <text style="fill: #444444; font: 7.6px 'Helvetica'" transform="translate(379.151549 208.687988)">10 %</text>
+     </g>
+    </g>
+    <g id="xtick_8">
+     <g id="line2d_30">
+      <path d="M 436.404063 188.109875 
+L 436.404063 19.831875 
+" clip-path="url(#p4cdfa2469c)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_31">
+      <g>
+       <use xlink:href="#mf4b798b31a" x="436.404063" y="188.109875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_24">
+      <text style="fill: #444444; font: 7.6px 'Helvetica'" transform="translate(429.856781 200.561688)">Top</text>
+      <text style="fill: #444444; font: 7.6px 'Helvetica'" transform="translate(427.743031 208.687988)">20 %</text>
+     </g>
+    </g>
+    <g id="xtick_9">
+     <g id="line2d_32">
+      <path d="M 484.995545 188.109875 
+L 484.995545 19.831875 
+" clip-path="url(#p4cdfa2469c)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_33">
+      <g>
+       <use xlink:href="#mf4b798b31a" x="484.995545" y="188.109875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_25">
+      <text style="fill: #444444; font: 7.6px 'Helvetica'" transform="translate(474.856076 200.561688)">20 bis</text>
+      <text style="fill: #444444; font: 7.6px 'Helvetica'" transform="translate(476.334513 208.687988)">50 %</text>
+     </g>
+    </g>
+    <g id="xtick_10">
+     <g id="line2d_34">
+      <path d="M 533.587027 188.109875 
+L 533.587027 19.831875 
+" clip-path="url(#p4cdfa2469c)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_35">
+      <g>
+       <use xlink:href="#mf4b798b31a" x="533.587027" y="188.109875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_26">
+      <text style="fill: #444444; font: 7.6px 'Helvetica'" transform="translate(522.813433 200.561688)">untere</text>
+      <text style="fill: #444444; font: 7.6px 'Helvetica'" transform="translate(523.660714 208.687988)">Hälfte</text>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_4">
+    <g id="ytick_7">
+     <g id="line2d_36">
+      <path d="M 309.191563 188.109875 
+L 563.616562 188.109875 
+" clip-path="url(#p4cdfa2469c)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_37">
+      <g>
+       <use xlink:href="#m9c4451a26f" x="309.191563" y="188.109875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_8">
+     <g id="line2d_38">
+      <path d="M 309.191563 154.454275 
+L 563.616562 154.454275 
+" clip-path="url(#p4cdfa2469c)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_39">
+      <g>
+       <use xlink:href="#m9c4451a26f" x="309.191563" y="154.454275" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_9">
+     <g id="line2d_40">
+      <path d="M 309.191563 120.798675 
+L 563.616562 120.798675 
+" clip-path="url(#p4cdfa2469c)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_41">
+      <g>
+       <use xlink:href="#m9c4451a26f" x="309.191563" y="120.798675" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_10">
+     <g id="line2d_42">
+      <path d="M 309.191563 87.143075 
+L 563.616562 87.143075 
+" clip-path="url(#p4cdfa2469c)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_43">
+      <g>
+       <use xlink:href="#m9c4451a26f" x="309.191563" y="87.143075" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_11">
+     <g id="line2d_44">
+      <path d="M 309.191563 53.487475 
+L 563.616562 53.487475 
+" clip-path="url(#p4cdfa2469c)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_45">
+      <g>
+       <use xlink:href="#m9c4451a26f" x="309.191563" y="53.487475" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_12">
+     <g id="line2d_46">
+      <path d="M 309.191563 19.831875 
+L 563.616562 19.831875 
+" clip-path="url(#p4cdfa2469c)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_47">
+      <g>
+       <use xlink:href="#m9c4451a26f" x="309.191563" y="19.831875" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+    </g>
+   </g>
+   <g id="patch_18">
+    <path d="M 320.756335 188.109875 
+L 339.221098 188.109875 
+L 339.221098 75.868449 
+L 320.756335 75.868449 
+z
+" clip-path="url(#p4cdfa2469c)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_19">
+    <path d="M 369.347817 188.109875 
+L 387.81258 188.109875 
+L 387.81258 112.721331 
+L 369.347817 112.721331 
+z
+" clip-path="url(#p4cdfa2469c)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_20">
+    <path d="M 417.939299 188.109875 
+L 436.404062 188.109875 
+L 436.404062 122.818011 
+L 417.939299 122.818011 
+z
+" clip-path="url(#p4cdfa2469c)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_21">
+    <path d="M 466.530781 188.109875 
+L 484.995545 188.109875 
+L 484.995545 151.088715 
+L 466.530781 151.088715 
+z
+" clip-path="url(#p4cdfa2469c)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_22">
+    <path d="M 515.122263 188.109875 
+L 533.587027 188.109875 
+L 533.587027 166.065457 
+L 515.122263 166.065457 
+z
+" clip-path="url(#p4cdfa2469c)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_23">
+    <path d="M 339.221098 188.109875 
+L 357.685862 188.109875 
+L 357.685862 174.142801 
+L 339.221098 174.142801 
+z
+" clip-path="url(#p4cdfa2469c)" style="fill: #9aa4ad"/>
+   </g>
+   <g id="patch_24">
+    <path d="M 387.81258 188.109875 
+L 406.277344 188.109875 
+L 406.277344 170.777241 
+L 387.81258 170.777241 
+z
+" clip-path="url(#p4cdfa2469c)" style="fill: #9aa4ad"/>
+   </g>
+   <g id="patch_25">
+    <path d="M 436.404063 188.109875 
+L 454.868826 188.109875 
+L 454.868826 151.761827 
+L 436.404063 151.761827 
+z
+" clip-path="url(#p4cdfa2469c)" style="fill: #9aa4ad"/>
+   </g>
+   <g id="patch_26">
+    <path d="M 484.995545 188.109875 
+L 503.460308 188.109875 
+L 503.460308 138.467865 
+L 484.995545 138.467865 
+z
+" clip-path="url(#p4cdfa2469c)" style="fill: #9aa4ad"/>
+   </g>
+   <g id="patch_27">
+    <path d="M 533.587027 188.109875 
+L 552.05179 188.109875 
+L 552.05179 161.858507 
+L 533.587027 161.858507 
+z
+" clip-path="url(#p4cdfa2469c)" style="fill: #9aa4ad"/>
+   </g>
+   <g id="LineCollection_2">
+    <path d="M 329.988717 122.313177 
+L 329.988717 43.054239 
+" clip-path="url(#p4cdfa2469c)" style="fill: none; stroke: #555555; stroke-width: 0.8"/>
+    <path d="M 378.580199 133.082969 
+L 378.580199 91.350025 
+" clip-path="url(#p4cdfa2469c)" style="fill: none; stroke: #555555; stroke-width: 0.8"/>
+    <path d="M 427.171681 136.953363 
+L 427.171681 107.504713 
+" clip-path="url(#p4cdfa2469c)" style="fill: none; stroke: #555555; stroke-width: 0.8"/>
+    <path d="M 475.763163 160.512283 
+L 475.763163 139.814089 
+" clip-path="url(#p4cdfa2469c)" style="fill: none; stroke: #555555; stroke-width: 0.8"/>
+    <path d="M 524.354645 171.786909 
+L 524.354645 158.661225 
+" clip-path="url(#p4cdfa2469c)" style="fill: none; stroke: #555555; stroke-width: 0.8"/>
+   </g>
+   <g id="line2d_48">
+    <g clip-path="url(#p4cdfa2469c)">
+     <use xlink:href="#m72552e0b59" x="329.988717" y="122.313177" style="fill: #555555; stroke: #555555"/>
+     <use xlink:href="#m72552e0b59" x="378.580199" y="133.082969" style="fill: #555555; stroke: #555555"/>
+     <use xlink:href="#m72552e0b59" x="427.171681" y="136.953363" style="fill: #555555; stroke: #555555"/>
+     <use xlink:href="#m72552e0b59" x="475.763163" y="160.512283" style="fill: #555555; stroke: #555555"/>
+     <use xlink:href="#m72552e0b59" x="524.354645" y="171.786909" style="fill: #555555; stroke: #555555"/>
+    </g>
+   </g>
+   <g id="line2d_49">
+    <g clip-path="url(#p4cdfa2469c)">
+     <use xlink:href="#m72552e0b59" x="329.988717" y="43.054239" style="fill: #555555; stroke: #555555"/>
+     <use xlink:href="#m72552e0b59" x="378.580199" y="91.350025" style="fill: #555555; stroke: #555555"/>
+     <use xlink:href="#m72552e0b59" x="427.171681" y="107.504713" style="fill: #555555; stroke: #555555"/>
+     <use xlink:href="#m72552e0b59" x="475.763163" y="139.814089" style="fill: #555555; stroke: #555555"/>
+     <use xlink:href="#m72552e0b59" x="524.354645" y="158.661225" style="fill: #555555; stroke: #555555"/>
+    </g>
+   </g>
+   <g id="line2d_50">
+    <path d="M 309.191563 152.939773 
+L 563.616562 152.939773 
+" clip-path="url(#p4cdfa2469c)" style="fill: none; stroke-dasharray: 4.4,3.3; stroke-dashoffset: 0; stroke: #b0492a; stroke-width: 1.1"/>
+   </g>
+   <g id="patch_28">
+    <path d="M 309.191563 188.109875 
+L 309.191563 19.831875 
+" style="fill: none; stroke: #888888; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_29">
+    <path d="M 309.191563 188.109875 
+L 563.616562 188.109875 
+" style="fill: none; stroke: #888888; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="text_27">
+    <text style="fill: #ffffff; font: 700 7.4px 'Helvetica'" transform="translate(331.87167 183.902925) rotate(-90)">67 %</text>
+   </g>
+   <g id="text_28">
+    <text style="fill: #ffffff; font: 700 7.4px 'Helvetica'" transform="translate(380.463152 183.902925) rotate(-90)">45 %</text>
+   </g>
+   <g id="text_29">
+    <text style="fill: #ffffff; font: 700 7.4px 'Helvetica'" transform="translate(429.054634 183.902925) rotate(-90)">39 %</text>
+   </g>
+   <g id="text_30">
+    <text style="fill: #ffffff; font: 700 7.4px 'Helvetica'" transform="translate(477.646116 183.902925) rotate(-90)">22 %</text>
+   </g>
+   <g id="text_31">
+    <text style="fill: #ffffff; font: 700 7.4px 'Helvetica'" transform="translate(526.237598 183.902925) rotate(-90)">13 %</text>
+   </g>
+   <g id="text_32">
+    <text style="fill: #b0492a; font: 7.2px 'Helvetica'; text-anchor: end" x="560.312342" y="34.976895" transform="rotate(-0 560.312342 34.976895)">gestrichelt: Durchschnitt 20,9 %</text>
+   </g>
+   <g id="text_33">
+    <text style="font: 9px 'Helvetica'; text-anchor: start" x="309.191563" y="13.831875" transform="rotate(-0 309.191563 13.831875)">Fenster 2: 578 Spieler, Jahrgänge 2006 bis 2009</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p98b2109e42">
+   <rect x="41.546563" y="19.831875" width="254.425" height="168.278"/>
+  </clipPath>
+  <clipPath id="p4cdfa2469c">
+   <rect x="309.191563" y="19.831875" width="254.425" height="168.278"/>
+  </clipPath>
+ </defs>
+</svg>
+<figcaption><span class="lab">Abbildung 8.</span> Anteil der Spieler mit Durchbruch nach früherer Einstufung. Grün: Einstufung nach Talent-Rang, mit Unsicherheitsbereich. Grau: dieselbe Rechnung, wenn man nur nach Einsatzminuten reiht. Die gestrichelte Linie ist der Durchschnitt aller Spieler. Der Talent-Rang trennt in beiden Fenstern klar, am stärksten an der Spitze.</figcaption></figure>
+<p class="tabcap"><span class="lab">Tabelle 6.</span> Trefferquoten nach Einstufung. Lesebeispiel: Von den besten 10 % nach Talent-Rang schafften in Fenster 1 24 von 54 den Durchbruch.</p><div class="tbl"><table><thead><tr><th class="l">Einstufung</th><th class="r">Fenster 1</th><th class="r">Fenster 2</th><th class="r">Fenster 1, nur Minuten</th><th class="r">Fenster 2, nur Minuten</th></tr></thead><tbody><tr><td class="l">Top 2 %</td><td class="r">82 % (9 von 11)</td><td class="r">67 % (8 von 12)</td><td class="r">27 %</td><td class="r">8 %</td></tr><tr><td class="l">Top 5 %</td><td class="r">56 % (15 von 27)</td><td class="r">48 % (14 von 29)</td><td class="r">22 %</td><td class="r">7 %</td></tr><tr><td class="l">Top 10 %</td><td class="r">44 % (24 von 54)</td><td class="r">45 % (26 von 58)</td><td class="r">35 %</td><td class="r">10 %</td></tr><tr><td class="l">Top 20 %</td><td class="r">39 % (43 von 109)</td><td class="r">39 % (45 von 116)</td><td class="r">36 %</td><td class="r">22 %</td></tr><tr><td class="l">20 bis 50 %</td><td class="r">28 % (45 von 163)</td><td class="r">22 % (38 von 173)</td><td class="r">29 %</td><td class="r">30 %</td></tr><tr><td class="l">untere Hälfte</td><td class="r">20 % (53 von 272)</td><td class="r">13 % (38 von 289)</td><td class="r">20 %</td><td class="r">16 %</td></tr><tr><td class="l">alle</td><td class="r">26 %</td><td class="r">21 %</td><td class="r">26 %</td><td class="r">21 %</td></tr></tbody></table></div>
+<p><strong>Was die Zahlen sagen.</strong> Die besten 2 % schaffen den Durchbruch rund dreimal so oft wie der Durchschnitt, die besten 10 %
+knapp doppelt so oft, die untere Hälfte deutlich seltener. Wer nur nach Einsatzminuten reiht, findet an der Spitze kaum mehr als
+Durchschnitt. Der Mehrwert kommt also aus der Bewertung, nicht aus der Spielzeit allein.</p>
+<figure><svg xmlns:xlink="http://www.w3.org/1999/xlink" style="width:100%;height:auto" viewBox="0 0 570.816562 181.828125" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-11-17T01:21:15.114125</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.9.4, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 181.828125 
+L 570.816562 181.828125 
+L 570.816562 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 41.546563 159.296094 
+L 295.971563 159.296094 
+L 295.971563 19.656094 
+L 41.546563 19.656094 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1">
+      <path d="M 72.385956 159.296094 
+L 72.385956 19.656094 
+" clip-path="url(#p9db05b955c)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_2">
+      <defs>
+       <path id="m5224f70148" d="M 0 0 
+L 0 3.5 
+" style="stroke: #444444; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#m5224f70148" x="72.385956" y="159.296094" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_1">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="72.385956" y="172.752187" transform="rotate(-0 72.385956 172.752187)">beste 10</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_3">
+      <path d="M 136.634694 159.296094 
+L 136.634694 19.656094 
+" clip-path="url(#p9db05b955c)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_4">
+      <g>
+       <use xlink:href="#m5224f70148" x="136.634694" y="159.296094" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_2">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="136.634694" y="172.752187" transform="rotate(-0 136.634694 172.752187)">beste 20</text>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_5">
+      <path d="M 200.883431 159.296094 
+L 200.883431 19.656094 
+" clip-path="url(#p9db05b955c)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_6">
+      <g>
+       <use xlink:href="#m5224f70148" x="200.883431" y="159.296094" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_3">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="200.883431" y="172.752187" transform="rotate(-0 200.883431 172.752187)">beste 30</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_7">
+      <path d="M 265.132169 159.296094 
+L 265.132169 19.656094 
+" clip-path="url(#p9db05b955c)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_8">
+      <g>
+       <use xlink:href="#m5224f70148" x="265.132169" y="159.296094" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_4">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="265.132169" y="172.752187" transform="rotate(-0 265.132169 172.752187)">beste 50</text>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_9">
+      <path d="M 41.546563 159.296094 
+L 295.971563 159.296094 
+" clip-path="url(#p9db05b955c)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_10">
+      <defs>
+       <path id="m066cb79f30" d="M 0 0 
+L -3.5 0 
+" style="stroke: #444444; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#m066cb79f30" x="41.546563" y="159.296094" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_5">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="34.546563" y="162.524141" transform="rotate(-0 34.546563 162.524141)">0</text>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_11">
+      <path d="M 41.546563 133.436834 
+L 295.971563 133.436834 
+" clip-path="url(#p9db05b955c)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_12">
+      <g>
+       <use xlink:href="#m066cb79f30" x="41.546563" y="133.436834" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_6">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="34.546563" y="136.664881" transform="rotate(-0 34.546563 136.664881)">20</text>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_13">
+      <path d="M 41.546563 107.577575 
+L 295.971563 107.577575 
+" clip-path="url(#p9db05b955c)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_14">
+      <g>
+       <use xlink:href="#m066cb79f30" x="41.546563" y="107.577575" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_7">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="34.546563" y="110.805622" transform="rotate(-0 34.546563 110.805622)">40</text>
+     </g>
+    </g>
+    <g id="ytick_4">
+     <g id="line2d_15">
+      <path d="M 41.546563 81.718316 
+L 295.971563 81.718316 
+" clip-path="url(#p9db05b955c)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_16">
+      <g>
+       <use xlink:href="#m066cb79f30" x="41.546563" y="81.718316" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_8">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="34.546563" y="84.946363" transform="rotate(-0 34.546563 84.946363)">60</text>
+     </g>
+    </g>
+    <g id="ytick_5">
+     <g id="line2d_17">
+      <path d="M 41.546563 55.859057 
+L 295.971563 55.859057 
+" clip-path="url(#p9db05b955c)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_18">
+      <g>
+       <use xlink:href="#m066cb79f30" x="41.546563" y="55.859057" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_9">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="34.546563" y="59.087104" transform="rotate(-0 34.546563 59.087104)">80</text>
+     </g>
+    </g>
+    <g id="ytick_6">
+     <g id="line2d_19">
+      <path d="M 41.546563 29.999797 
+L 295.971563 29.999797 
+" clip-path="url(#p9db05b955c)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_20">
+      <g>
+       <use xlink:href="#m066cb79f30" x="41.546563" y="29.999797" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_10">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="34.546563" y="33.227844" transform="rotate(-0 34.546563 33.227844)">100</text>
+     </g>
+    </g>
+    <g id="text_11">
+     <text style="fill: #333333; font: 9px 'Helvetica'; text-anchor: middle" x="13.656094" y="89.476094" transform="rotate(-90 13.656094 89.476094)">Anteil mit Durchbruch in %</text>
+    </g>
+   </g>
+   <g id="patch_3">
+    <path d="M 53.111335 159.296094 
+L 91.660578 159.296094 
+L 91.660578 68.788686 
+L 53.111335 68.788686 
+z
+" clip-path="url(#p9db05b955c)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 117.360073 159.296094 
+L 155.909315 159.296094 
+L 155.909315 81.718316 
+L 117.360073 81.718316 
+z
+" clip-path="url(#p9db05b955c)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 181.60881 159.296094 
+L 220.158052 159.296094 
+L 220.158052 98.957822 
+L 181.60881 98.957822 
+z
+" clip-path="url(#p9db05b955c)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 245.857547 159.296094 
+L 284.40679 159.296094 
+L 284.40679 112.749427 
+L 245.857547 112.749427 
+z
+" clip-path="url(#p9db05b955c)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 53.111335 68.788686 
+L 91.660578 68.788686 
+L 91.660578 42.929427 
+L 53.111335 42.929427 
+z
+" clip-path="url(#p9db05b955c)" style="fill: #1f5fa8"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 117.360073 81.718316 
+L 155.909315 81.718316 
+L 155.909315 68.788686 
+L 117.360073 68.788686 
+z
+" clip-path="url(#p9db05b955c)" style="fill: #1f5fa8"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 181.60881 98.957822 
+L 220.158052 98.957822 
+L 220.158052 86.028193 
+L 181.60881 86.028193 
+z
+" clip-path="url(#p9db05b955c)" style="fill: #1f5fa8"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 245.857547 112.749427 
+L 284.40679 112.749427 
+L 284.40679 97.233872 
+L 245.857547 97.233872 
+z
+" clip-path="url(#p9db05b955c)" style="fill: #1f5fa8"/>
+   </g>
+   <g id="line2d_21">
+    <path d="M 41.546563 125.808353 
+L 295.971563 125.808353 
+" clip-path="url(#p9db05b955c)" style="fill: none; stroke-dasharray: 4.4,3.3; stroke-dashoffset: 0; stroke: #b0492a; stroke-width: 1.1"/>
+   </g>
+   <g id="patch_11">
+    <path d="M 41.546563 159.296094 
+L 41.546563 19.656094 
+" style="fill: none; stroke: #888888; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_12">
+    <path d="M 41.546563 159.296094 
+L 295.971563 159.296094 
+" style="fill: none; stroke: #888888; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="text_12">
+    <text style="font: 8px 'Helvetica'; text-anchor: middle" x="72.385956" y="39.69702" transform="rotate(-0 72.385956 39.69702)">9 von 10</text>
+   </g>
+   <g id="text_13">
+    <text style="font: 8px 'Helvetica'; text-anchor: middle" x="136.634694" y="65.556279" transform="rotate(-0 136.634694 65.556279)">14 von 20</text>
+   </g>
+   <g id="text_14">
+    <text style="font: 8px 'Helvetica'; text-anchor: middle" x="200.883431" y="82.795785" transform="rotate(-0 200.883431 82.795785)">17 von 30</text>
+   </g>
+   <g id="text_15">
+    <text style="font: 8px 'Helvetica'; text-anchor: middle" x="265.132169" y="94.001464" transform="rotate(-0 265.132169 94.001464)">24 von 50</text>
+   </g>
+   <g id="text_16">
+    <text style="font: 9px 'Helvetica'; text-anchor: start" x="41.546563" y="13.656094" transform="rotate(-0 41.546563 13.656094)">Fenster 1</text>
+   </g>
+  </g>
+  <g id="axes_2">
+   <g id="patch_13">
+    <path d="M 309.191563 159.296094 
+L 563.616562 159.296094 
+L 563.616562 19.656094 
+L 309.191563 19.656094 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="matplotlib.axis_3">
+    <g id="xtick_5">
+     <g id="line2d_22">
+      <path d="M 340.030956 159.296094 
+L 340.030956 19.656094 
+" clip-path="url(#p01fcc7f985)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_23">
+      <g>
+       <use xlink:href="#m5224f70148" x="340.030956" y="159.296094" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_17">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="340.030956" y="172.752187" transform="rotate(-0 340.030956 172.752187)">beste 10</text>
+     </g>
+    </g>
+    <g id="xtick_6">
+     <g id="line2d_24">
+      <path d="M 404.279694 159.296094 
+L 404.279694 19.656094 
+" clip-path="url(#p01fcc7f985)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_25">
+      <g>
+       <use xlink:href="#m5224f70148" x="404.279694" y="159.296094" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_18">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="404.279694" y="172.752187" transform="rotate(-0 404.279694 172.752187)">beste 20</text>
+     </g>
+    </g>
+    <g id="xtick_7">
+     <g id="line2d_26">
+      <path d="M 468.528431 159.296094 
+L 468.528431 19.656094 
+" clip-path="url(#p01fcc7f985)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_27">
+      <g>
+       <use xlink:href="#m5224f70148" x="468.528431" y="159.296094" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_19">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="468.528431" y="172.752187" transform="rotate(-0 468.528431 172.752187)">beste 30</text>
+     </g>
+    </g>
+    <g id="xtick_8">
+     <g id="line2d_28">
+      <path d="M 532.777169 159.296094 
+L 532.777169 19.656094 
+" clip-path="url(#p01fcc7f985)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_29">
+      <g>
+       <use xlink:href="#m5224f70148" x="532.777169" y="159.296094" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_20">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="532.777169" y="172.752187" transform="rotate(-0 532.777169 172.752187)">beste 50</text>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_4">
+    <g id="ytick_7">
+     <g id="line2d_30">
+      <path d="M 309.191563 159.296094 
+L 563.616562 159.296094 
+" clip-path="url(#p01fcc7f985)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_31">
+      <g>
+       <use xlink:href="#m066cb79f30" x="309.191563" y="159.296094" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_8">
+     <g id="line2d_32">
+      <path d="M 309.191563 133.436834 
+L 563.616562 133.436834 
+" clip-path="url(#p01fcc7f985)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_33">
+      <g>
+       <use xlink:href="#m066cb79f30" x="309.191563" y="133.436834" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_9">
+     <g id="line2d_34">
+      <path d="M 309.191563 107.577575 
+L 563.616562 107.577575 
+" clip-path="url(#p01fcc7f985)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_35">
+      <g>
+       <use xlink:href="#m066cb79f30" x="309.191563" y="107.577575" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_10">
+     <g id="line2d_36">
+      <path d="M 309.191563 81.718316 
+L 563.616562 81.718316 
+" clip-path="url(#p01fcc7f985)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_37">
+      <g>
+       <use xlink:href="#m066cb79f30" x="309.191563" y="81.718316" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_11">
+     <g id="line2d_38">
+      <path d="M 309.191563 55.859057 
+L 563.616562 55.859057 
+" clip-path="url(#p01fcc7f985)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_39">
+      <g>
+       <use xlink:href="#m066cb79f30" x="309.191563" y="55.859057" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_12">
+     <g id="line2d_40">
+      <path d="M 309.191563 29.999797 
+L 563.616562 29.999797 
+" clip-path="url(#p01fcc7f985)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_41">
+      <g>
+       <use xlink:href="#m066cb79f30" x="309.191563" y="29.999797" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+    </g>
+   </g>
+   <g id="patch_14">
+    <path d="M 320.756335 159.296094 
+L 359.305578 159.296094 
+L 359.305578 94.647946 
+L 320.756335 94.647946 
+z
+" clip-path="url(#p01fcc7f985)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_15">
+    <path d="M 385.005073 159.296094 
+L 423.554315 159.296094 
+L 423.554315 107.577575 
+L 385.005073 107.577575 
+z
+" clip-path="url(#p01fcc7f985)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_16">
+    <path d="M 449.25381 159.296094 
+L 487.803052 159.296094 
+L 487.803052 111.887452 
+L 449.25381 111.887452 
+z
+" clip-path="url(#p01fcc7f985)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_17">
+    <path d="M 513.502547 159.296094 
+L 552.05179 159.296094 
+L 552.05179 112.749427 
+L 513.502547 112.749427 
+z
+" clip-path="url(#p01fcc7f985)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_18">
+    <path d="M 320.756335 94.647946 
+L 359.305578 94.647946 
+L 359.305578 81.718316 
+L 320.756335 81.718316 
+z
+" clip-path="url(#p01fcc7f985)" style="fill: #1f5fa8"/>
+   </g>
+   <g id="patch_19">
+    <path d="M 385.005073 107.577575 
+L 423.554315 107.577575 
+L 423.554315 94.647946 
+L 385.005073 94.647946 
+z
+" clip-path="url(#p01fcc7f985)" style="fill: #1f5fa8"/>
+   </g>
+   <g id="patch_20">
+    <path d="M 449.25381 111.887452 
+L 487.803052 111.887452 
+L 487.803052 94.647946 
+L 449.25381 94.647946 
+z
+" clip-path="url(#p01fcc7f985)" style="fill: #1f5fa8"/>
+   </g>
+   <g id="patch_21">
+    <path d="M 513.502547 112.749427 
+L 552.05179 112.749427 
+L 552.05179 102.405723 
+L 513.502547 102.405723 
+z
+" clip-path="url(#p01fcc7f985)" style="fill: #1f5fa8"/>
+   </g>
+   <g id="line2d_42">
+    <path d="M 309.191563 132.273168 
+L 563.616562 132.273168 
+" clip-path="url(#p01fcc7f985)" style="fill: none; stroke-dasharray: 4.4,3.3; stroke-dashoffset: 0; stroke: #b0492a; stroke-width: 1.1"/>
+   </g>
+   <g id="patch_22">
+    <path d="M 309.191563 159.296094 
+L 309.191563 19.656094 
+" style="fill: none; stroke: #888888; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_23">
+    <path d="M 309.191563 159.296094 
+L 563.616562 159.296094 
+" style="fill: none; stroke: #888888; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="text_21">
+    <text style="font: 8px 'Helvetica'; text-anchor: middle" x="340.030956" y="78.485909" transform="rotate(-0 340.030956 78.485909)">6 von 10</text>
+   </g>
+   <g id="text_22">
+    <text style="font: 8px 'Helvetica'; text-anchor: middle" x="404.279694" y="91.415538" transform="rotate(-0 404.279694 91.415538)">10 von 20</text>
+   </g>
+   <g id="text_23">
+    <text style="font: 8px 'Helvetica'; text-anchor: middle" x="468.528431" y="91.415538" transform="rotate(-0 468.528431 91.415538)">15 von 30</text>
+   </g>
+   <g id="text_24">
+    <text style="font: 8px 'Helvetica'; text-anchor: middle" x="532.777169" y="99.173316" transform="rotate(-0 532.777169 99.173316)">22 von 50</text>
+   </g>
+   <g id="text_25">
+    <text style="font: 9px 'Helvetica'; text-anchor: start" x="309.191563" y="13.656094" transform="rotate(-0 309.191563 13.656094)">Fenster 2</text>
+   </g>
+   <g id="legend_1">
+    <g id="patch_24">
+     <path d="M 448.221656 31.699594 
+L 463.021656 31.699594 
+L 463.021656 26.519594 
+L 448.221656 26.519594 
+z
+" style="fill: #34b190"/>
+    </g>
+    <g id="text_26">
+     <text style="font: 7.4px 'Helvetica'; text-anchor: start" x="468.941656" y="31.699594" transform="rotate(-0 468.941656 31.699594)">Profiliga</text>
+    </g>
+    <g id="patch_25">
+     <path d="M 448.221656 42.489719 
+L 463.021656 42.489719 
+L 463.021656 37.309719 
+L 448.221656 37.309719 
+z
+" style="fill: #1f5fa8"/>
+    </g>
+    <g id="text_27">
+     <text style="font: 7.4px 'Helvetica'; text-anchor: start" x="468.941656" y="42.489719" transform="rotate(-0 468.941656 42.489719)">Stammspieler Regionalliga</text>
+    </g>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p9db05b955c">
+   <rect x="41.546563" y="19.656094" width="254.425" height="139.64"/>
+  </clipPath>
+  <clipPath id="p01fcc7f985">
+   <rect x="309.191563" y="19.656094" width="254.425" height="139.64"/>
+  </clipPath>
+ </defs>
+</svg>
+<figcaption><span class="lab">Abbildung 9.</span> Die namentliche Probe. Von den zehn bestbewerteten Nachwuchsspielern aus Fenster 1 haben 9 den Durchbruch geschafft, 7 davon stehen im Kader eines Profiklubs. Unter den besten 30 sind es 17, unter den besten 50 24. Die gestrichelte Linie ist der Durchschnitt.</figcaption></figure>
+<p><strong>Einordnung der oft zitierten 80 %.</strong> Die Fachliteratur nennt, dass die besten 20 % nach diesem Verfahren rund 80 % der
+später wertvollsten Spieler enthalten. In unseren Daten enthalten die besten 20 % 30 % (Fenster 1) und
+37 % (Fenster 2) der späteren Aufsteiger. Der Unterschied hat zwei Gründe: Unsere Stichprobe enthält nur
+Spieler, die bereits viel spielen, und der Beobachtungszeitraum ist mit zwei Jahren kurz. Für die Praxis ist die Trefferquote die
+wichtigere Zahl: Sie sagt, wie oft sich das Hinsehen lohnt.</p>
+<div class="kern"><h4>Kernaussagen</h4><ul><li>Beste 2 %: 9 von 11 mit Durchbruch (Fenster 1), 8 von 12 (Fenster 2). Durchschnitt: 26 % und 21 %.</li><li>Von den zehn Bestbewerteten spielen 7 in einer Profiliga.</li><li>Einsatzminuten allein leisten das nicht. Der Mehrwert kommt aus der Bewertung.</li></ul></div>
+</section><section class="main" id="vorteil"><h2>7 Warum das ohne Eventdaten funktioniert</h2>
+<p>Eventdaten beschreiben, was ein Spieler am Ball tut. Sie sind teuer in der Erhebung und deshalb nur für die oberen Ligen verfügbar.
+Das Plus-Minus-Verfahren braucht sie nicht, weil es am Ergebnis ansetzt und nicht an der Aktion.</p>
+<figure><svg xmlns:xlink="http://www.w3.org/1999/xlink" style="width:100%;height:auto" viewBox="0 0 468.078675 175.176" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-11-17T01:21:15.134363</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.9.4, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 175.176 
+L 468.078675 175.176 
+L 468.078675 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 115.55244 34.6659 
+L 204.18516 34.6659 
+Q 207.15372 34.6659 207.15372 31.5397 
+L 207.15372 12.3359 
+Q 207.15372 9.2097 204.18516 9.2097 
+L 115.55244 9.2097 
+Q 112.58388 9.2097 112.58388 12.3359 
+L 112.58388 31.5397 
+Q 112.58388 34.6659 115.55244 34.6659 
+z
+" clip-path="url(#p810791128e)" style="fill: #e3e6e8"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 85.86684 65.9279 
+L 233.87076 65.9279 
+Q 236.83932 65.9279 236.83932 62.8017 
+L 236.83932 43.5979 
+Q 236.83932 40.4717 233.87076 40.4717 
+L 85.86684 40.4717 
+Q 82.89828 40.4717 82.89828 43.5979 
+L 82.89828 62.8017 
+Q 82.89828 65.9279 85.86684 65.9279 
+z
+" clip-path="url(#p810791128e)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 56.18124 97.1899 
+L 263.55636 97.1899 
+Q 266.52492 97.1899 266.52492 94.0637 
+L 266.52492 74.8599 
+Q 266.52492 71.7337 263.55636 71.7337 
+L 56.18124 71.7337 
+Q 53.21268 71.7337 53.21268 74.8599 
+L 53.21268 94.0637 
+Q 53.21268 97.1899 56.18124 97.1899 
+z
+" clip-path="url(#p810791128e)" style="fill: #34b190"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 26.49564 128.4519 
+L 293.24196 128.4519 
+Q 296.21052 128.4519 296.21052 125.3257 
+L 296.21052 106.1219 
+Q 296.21052 102.9957 293.24196 102.9957 
+L 26.49564 102.9957 
+Q 23.52708 102.9957 23.52708 106.1219 
+L 23.52708 125.3257 
+Q 23.52708 128.4519 26.49564 128.4519 
+z
+" clip-path="url(#p810791128e)" style="fill: #34b190"/>
+   </g>
+   <g id="line2d_1">
+    <path d="M 312.5376 127.782 
+L 312.5376 41.1416 
+" clip-path="url(#p810791128e)" style="fill: none; stroke: #34b190; stroke-width: 2; stroke-linecap: square"/>
+   </g>
+   <g id="line2d_2">
+    <path d="M 312.5376 33.996 
+L 312.5376 9.8796 
+" clip-path="url(#p810791128e)" style="fill: none; stroke: #9aa4ad; stroke-width: 2; stroke-linecap: square"/>
+   </g>
+   <g id="text_1">
+    <text style="fill: #111111; font: 700 7.8px 'Helvetica'; text-anchor: middle" x="159.8688" y="23.881706" transform="rotate(-0 159.8688 23.881706)">Bundesliga, 2. Liga</text>
+   </g>
+   <g id="text_2">
+    <text style="fill: #ffffff; font: 700 7.8px 'Helvetica'; text-anchor: middle" x="159.8688" y="55.134566" transform="rotate(-0 159.8688 55.134566)">Regionalligen</text>
+   </g>
+   <g id="text_3">
+    <text style="fill: #ffffff; font: 700 7.8px 'Helvetica'; text-anchor: middle" x="159.8688" y="86.472738" transform="rotate(-0 159.8688 86.472738)">Landesligen, Oberligen</text>
+   </g>
+   <g id="text_4">
+    <text style="fill: #ffffff; font: 700 7.8px 'Helvetica'; text-anchor: middle" x="159.8688" y="117.667706" transform="rotate(-0 159.8688 117.667706)">Akademie- und Nachwuchsligen</text>
+   </g>
+   <g id="text_5">
+    <text style="fill: #6b6b6b; font: 7.6px 'Helvetica'" transform="translate(329.5008 19.808494)">Eventdaten üblich,</text>
+    <text style="fill: #6b6b6b; font: 7.6px 'Helvetica'" transform="translate(329.5008 27.934794)">Wettmarkt vorhanden</text>
+   </g>
+   <g id="text_6">
+    <text style="fill: #111111; font: 7.6px 'Helvetica'" transform="translate(329.5008 79.907538)">keine Eventdaten, kein Wettmarkt.</text>
+    <text style="fill: #111111; font: 7.6px 'Helvetica'" transform="translate(329.5008 89.332013)">Spielberichte liegen für jedes Spiel vor:</text>
+    <text style="fill: #111111; font: 7.6px 'Helvetica'" transform="translate(329.5008 98.754113)">Ergebnis, Aufstellung, Wechsel, Tore.</text>
+    <text style="fill: #111111; font: 7.6px 'Helvetica'" transform="translate(329.5008 108.06815)">Hier arbeitet das Dashboard.</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p810791128e">
+   <rect x="7.2" y="7.2" width="424.08" height="160.776"/>
+  </clipPath>
+ </defs>
+</svg>
+<figcaption><span class="lab">Abbildung 10.</span> Abdeckung. Eventdaten und Wettquoten enden an der Grenze zum Profifußball. Spielberichte gibt es für jedes Spiel jeder Liga. Genau dort, wo die meisten Spieler unentdeckt sind, ist das Verfahren einsetzbar.</figcaption></figure>
+<p class="tabcap"><span class="lab">Tabelle 7.</span> Eventdaten und Ergebnisdaten im Vergleich.</p><div class="tbl wide"><table><thead><tr><th class="l"></th><th class="l">Eventdaten</th><th class="l">Ergebnisdaten (dieses Verfahren)</th></tr></thead><tbody><tr><td class="l">Verfügbar für</td><td class="l">Profiligen und wenige Ligen darunter</td><td class="l">jede Liga mit Spielbericht, auch Nachwuchs</td></tr><tr><td class="l">Kosten je Spiel</td><td class="l">hoch, Erfassung durch Personen oder Kameras</td><td class="l">praktisch null, Spielberichte sind öffentlich</td></tr><tr><td class="l">Misst</td><td class="l">Aktionen am Ball</td><td class="l">Wirkung auf das Ergebnis</td></tr><tr><td class="l">Stärke</td><td class="l">erklärt, wie ein Spieler spielt</td><td class="l">erfasst auch Laufwege, Stellungsspiel und Defensivarbeit, die kein Event abbilden</td></tr><tr><td class="l">Schwäche</td><td class="l">bewertet, was sichtbar und zählbar ist</td><td class="l">braucht viele Spiele und sagt nicht, warum ein Spieler wirkt</td></tr><tr><td class="l">Beste Verwendung</td><td class="l">Profil und Spielstil</td><td class="l">Vorauswahl und Rangfolge</td></tr></tbody></table></div>
+<p><strong>Der eigentliche Vorteil.</strong> Beide Datenarten ergänzen einander. Das Verfahren ersetzt nicht den Scout und nicht das
+Video. Es sagt, <em>bei wem</em> sich beides lohnt. In einem Markt mit über 15.000 Spielern ist das der Engpass:
+Niemand kann alle sehen. Abschnitt 6 zeigt, dass die Vorauswahl die Trefferquote an der Spitze etwa verdreifacht.</p>
+<div class="kern"><h4>Kernaussagen</h4><ul><li>Ergebnisdaten gibt es für jede Liga, Eventdaten nur für die oberen.</li><li>Das Verfahren erfasst auch Wirkung, die kein Event abbildet, etwa Defensivarbeit.</li><li>Es ersetzt Scout und Video nicht, sondern sagt, wo beides lohnt.</li></ul></div>
+</section><section class="main" id="grenzen"><h2>8 Grenzen</h2>
+<p>Die Ergebnisse sind belastbar genug für eine Vorauswahl. Für eine Kaufentscheidung allein reichen sie nicht. Die wichtigsten
+Einschränkungen:</p>
+<ol>
+<li><strong>Kurzer Zeitraum.</strong> Die Daten beginnen 2023/24. Der längste mögliche Rückblick umfasst zwei Jahre. Ob ein Spieler sich
+im Profifußball hält, ist damit noch nicht messbar.</li>
+<li><strong>Kleine Fallzahlen an der Spitze.</strong> Die besten 2 % sind elf bis zwölf Spieler je Fenster. Die Abbildungen zeigen den
+Unsicherheitsbereich. Die Richtung ist in beiden Fenstern gleich, die genaue Höhe ist es nicht.</li>
+<li><strong>Durchbruch ist nur teilweise sichtbar.</strong> Profiligen und Ausland sind nicht Teil der Spieldaten. Der Profistatus stammt
+aus den öffentlichen Spielerprofilen des Verbands und kann veraltet sein. Spieler, die ins Ausland gewechselt sind, zählen als kein
+Durchbruch. Die wahren Quoten liegen eher höher. Ein Abgleich mit einer Datenbank zum Profifußball ist vorbereitet.</li>
+<li><strong>Akademie-Effekt.</strong> Spieler großer Akademien haben bessere Chancen, unabhängig von ihrer Bewertung. Ein Teil der
+Trefferquote geht darauf zurück. Der Vergleich innerhalb derselben Akademie steht noch aus.</li>
+<li><strong>Zweite Mannschaften.</strong> Ein Stammplatz in der zweiten Mannschaft eines Profiklubs in der Regionalliga zählt hier als
+Durchbruch. Man kann das auch als Vorstufe werten.</li>
+<li><strong>Wenig Einsatzzeit.</strong> Unter rund 900 Minuten ist ein Wert vorläufig. Das Dashboard zeigt das als Ampel.</li>
+<li><strong>Kein Ersatz für die Mannschaftsstärke.</strong> Für die Prognose des nächsten Spiels ist eine laufend aktualisierte
+Mannschaftsstärke besser. Die Spielerwerte beantworten eine andere Frage.</li>
+</ol>
+<figure><svg xmlns:xlink="http://www.w3.org/1999/xlink" style="width:100%;height:auto" viewBox="0 0 472.84 164.168469" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-11-17T01:21:15.150779</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.9.4, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 164.168469 
+L 472.84 164.168469 
+L 472.84 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 52.72 129.168 
+L 465.64 129.168 
+L 465.64 7.2 
+L 52.72 7.2 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1">
+      <path d="M 52.72 129.168 
+L 52.72 7.2 
+" clip-path="url(#pcdc56af3ee)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_2">
+      <defs>
+       <path id="m25c4020378" d="M 0 0 
+L 0 3.5 
+" style="stroke: #444444; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#m25c4020378" x="52.72" y="129.168" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_1">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="52.72" y="142.624094" transform="rotate(-0 52.72 142.624094)">0</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_3">
+      <path d="M 131.371429 129.168 
+L 131.371429 7.2 
+" clip-path="url(#pcdc56af3ee)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_4">
+      <g>
+       <use xlink:href="#m25c4020378" x="131.371429" y="129.168" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_2">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="131.371429" y="142.624094" transform="rotate(-0 131.371429 142.624094)">20</text>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_5">
+      <path d="M 210.022857 129.168 
+L 210.022857 7.2 
+" clip-path="url(#pcdc56af3ee)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_6">
+      <g>
+       <use xlink:href="#m25c4020378" x="210.022857" y="129.168" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_3">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="210.022857" y="142.624094" transform="rotate(-0 210.022857 142.624094)">40</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_7">
+      <path d="M 288.674286 129.168 
+L 288.674286 7.2 
+" clip-path="url(#pcdc56af3ee)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_8">
+      <g>
+       <use xlink:href="#m25c4020378" x="288.674286" y="129.168" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_4">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="288.674286" y="142.624094" transform="rotate(-0 288.674286 142.624094)">60</text>
+     </g>
+    </g>
+    <g id="xtick_5">
+     <g id="line2d_9">
+      <path d="M 367.325714 129.168 
+L 367.325714 7.2 
+" clip-path="url(#pcdc56af3ee)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_10">
+      <g>
+       <use xlink:href="#m25c4020378" x="367.325714" y="129.168" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_5">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="367.325714" y="142.624094" transform="rotate(-0 367.325714 142.624094)">80</text>
+     </g>
+    </g>
+    <g id="xtick_6">
+     <g id="line2d_11">
+      <path d="M 445.977143 129.168 
+L 445.977143 7.2 
+" clip-path="url(#pcdc56af3ee)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_12">
+      <g>
+       <use xlink:href="#m25c4020378" x="445.977143" y="129.168" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_6">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: middle" x="445.977143" y="142.624094" transform="rotate(-0 445.977143 142.624094)">100</text>
+     </g>
+    </g>
+    <g id="text_7">
+     <text style="fill: #333333; font: 9px 'Helvetica'; text-anchor: middle" x="259.18" y="154.977219" transform="rotate(-0 259.18 154.977219)">Anteil mit Durchbruch in %, Punkt = gemessen, Balken = Unsicherheitsbereich</text>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_13">
+      <path d="M 52.72 12.744 
+L 465.64 12.744 
+" clip-path="url(#pcdc56af3ee)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_14">
+      <defs>
+       <path id="m9984ac47aa" d="M 0 0 
+L -3.5 0 
+" style="stroke: #444444; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#m9984ac47aa" x="52.72" y="12.744" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_8">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="45.72" y="15.972047" transform="rotate(-0 45.72 15.972047)">Top 2 %</text>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_15">
+      <path d="M 52.72 49.704 
+L 465.64 49.704 
+" clip-path="url(#pcdc56af3ee)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_16">
+      <g>
+       <use xlink:href="#m9984ac47aa" x="52.72" y="49.704" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_9">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="45.72" y="52.932047" transform="rotate(-0 45.72 52.932047)">Top 5 %</text>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_17">
+      <path d="M 52.72 86.664 
+L 465.64 86.664 
+" clip-path="url(#pcdc56af3ee)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_18">
+      <g>
+       <use xlink:href="#m9984ac47aa" x="52.72" y="86.664" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_10">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="45.72" y="89.892047" transform="rotate(-0 45.72 89.892047)">Top 10 %</text>
+     </g>
+    </g>
+    <g id="ytick_4">
+     <g id="line2d_19">
+      <path d="M 52.72 123.624 
+L 465.64 123.624 
+" clip-path="url(#pcdc56af3ee)" style="fill: none; stroke: #eeeeee; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_20">
+      <g>
+       <use xlink:href="#m9984ac47aa" x="52.72" y="123.624" style="fill: #444444; stroke: #444444; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_11">
+      <text style="fill: #444444; font: 9px 'Helvetica'; text-anchor: end" x="45.72" y="126.852047" transform="rotate(-0 45.72 126.852047)">Top 20 %</text>
+     </g>
+    </g>
+   </g>
+   <g id="line2d_21">
+    <path d="M 258.393486 12.744 
+L 425.921029 12.744 
+" clip-path="url(#pcdc56af3ee)" style="fill: none; stroke: #34b190; stroke-opacity: 0.35; stroke-width: 5; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_22">
+    <path d="M 199.404914 49.704 
+L 337.438171 49.704 
+" clip-path="url(#pcdc56af3ee)" style="fill: none; stroke: #34b190; stroke-opacity: 0.35; stroke-width: 5; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_23">
+    <path d="M 178.562286 86.664 
+L 279.236114 86.664 
+" clip-path="url(#pcdc56af3ee)" style="fill: none; stroke: #34b190; stroke-opacity: 0.35; stroke-width: 5; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_24">
+    <path d="M 173.8432 123.624 
+L 244.629486 123.624 
+" clip-path="url(#pcdc56af3ee)" style="fill: none; stroke: #34b190; stroke-opacity: 0.35; stroke-width: 5; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_25">
+    <defs>
+     <path id="m1787fe083b" d="M 0 3.5 
+C 0.928211 3.5 1.81853 3.131218 2.474874 2.474874 
+C 3.131218 1.81853 3.5 0.928211 3.5 0 
+C 3.5 -0.928211 3.131218 -1.81853 2.474874 -2.474874 
+C 1.81853 -3.131218 0.928211 -3.5 0 -3.5 
+C -0.928211 -3.5 -1.81853 -3.131218 -2.474874 -2.474874 
+C -3.131218 -1.81853 -3.5 -0.928211 -3.5 0 
+C -3.5 0.928211 -3.131218 1.81853 -2.474874 2.474874 
+C -1.81853 3.131218 -0.928211 3.5 0 3.5 
+z
+" style="stroke: #34b190"/>
+    </defs>
+    <g clip-path="url(#pcdc56af3ee)">
+     <use xlink:href="#m1787fe083b" x="374.404343" y="12.744" style="fill: #34b190; stroke: #34b190"/>
+    </g>
+   </g>
+   <g id="line2d_26">
+    <g clip-path="url(#pcdc56af3ee)">
+     <use xlink:href="#m1787fe083b" x="271.370971" y="49.704" style="fill: #34b190; stroke: #34b190"/>
+    </g>
+   </g>
+   <g id="line2d_27">
+    <g clip-path="url(#pcdc56af3ee)">
+     <use xlink:href="#m1787fe083b" x="227.326171" y="86.664" style="fill: #34b190; stroke: #34b190"/>
+    </g>
+   </g>
+   <g id="line2d_28">
+    <g clip-path="url(#pcdc56af3ee)">
+     <use xlink:href="#m1787fe083b" x="207.663314" y="123.624" style="fill: #34b190; stroke: #34b190"/>
+    </g>
+   </g>
+   <g id="line2d_29">
+    <path d="M 154.5736 129.168 
+L 154.5736 7.2 
+" clip-path="url(#pcdc56af3ee)" style="fill: none; stroke-dasharray: 4.4,3.3; stroke-dashoffset: 0; stroke: #b0492a; stroke-width: 1.1"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 52.72 129.168 
+L 52.72 7.2 
+" style="fill: none; stroke: #888888; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 52.72 129.168 
+L 465.64 129.168 
+" style="fill: none; stroke: #888888; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="text_12">
+    <text style="font: 8px 'Helvetica'; text-anchor: start" x="431.819886" y="14.779625" transform="rotate(-0 431.819886 14.779625)">9 von 11</text>
+   </g>
+   <g id="text_13">
+    <text style="font: 8px 'Helvetica'; text-anchor: start" x="343.337029" y="51.739625" transform="rotate(-0 343.337029 51.739625)">15 von 27</text>
+   </g>
+   <g id="text_14">
+    <text style="font: 8px 'Helvetica'; text-anchor: start" x="285.134971" y="88.699625" transform="rotate(-0 285.134971 88.699625)">24 von 54</text>
+   </g>
+   <g id="text_15">
+    <text style="font: 8px 'Helvetica'; text-anchor: start" x="250.528343" y="125.659625" transform="rotate(-0 250.528343 125.659625)">43 von 109</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="pcdc56af3ee">
+   <rect x="52.72" y="7.2" width="412.92" height="121.968"/>
+  </clipPath>
+ </defs>
+</svg>
+<figcaption><span class="lab">Abbildung 11.</span> Unsicherheit an der Spitze, Fenster 1. Je kleiner die Gruppe, desto breiter der Bereich, in dem die wahre Trefferquote liegt. Auch die untere Grenze der besten 2 % liegt über dem Durchschnitt aller Spieler.</figcaption></figure>
+<div class="kern"><h4>Kernaussagen</h4><ul><li>Zwei Jahre Rückblick, kleine Gruppen an der Spitze: Richtung gesichert, Höhe mit Unsicherheit.</li><li>Wechsel ins Ausland und in Profiligen sind unvollständig erfasst, die wahren Quoten liegen eher höher.</li></ul></div>
+</section><section class="main" id="literatur"><h2>9 Literatur und Quellen</h2><p>Angegeben ist jeweils, wofür eine Arbeit verwendet wird.</p><h3>Methode: Plus-Minus und Talent</h3><ol class="refs"><li><strong>Hvattum, L. M. (2019).</strong> A comprehensive review of plus-minus ratings for evaluating individual players in team sports. <i>International Journal of Computer Science in Sport</i> 18(1), 1–23. <span class="refuse">Verwendet: Überblick.</span></li><li><strong>Hvattum, L. M. (2020).</strong> Offensive and defensive plus-minus player ratings for soccer. <i>Applied Sciences</i> 10(20), 7345. <span class="refuse">Verwendet: Abschnitt 3.</span></li><li><strong>Hvattum, L. M., Kriegl, M.-A. und Čulík, M. (2023).</strong> Identifying talent with plus-minus ratings in association football. In Y. Dominicy und C. Ley (Hrsg.), <i>Statistics Meets Sports</i>, 175–200. Cambridge Scholars. <span class="refuse">Verwendet: Peak-Wert, Talent-Rang, Abschnitt 6.</span></li><li><strong>Kharrat, T., McHale, I. G. und López Peña, J. (2020).</strong> Plus-minus player ratings for soccer. <i>European Journal of Operational Research</i> 283(2), 726–736. <span class="refuse">Verwendet: Spielerwert in Punkten.</span></li><li><strong>Arntzen, H. und Hvattum, L. M. (2021).</strong> Predicting match outcomes in association football using team ratings and player ratings. <i>Statistical Modelling</i> 21(5), 449–470. <span class="refuse">Verwendet: Abschnitt 5.</span></li></ol><h3>Mannschaftsstärke, Wettquoten, Prognosegüte</h3><ol class="refs"><li><strong>Hvattum, L. M. und Arntzen, H. (2010).</strong> Using ELO ratings for match result prediction in association football. <i>International Journal of Forecasting</i> 26(3), 460–470. <span class="refuse">Verwendet: Mannschaftsstärke.</span></li><li><strong>Štrumbelj, E. (2014).</strong> On determining probability forecasts from betting odds. <i>International Journal of Forecasting</i> 30(4), 934–943. <span class="refuse">Verwendet: Quote und Wahrscheinlichkeit.</span></li><li><strong>Wunderlich, F. und Memmert, D. (2018).</strong> The betting odds rating system: Using soccer forecasts to forecast soccer. <i>PLOS ONE</i> 13(6), e0198668. <span class="refuse">Verwendet: Quoten als Maßstab.</span></li><li><strong>Epstein, E. S. (1969).</strong> A scoring system for probability forecasts of ranked categories. <i>Journal of Applied Meteorology</i> 8, 985–987. <span class="refuse">Verwendet: Prognosefehler.</span></li><li><strong>Constantinou, A. C. und Fenton, N. E. (2012).</strong> Solving the problem of inadequate scoring rules for assessing probabilistic football forecast models. <i>Journal of Quantitative Analysis in Sports</i> 8(1). <span class="refuse">Verwendet: Prognosefehler.</span></li></ol><h3>Öffentliche Quellen</h3><ol class="refs"><li><strong>Österreichischer Fußball-Bund.</strong> Öffentliche Spielberichte und Spielerprofile der Bewerbe ab der Saison 2023/24, oefb.at. <span class="refuse">Verwendet: Ergebnisse, Aufstellungen, Tor-Minuten.</span></li></ol><h3>Eigene Berechnung</h3><ol class="refs"><li><strong>Strykerlabs Football Intelligence Hub (17.11.2026).</strong> Eigene Berechnungen und Simulationen auf Basis von Spieldaten. <span class="refuse">Verwendet: alle Zahlen dieses Dokuments.</span></li></ol></section>
+<footer>Strykerlabs Football Intelligence · Bessere Spieler finden, wo es keine Eventdaten gibt, Fassung 1, 17.11.2026 · Strykerlabs GmbH · Glacisstraße 43a/1/5, 8010 Graz</footer>
+</div>
