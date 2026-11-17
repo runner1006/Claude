@@ -206,3 +206,11 @@ aus der CSV. `minute` ist der Rohtext (z. B. `"90+2"`, `"(Elfm.)"`), Anzeige wie
   der gewählten Saison aus `squads.json` (Minuten/Einsätze für genau dieses Team), Zellen über `scoutCell()` wie im
   Scouting, darunter ein XY-Diagramm mit wählbaren Achsen (`XY_PARAMS`, Standard: Einsatzminuten × Talent-Rang).
   In der Statistik führt ein Klick auf eine Vereinszeile hierher (`openTeam(team, saison)`).
+* **Navigation** (seit 2026-11-17): „Teams“ ist kein Menüpunkt mehr, die Team-Seite hängt an der Statistik
+  (Klick auf einen Verein) und zeigt nur dieses Team. Hash `#team=<Team>~<Saison>`. Profil ↔ Team sind verlinkt
+  (Teamnamen im Profil anklickbar, Spielernamen im Kader). Jeder Seitenwechsel ist ein Verlaufseintrag
+  (`history.pushState`), die Zurück-Taste des Browsers funktioniert.
+* **Farbschemata**: Dunkel (Standard), Nova-Grau (`data-theme="grey"`, neutrale Grautöne der Nova-Palette),
+  Nova-Hell (`data-theme="light"`). Umschalter in der Kopfzeile, Wahl in `localStorage["oefb-theme"]`.
+  Alle Diagrammfarben laufen über CSS-Variablen (`var(--accent)`, `var(--grid)` …), keine festen Hex-Werte im Skript.
+* Neuzeichnen nach Filteränderungen ist gegen ausbleibende Animations-Frames abgesichert (`coalesce`: rAF oder 150 ms).
