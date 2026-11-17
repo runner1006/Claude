@@ -577,7 +577,7 @@ const csvNum=v=>v==null||v===""?"":(LANG==="de"?String(v).replace(".",","):Strin
 /* "/" springt ins Suchfeld des sichtbaren Tabs */
 document.addEventListener("keydown",e=>{ if(e.key!=="/"||e.metaKey||e.ctrlKey||e.altKey)return;
   const a=document.activeElement; if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return;
-  const sec=[...document.querySelectorAll("main>section")].find(x=>!x.hidden); const inp=sec&&sec.querySelector("input[type=search]");
+  const sec=[...document.querySelectorAll("main>section")].find(x=>!x.hidden); const inp=sec&&[...sec.querySelectorAll("input[type=search]:not(.ms-search)")].find(x=>x.offsetParent!==null);
   if(inp){ e.preventDefault(); const sb=inp.closest(".sidebar"); if(sb)sb.classList.remove("collapsed"); inp.focus(); inp.select(); }
   else { const pi=document.querySelector("#tab-profile input[type=search]"); if(pi){ e.preventDefault(); switchTab("profile"); pi.focus(); pi.select(); } } });
 
@@ -717,7 +717,8 @@ function makeFilterBar(host,rows,defs,onChange,opts){
       inp.oninput=()=>{clearTimeout(tmr); tmr=setTimeout(()=>set(def,inp.value),120);};
       ctl[def.key]=()=>inp.value=""; setv[def.key]=v=>{inp.value=v;};
     } else if(def.type==="select"){
-      const opts=def.options||uniqueVals(rows,def.get);
+      let opts=def.options||uniqueVals(rows,def.get);
+      if(def.disp&&!def.options)opts=[...opts].sort((a,b)=>String(def.disp(a)).localeCompare(String(def.disp(b)),LOC()));   // nach Anzeige-Label sortieren
       const ms=multiSelectControl(opts,arr=>set(def,arr),def.disp);
       inp=ms.element; ctl[def.key]=()=>ms.clear(); setv[def.key]=v=>ms.set(Array.isArray(v)?v:[v]);
     } else if(def.type==="bool"){
@@ -903,7 +904,7 @@ function decodeScout(d){
       cat:leagueCat(comp),
       // normalisierte Felder fuer Textsuche + String-Sortierung (keine norm() je Zeile spaeter)
       nname:norm(name),nteam:ti.map(j=>nteams[j]).join(", "),ncomp:ci.map(j=>ncomps[j]).join(", "),
-      nnat:norm(r[C.nat]),npos:norm(r[C.pos]),nrole:norm(r[C.role])};
+      nnat:norm(r[C.nat]),nnatEn:norm(NAT_EN[r[C.nat]]||r[C.nat]),npos:norm(r[C.pos]),nrole:norm(r[C.role])};
   }
   // Talent-Rang je Jahrgang (fuer den Tooltip "Rang x von n"): pct_talent aufsteigend, gleiche Werte = gleicher Rang
   const byY=new Map();
@@ -974,7 +975,7 @@ function buildScoutCols(){
   const cur=state.hasSea?state.curSeason:"";
   return [
   {k:"name",l:"Name",always:true,s:"nname",flex:1.2,min:84,wrap:1},
-  {k:"nat",l:TX("Nation","Nation"),s:"nnat",flex:0.6,min:68,wrap:1},
+  {k:"nat",l:TX("Nation","Nation"),s:TX("nnat","nnatEn"),flex:0.6,min:68,wrap:1},
   {k:"team",l:TX("Verein","Club"),s:"nteam",flex:1.5,min:90,wrap:1},
   {k:"comp",l:TX("Liga","League"),s:"ncomp",flex:1.1,min:80,wrap:1,t:compLegend(),tl:TX("Bewerb","Competition")},
   {k:"by",l:TX("Jg.","Born"),num:1,w:44,t:help("by"),tl:TX("Jahrgang","Birth year")},
@@ -1088,12 +1089,13 @@ function renderScout(){
   PRESETS.forEach(grp=>{ const og=el("optgroup",{label:grp.g}); grp.items.forEach(it=>{presetBy[it.k]=it; og.append(el("option",{value:it.k},it.l));}); presetSel.append(og); });
   const presetInfo=el("div",{class:"preset-info"});
   const presetBox=el("div",{class:"preset-box"},presetSel,presetInfo);
+  if(!state.hasSea)presetBox.hidden=true;          // Vorlagen brauchen die Saisonminuten (scout.json ab v2)
   if(state.presetKey&&presetBy[state.presetKey]){ presetSel.value=state.presetKey; presetInfo.textContent=presetBy[state.presetKey].d; }
   presetSel.onchange=()=>{
     const it=presetBy[presetSel.value];
     if(!it){ state.presetKey=""; presetInfo.textContent=""; fb.setState({}); return; }
     state.sortSc={k:it.sort,dir:-1};
-    if(state.scoutCols&&scCols.some(c=>c.k===it.sort)&&!state.scoutCols.has(it.sort)){ state.scoutCols.add(it.sort); build(); }   // Sortierspalte sichtbar machen
+    if(state.scoutCols&&scCols.some(c=>c.k===it.sort)&&!state.scoutCols.has(it.sort)){ state.scoutCols.add(it.sort); if(colCb[it.sort])colCb[it.sort].checked=true; build(); }   // Sortierspalte sichtbar machen
     fb.setState(it.f); state.presetKey=it.k; presetInfo.textContent=it.d;
   };
   const fb=makeFilterBar(side,rowsAll,[
@@ -1139,9 +1141,10 @@ function renderScout(){
 
   // Spalten-Auswahl (alle sichtbar per Default, abwählbar) + CSV-Export der gefilterten Liste
   const colPop=el("div",{class:"ms-pop",style:"position:absolute;right:0;z-index:9;min-width:190px"});
+  const colCb={};                                  // Spalte -> Checkbox (Vorlagen blenden die Sortierspalte ein)
   scCols.filter(c=>!c.always).forEach(c=>{
     const row=el("label",{class:"ms-opt"});
-    const cb=el("input",{type:"checkbox"}); cb.checked=state.scoutCols.has(c.k);
+    const cb=el("input",{type:"checkbox"}); cb.checked=state.scoutCols.has(c.k); colCb[c.k]=cb;
     cb.onchange=()=>{cb.checked?state.scoutCols.add(c.k):state.scoutCols.delete(c.k); build();};
     row.append(cb,document.createTextNode(c.tl||c.l)); colPop.append(row);
   });
@@ -1183,7 +1186,8 @@ function renderScout(){
       rows.sort((a,b)=>{const va=a[k],vb=b[k],an=va==null,bn=vb==null;
         if(an&&bn)return 0; if(an)return 1; if(bn)return -1; return (va-vb)*d;});
     } else { const s=(col&&col.s)||k;
-      rows.sort((a,b)=>{const va=a[s],vb=b[s]; return (va>vb?1:va<vb?-1:0)*d;}); }
+      rows.sort((a,b)=>{const va=a[s],vb=b[s]; if(!va||!vb){ if(!va&&!vb)return 0; return va?-1:1; }   // leere Texte immer ans Ende
+        return (va>vb?1:va<vb?-1:0)*d;}); }
     fb.count.innerHTML=`<b>${nf(rows.length)}</b> / ${nf(rowsAll.length)} ${TX("Spieler","players")}`;
     lastRows=rows;
     vt.setRows(rows);
@@ -1593,10 +1597,10 @@ function renderProfileShell(){
 let _pfToken=0;
 /* Profil oeffnen: haengt NICHT an scout.json (Deep-Link #profile=<id> laedt sofort); der Name fuer den
    Ladehinweis kommt aus scout.json, falls schon da. */
-async function openProfile(pid){
+async function openProfile(pid,silent){            // silent: nur neu rendern (Sprachwechsel), ohne Tabwechsel und Scrollen
   pid=pid?String(pid):null; if(!pid)return;
   const t0=performance.now();
-  state.profileId=pid; switchTab("profile"); window.scrollTo(0,0);
+  state.profileId=pid; if(!silent){ switchTab("profile"); window.scrollTo(0,0); }
   const body=state._pfBody; if(!body)return;
   const token=++_pfToken;
   let data=state.profileCache.get(pid);
@@ -1621,7 +1625,7 @@ async function openProfile(pid){
    Fussball-Einheiten (Tore Differenz je Saison), Ampel fuer die Datenbasis, Rohfakten "wenn er am Platz ist",
    Vergleichsspieler. TALENT_CHECK = Rueckblick-Pilot (validierung/rueckblick_pilot.py, Stand 11/2026):
    Nachwuchsspieler 2023/24 nach damaligem Talent-Rang -> Anteil mit Durchbruch (Profi oder Stamm Regionalliga) bis 2026. */
-const TALENT_CHECK={n:544,base:26,bands:[[2,57,28],[10,39,140],[20,33,245],[50,23,197],[100,15,102]]};   // [bis Perzentil, Quote %, n]
+const TALENT_CHECK={n:544,base:26,bands:[[2,57,28],[10,34,112],[20,26,105],[50,23,197],[100,15,102]]};   // disjunkte Baender: [bis Perzentil, Quote %, n]
 function renderProfileSimple(wrap,c){
   const {pl,rat,bench,games,pid}=c; if(!rat||!bench||bench.total==null||rat.total==null)return;
   const row=pid?state.byId.get(pid):null, age=+pl.age||null, first=String(pl.name||"").split(" ")[0];
@@ -1675,6 +1679,9 @@ function renderProfileSimple(wrap,c){
       subs.push(TX(`Rückblick: Von Nachwuchsspielern mit dieser Einstufung haben <b>${b[1]} von 100</b> binnen zwei Jahren den Sprung geschafft (Profiliga oder Stammspieler Regionalliga). Im Schnitt aller: ${TALENT_CHECK.base} von 100. Erste Auswertung, ${TALENT_CHECK.n} Spieler.`,
                    `Looking back: of youth players rated like this, <b>${b[1]} of 100</b> made the step within two years (professional league or regular in the Regionalliga). Average of all: ${TALENT_CHECK.base} of 100. First evaluation, ${TALENT_CHECK.n} players.`)); }
     q2=qcard(TX("Wie gut kann er werden?","How good can he become?"),rk,subs);
+  } else if(age==null){
+    q2=qcard(TX("Wie gut kann er werden?","How good can he become?"),TX("Alter unbekannt","Age unknown"),
+      [TX("Im ÖFB-Profil fehlt das Geburtsjahr. Ohne Alter ist keine Aussage zum Potenzial möglich, es zählt der heutige Wert.","The ÖFB profile has no year of birth. Without the age no statement on potential is possible; the current value is what counts.")]);
   } else {
     q2=qcard(TX("Wie gut kann er werden?","How good can he become?"),
       age!=null&&age>=27?TX("Im besten Alter oder darüber","At peak age or beyond"):TX("Nahe am besten Alter","Close to peak age"),
@@ -1720,14 +1727,15 @@ function renderProfileSimple(wrap,c){
   // --- Vergleichsspieler (aehnlich bewertet, aehnliches Alter, gleicher Bereich) ---
   if(row&&state.rows.length){
     const cand=[]; for(const q of state.rows){ if(!q.id||q.id===row.id||q.total==null||q.min<900)continue;
-      if(row.hasE!==q.hasE&&row.hasJ!==q.hasJ)continue; if(row.age!=null&&q.age!=null&&Math.abs(q.age-row.age)>2)continue;
+      if(row.hasE!==q.hasE&&row.hasJ!==q.hasJ)continue; if(row.age!=null&&(q.age==null||Math.abs(q.age-row.age)>2))continue;
       cand.push([Math.abs(q.total-row.total)+Math.abs((q.off||0)-(row.off||0))*0.5,q]); }
     cand.sort((a,b)=>a[0]-b[0]);
     if(cand.length){ const list=el("div",{class:"v2-sim"});
       cand.slice(0,4).forEach(([,q])=>{ const a=el("span",{class:"plink","data-id":q.id},q.name); a.onclick=()=>openProfile(q.id);
         list.append(el("div",{},a,el("small",{},` ${q.by||""} · ${q.teamsArr[0]||""}`))); });
       box.append(el("div",{class:"v2-sec"},el("div",{class:"v2-eyebrow"},TX("Ähnlich bewertete Spieler","Similarly rated players")),
-        el("div",{class:"v2-sub"},TX("Gleiches Alter (±2 Jahre), ähnlicher Gesamtwert und ähnliches Offensiv-Profil.","Same age (±2 years), similar overall value and similar offensive profile.")),list)); }
+        el("div",{class:"v2-sub"},row.age!=null?TX("Gleiches Alter (±2 Jahre), ähnlicher Gesamtwert und ähnliches Offensiv-Profil.","Same age (±2 years), similar overall value and similar offensive profile.")
+                                              :TX("Ähnlicher Gesamtwert und ähnliches Offensiv-Profil (Alter unbekannt, daher ohne Altersvergleich).","Similar overall value and similar offensive profile (age unknown, so without age matching).")),list)); }
   }
   wrap.append(box);
 }
@@ -1961,7 +1969,7 @@ function renderProfile(wrap,data){
     Lp.push(`Name: ${pl.name}`);
     if(pl.birth_year)Lp.push(TX(`Jahrgang: ${pl.birth_year}${pl.age?` (${pl.age} J.)`:""}`,`Birth year: ${pl.birth_year}${pl.age?` (age ${pl.age})`:""}`));
     if(pl.nationality)Lp.push(`${TX("Nationalität","Nationality")}: ${natLabel(pl.nationality)}`);
-    if(pl.verband)Lp.push(`${TX("Landesverband","Regional association")}: ${pl.verband}`);
+    if(pl.verband)Lp.push(`${TX("Landesverband","Regional association")}: ${verbandLabel(pl.verband)}`);
     if(pl.club)Lp.push(`${TX("Aktueller Verein","Current club")}: ${pl.club}`);
     if(pl.first_match)Lp.push(`${TX("Erstes Spiel (ÖFB)","First match (ÖFB)")}: ${pl.first_match}`);
     if(pl.n_clubs)Lp.push(`${TX("Anzahl Vereine","Number of clubs")}: ${pl.n_clubs}`);
@@ -2183,7 +2191,7 @@ const AGE_CURVE=[[13,-0.42],[14,-0.36],[15,-0.31],[16,-0.26],[17,-0.20],[18,-0.1
 
 function drawTimeline(host){
   const W=640,H=180,L=48,R=16,x=m=>L+m/90*(W-L-R);
-  const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Spiel in Segmente geteilt"});
+  const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":TX("Spiel in Segmente geteilt","Match split into segments")});
   const lanes=[{y:44,lab:"Heim",cls:"t-off"},{y:118,lab:"Gast",cls:"t-def"}];
   // Segment-Hintergründe
   [[0,60,"S1 (0–60′)"],[60,90,"S2 (60–90′)"]].forEach(([a,b,lab],i)=>{
@@ -2218,7 +2226,7 @@ function drawMatrix(host){
   const cs=24, x0=70, y0=44, rowH=26;
   const cols=nP*2+2;                 // Off(7) + Def(7) + c + h
   const W=x0+cols*cs+70, H=y0+4*rowH+16;
-  const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Design-Matrix"});
+  const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":TX("Design-Matrix","Design matrix")});
   const cx=i=>x0+i*cs+cs/2;
   // Gruppen-Header
   const grp=(a,b,lab,col)=>{s.append(sv("text",{x:(cx(a)+cx(b))/2,y:14,"text-anchor":"middle",fill:col,"font-size":11},lab));};
@@ -2261,7 +2269,7 @@ function drawAgeCurve(host){
   const W=640,H=250,L=46,R=18,T=16,B=34;
   const xs=13,xe=40,ymin=-0.56,ymax=0.12;
   const X=a=>L+(a-xs)/(xe-xs)*(W-L-R), Y=v=>T+(ymax-v)/(ymax-ymin)*(H-T-B);
-  const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Alterskurve"});
+  const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":TX("Alterskurve","Age curve")});
   // Achsen / Nulllinie
   s.append(sv("line",{x1:L,y1:Y(0),x2:W-R,y2:Y(0),stroke:"var(--line2)","stroke-dasharray":"4 3"}));
   s.append(sv("text",{x:L-6,y:Y(0)+4,"text-anchor":"end",fill:"var(--muted)","font-size":10},TX("0,0","0.0")));
@@ -2287,7 +2295,7 @@ function drawAgeCurve(host){
 
 function drawFunnel(host){
   const W=640,H=120,N=20,L=20,R=20,gap=(W-L-R)/(N-1);
-  const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Talent-Filter"});
+  const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":TX("Talent-Filter","Talent filter")});
   s.append(sv("text",{x:L,y:16,fill:"var(--muted)","font-size":11},TX("Ein Jahrgang – nach Peak-Rating sortiert (bester links)","One birth year – sorted by peak rating (best on the left)")));
   const cut=Math.round(N*0.2);
   for(let i=0;i<N;i++){
@@ -2409,7 +2417,7 @@ function explainEN(){ return `
       <div class="note">Categories: <b>early developer</b> (identified &lt;17), <b>late developer</b> (17–20),
         <b>grassroots</b> (only in the data after 20). Result in the paper: with “peak + minutes, top 20%”
         about <b>80%</b> of the later most valuable players are identified early. → see the <b>Scouting</b> tab
-        (column “Talent%”, filter “Talent percentile”).</div>
+        (column “Talent%”, filter “Talent rank in birth year”).</div>
     </div></div>
   </div>`; }
 function renderExplain(){
@@ -2521,7 +2529,7 @@ function renderExplain(){
       <div class="note">Kategorien: <b>Early developer</b> (&lt;17 erkannt), <b>Late developer</b> (17–20),
         <b>Grassroots</b> (erst &gt;20 in den Daten). Ergebnis im Paper: mit „Peak + Minuten, Top 20 %"
         werden ~<b>80 %</b> der später wertvollsten Spieler früh erkannt. → siehe Tab <b>Scouting</b>
-        (Spalte „Talent%", Filter „Talent-Perzentil").</div>
+        (Spalte „Talent%", Filter „Talent-Rang im Jahrgang").</div>
     </div></div>
   </div>`;
   drawTimeline($("#viz-timeline"));
@@ -2562,7 +2570,7 @@ function setLang(l){
   const pid=state.profileId; state.profileId=null; $("#tab-profile").innerHTML=""; state._pfBody=null; safe(renderProfileShell);
   state.open=null; state.openDetail=null; safe(renderMatches);
   if(state.scout)setPills(state.scout);
-  if(pid){ openProfile(pid); if(active!=="profile")switchTab(active); }
+  if(pid){ openProfile(pid,active!=="profile"); if(active!=="profile"&&onShow[active])onShow[active](); }
   else if(onShow[active])onShow[active]();
 }
 document.querySelectorAll("#langSeg button").forEach(b=>b.addEventListener("click",()=>setLang(b.dataset.lang)));

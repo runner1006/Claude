@@ -82,6 +82,8 @@
     var dmax = opts.max != null ? opts.max : (n ? values[n - 1] : 100);
     if (dmax <= dmin) dmax = dmin + 1;
     var step = opts.step || 1;
+    var stepDec = (String(step).split(".")[1] || "").length;
+    function snap(v) { return +(Math.round(v / step) * step).toFixed(stepDec); }   // ohne Gleitkomma-Reste (0.35 statt 0.35000000000000003)
     var bins = opts.bins || 32;
     var fmt = opts.format || function (v) { return String(Math.round(v)); };
     var mode = (opts.scale === "quantile" && n > 1) ? "quantile"
@@ -112,6 +114,7 @@
     // ---- Achsen-Mapping Position<->Wert ----
     function toPos(v) {
       if (mode !== "quantile") {
+        if (v >= dmax) return 1;                    // auch wenn es ueber dem Minimum nur einen Wert gibt
         if (!zeroMode) return g(v);
         if (v <= dmin) return 0;
         if (v < v0) return Z;
@@ -127,6 +130,7 @@
     function toVal(p) {
       p = clamp(p, 0, 1);
       if (mode !== "quantile") {
+        if (p >= 1) return dmax;
         if (!zeroMode) return gi(p);
         if (p < Z * 0.5) return dmin;               // ganz links: Nullen eingeschlossen
         if (p <= Z) return v0;                      // knapp daneben: ab dem kleinsten Wert > Minimum
@@ -149,7 +153,7 @@
     } else {
       // Kanten im transformierten Raum gleichmaessig, dann ans Raster gesnappt und dedupliziert
       var edges = [v0], e;
-      for (i = 1; i <= bins; i++) { e = Math.round(gi(i / bins) / step) * step; if (e > edges[edges.length - 1] + step * 1e-6) edges.push(e); }
+      for (i = 1; i <= bins; i++) { e = snap(gi(i / bins)); if (e > edges[edges.length - 1] + step * 1e-6) edges.push(e); }
       if (edges[edges.length - 1] < dmax) edges.push(dmax); else edges[edges.length - 1] = dmax;
       if (edges.length < 2) edges.push(dmax + step);
       var ptr = zeroMode ? n0 : 0;
@@ -217,7 +221,7 @@
     function valueAt(clientX) {
       var r = track.getBoundingClientRect();
       var v = toVal((clientX - r.left) / r.width);
-      return clamp(Math.round(v / step) * step, dmin, dmax);
+      return clamp(snap(v), dmin, dmax);
     }
     var active = null, tmr = null;
     function emit(live) {
@@ -248,7 +252,8 @@
     track.addEventListener("pointerdown", function (e) {
       if (e.target === thumbLo || e.target === thumbHi) return;
       var v = valueAt(e.clientX);
-      if (Math.abs(v - lo) <= Math.abs(v - hi)) { lo = Math.min(v, hi); down("lo", e); }
+      var pv = toPos(v);                            // naechster Griff im Positionsraum (Achse ist nicht linear)
+      if (Math.abs(pv - toPos(lo)) <= Math.abs(pv - toPos(hi))) { lo = Math.min(v, hi); down("lo", e); }
       else { hi = Math.max(v, lo); down("hi", e); }
       render(); emit(true);
     });
@@ -258,8 +263,9 @@
       element: root,
       getRange: rangeOut,
       setRange: function (a, b) {
-        lo = (a === "" || a == null) ? dmin : clamp(+a, dmin, dmax);
-        hi = (b === "" || b == null) ? dmax : clamp(+b, dmin, dmax);
+        lo = (a === "" || a == null || isNaN(+a)) ? dmin : clamp(+a, dmin, dmax);
+        hi = (b === "" || b == null || isNaN(+b)) ? dmax : clamp(+b, dmin, dmax);
+        if (lo > hi) { var sw = lo; lo = hi; hi = sw; }
         render();
       },
       reset: function () { lo = dmin; hi = dmax; render(); }

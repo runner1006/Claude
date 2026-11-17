@@ -186,6 +186,16 @@ def build(data_dir: str, ref: dt.date) -> None:
 
     # ---- Einsaetze -> Aggregat je Spieler + Spiele je Spieler --------------------
     squads: dict = {}
+    # Zweitteams: (Aufstellungsname, Bewerb, Saison), bei denen irgendein Spielbericht "… Amat." traegt. Der Zusatz
+    # gilt dann fuer alle Einsaetze dieser Kombination, auch wenn ein einzelner Spielbericht keinen Teamnamen hat.
+    amat: set = set()
+    for r in con.execute("SELECT DISTINCT match_id, side, team FROM appearances WHERE team IS NOT NULL AND team != ''"):
+        m = M.get(r["match_id"])
+        if m is None:
+            continue
+        mt = (m["home_team"] if r["side"] == "home" else m["away_team"]) or ""
+        if mt.rstrip().endswith("Amat."):
+            amat.add((r["team"], m["competition"] or "", m["season"]))
     agg: dict[str, dict] = {}
     games: dict[str, list[dict]] = defaultdict(list)
     n_app = n_skipped = 0
@@ -202,9 +212,8 @@ def build(data_dir: str, ref: dt.date) -> None:
         comp = m["competition"] or ""
         # Anzeigename des Teams: Die Aufstellungsseite kuerzt Zweitteams ("LASK Amat." -> "LASK"). Steht im
         # Spielbericht "Amat.", wird es angehaengt, damit die zweite Mannschaft nicht wie die Profis aussieht.
-        mt = (m["home_team"] if r["side"] == "home" else m["away_team"]) or ""
         team = r["team"] or ""
-        if team and mt.rstrip().endswith("Amat.") and "Amat" not in team:
+        if team and "Amat" not in team and (team, comp, m["season"]) in amat:
             team = team.rstrip() + " Amat."
         a = agg.get(key)
         if a is None:
