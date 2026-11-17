@@ -214,3 +214,9 @@ aus der CSV. `minute` ist der Rohtext (z. B. `"90+2"`, `"(Elfm.)"`), Anzeige wie
   Nova-Hell (`data-theme="light"`). Umschalter in der Kopfzeile, Wahl in `localStorage["oefb-theme"]`.
   Alle Diagrammfarben laufen über CSS-Variablen (`var(--accent)`, `var(--grid)` …), keine festen Hex-Werte im Skript.
 * Neuzeichnen nach Filteränderungen ist gegen ausbleibende Animations-Frames abgesichert (`coalesce`: rAF oder 150 ms).
+* **Minuten im Erwachsenenfußball** (scout.json v4, seit 2026-11-17): Spalten `emin` (Minuten in Erwachsenenbewerben
+  seit 2023/24) und `ecmin` (davon laufende Saison). `min` bleibt die Summe aus Erwachsenen- und Nachwuchsligen.
+  Filter „Minuten Erwachsenenfußball“, Spalte „Min. Erw.“ (Standard aus, Erwachsenen-Vorlagen zeigen sie anstelle
+  von „Min.“), Vorlagen der Gruppe Erwachsenenfußball rechnen mit `emin`/`ecmin`. Filter „Erwachsene oder Nachwuchs“
+  hat drei Werte: `Erwachsen` (hat dort gespielt), `Jugend`, `NurErw` (nie in einer Nachwuchsliga).
+  Hintergrund: Mit „hat dort gespielt“ + Gesamtminuten standen Akademiespieler mit wenigen Erwachsenen-Minuten vorne.

@@ -455,7 +455,8 @@ let LANG=(()=>{ try{ const q=new URLSearchParams(location.search).get("lang"); i
 const TX=(de,en)=>LANG==="en"?en:de;
 const LOC=()=>TX("de-AT","en-GB");
 /* Datenwerte bleiben intern deutsch (Filterlogik, Vertrag); nur die Anzeige wird uebersetzt */
-const catLabel=c=>c==="Jugend"?TX("Nachwuchs (U15–U18)","Youth (U15–U18)"):c==="Erwachsen"?TX("Erwachsene","Senior (men's)"):c;
+const catLabel=c=>c==="Jugend"?TX("Nachwuchs (U15–U18)","Youth (U15–U18)"):c==="Erwachsen"?TX("Erwachsene","Senior (men's)")
+  :c==="NurErw"?TX("Nur Erwachsene (nie Nachwuchsliga)","Senior only (never in a youth league)"):c;
 /* Perzentil (0 = bester) als "Top x %" – verstaendlicher als "P0" */
 const topLabel=p=>+p<=50?"Top "+Math.max(1,Math.ceil(+p))+TX(" %","%"):TX("untere ","bottom ")+Math.max(1,100-Math.floor(+p))+TX(" %","%");
 /* "besser als N von 100" aus einem Perzentil (0 = bester) */
@@ -899,6 +900,7 @@ function decodeScout(d){
       min:r[C.min]||0,matches:r[C.matches]||0,goals:r[C.goals]||0,first:r[C.first],last:r[C.last],
       off:r[C.off],def:r[C.def],total:r[C.total],peak:r[C.peak],pct_talent:r[C.pct_talent],
       total_cur:C.total_cur!=null?r[C.total_cur]:null,   // zeitgewichtetes Total (scout.json v3), sonst null
+      emin:C.emin!=null?(r[C.emin]||0):null, ecmin:C.ecmin!=null?(r[C.ecmin]||0):null,   // Minuten im Erwachsenenfussball gesamt / laufende Saison (v4)
       seasonsArr:se.map(x=>seasons[x[0]]),cmin,cmatches,talRank:null,talN:null,
       hasJ:ci.some(j=>compJ[j]),hasE:ci.some(j=>!compJ[j]),aka:ci.some(j=>compAka[j]),
       cat:leagueCat(comp),
@@ -926,7 +928,7 @@ function decodeScout(d){
 const COL_HELP_DE={
   by:"Geburtsjahrgang.",
   age:"Alter am Stichtag der Datenerstellung (Geburtsdatum aus dem ÖFB-Profil; sonst Jahr minus Jahrgang).",
-  min:"Einsatzminuten gesamt über alle erfassten Saisonen (ab 2023/24) und Bewerbe; enthält auch die wenigen Spielberichte ohne Datum, die in keiner Saisonsumme stecken.",
+  min:"Einsatzminuten gesamt über alle erfassten Saisonen (ab 2023/24) und Bewerbe, also Erwachsenenfußball und Nachwuchsligen zusammen (Aufteilung per Mauszeiger auf den Wert); enthält auch die wenigen Spielberichte ohne Datum, die in keiner Saisonsumme stecken.",
   cmin:"Einsatzminuten in der laufenden Saison. Wer heuer neu viel spielt, ist hier sichtbar – das Total-Rating dagegen gewichtet alle Saisonen gleich (siehe „Total akt.“ für die zeitgewichtete Variante).",
   matches:"Einsätze gesamt (Kaderzeilen inkl. Bank ohne Minuten).",
   goals:"Tore gesamt über alle erfassten Saisonen.",
@@ -942,7 +944,7 @@ const COL_HELP_DE={
 const COL_HELP_EN={
   by:"Year of birth.",
   age:"Age on the data cut-off date (date of birth from the ÖFB profile; otherwise year minus birth year).",
-  min:"Total minutes played across all recorded seasons (from 2023/24) and competitions; also includes the few match reports without a date, which are not part of any season total.",
+  min:"Total minutes played across all recorded seasons (from 2023/24) and competitions, i.e. senior football and youth leagues combined (hover over the value for the split); also includes the few match reports without a date, which are not part of any season total.",
   cmin:"Minutes played in the current season. Players who are new and play a lot this season show up here – the Total rating weights all seasons equally (see “Total cur.” for the time-weighted variant).",
   matches:"Total appearances (squad entries incl. unused substitutes).",
   goals:"Total goals across all recorded seasons.",
@@ -974,13 +976,15 @@ let SCOUT_COLS=[];
 function buildScoutCols(){
   const cur=state.hasSea?state.curSeason:"";
   return [
-  {k:"name",l:"Name",always:true,s:"nname",flex:1.2,min:84,wrap:1},
+  {k:"name",l:"Name",always:true,s:"nname",flex:1.2,min:74,wrap:1},
   {k:"nat",l:TX("Nation","Nation"),s:TX("nnat","nnatEn"),flex:0.6,min:68,wrap:1},
   {k:"team",l:TX("Verein","Club"),s:"nteam",flex:1.5,min:90,wrap:1},
   {k:"comp",l:TX("Liga","League"),s:"ncomp",flex:1.1,min:80,wrap:1,t:compLegend(),tl:TX("Bewerb","Competition")},
   {k:"by",l:TX("Jg.","Born"),num:1,w:44,t:help("by"),tl:TX("Jahrgang","Birth year")},
   {k:"age",l:TX("Alter","Age"),num:1,w:44,t:help("age"),hide:1},   // standardmäßig aus: Geburtsjahr steht daneben, Platz für "Min. 26/27"
   {k:"min",l:"Min.",num:1,w:50,t:help("min"),tl:TX("Minuten gesamt","Minutes total")},
+  {k:"emin",l:TX("Min. Erw.","Sen. min"),num:1,w:60,hide:1,needEmin:1,tl:TX("Minuten Erwachsenenfußball","Senior football minutes"),   // standardmäßig aus; Erwachsenen-Vorlagen blenden sie ein
+   t:TX("Einsatzminuten seit 2023/24 nur im Erwachsenenfußball (Regionalliga, Landesliga, Oberliga).","Minutes since 2023/24 in senior football only (Regionalliga, Landesliga, Oberliga).")},
   {k:"cmin",l:cur?"Min. "+shortSeason(cur):TX("Saison","Season"),num:1,w:72,needSea:1,tl:TX("Minuten ","Minutes ")+cur,   // ohne Saisondaten (scout.json v1) ausgeblendet
    t:cur?TX(`Einsatzminuten in der Saison ${cur}. `,`Minutes played in season ${cur}. `)+help("cmin").replace(/^[^.]*\. /,""):help("cmin")},
   {k:"matches",l:TX("Sp.","Apps"),num:1,w:40,t:help("matches"),tl:TX("Einsätze","Appearances")},
@@ -1022,7 +1026,8 @@ function scoutCell(p,c){
         :TX("kein Einsatz in der laufenden Saison","no appearance in the current season")},(p.cmin||0)+"'");
     if(c.k==="total_cur")return el("td",{class:"num",title:p.total_cur!=null&&p.total!=null?TX("zeitgewichtet; Differenz zu Total ","time-weighted; difference to Total ")+(p.total_cur-p.total>=0?"+":"")+(p.total_cur-p.total).toFixed(3):""},fmtRat(p.total_cur));
     if(c.rat)return el("td",{class:"num",style:c.k==="total"?"font-weight:600":""},fmtRat(p[c.k]));
-    if(c.k==="min")return el("td",{class:"num"},(p.min||0)+"'");
+    if(c.k==="min")return el("td",{class:"num",title:p.emin!=null?TX(`davon Erwachsenenfußball ${p.emin}', Nachwuchs ${Math.max(0,(p.min||0)-p.emin)}'`,`of which senior football ${p.emin}', youth ${Math.max(0,(p.min||0)-p.emin)}'`):""},(p.min||0)+"'");
+    if(c.k==="emin")return el("td",{class:"num",title:p.ecmin!=null?TX(`davon ${p.ecmin}' in ${state.curSeason}`,`of which ${p.ecmin}' in ${state.curSeason}`):""},p.emin!=null?p.emin+"'":"—");
     if(c.k==="age")return el("td",{class:"num"},p.age!=null?String(p.age):"—");
     if(c.num)return el("td",{class:"num"},esc(p[c.k]));
     return el("td",{},esc(p[c.k]));
@@ -1037,7 +1042,7 @@ function renderScout(){
   SCOUT_COLS=buildScoutCols();
   const {side,content}=tabScaffold(sec);
   const rowsAll=state.rows, d=state.scout;
-  const scCols=SCOUT_COLS.filter(c=>(!c.needSea||state.hasSea)&&(!c.needCur||state.hasCur));   // ohne Saisondaten/total_cur (alte scout.json) keine Saison-/Total-akt.-Spalte
+  const scCols=SCOUT_COLS.filter(c=>(!c.needSea||state.hasSea)&&(!c.needCur||state.hasCur)&&(!c.needEmin||state.hasEmin));   // ohne Saisondaten/total_cur (alte scout.json) keine Saison-/Total-akt.-Spalte
   if(!state.scoutCols)state.scoutCols=new Set(scCols.filter(c=>!c.hide).map(c=>c.k));
   const compOpts=deSort(d.competitions), teamOpts=deSort(d.teams);
   const min=v=>v+"'", r2=v=>(+v).toFixed(2);
@@ -1047,6 +1052,7 @@ function renderScout(){
      (Stand 11/2026: je Vorlage rund 30 bis 210 Spieler; Erwachsenen-Vorlagen bewusst nur bis 18 Jahre). Alle verlangen Einsaetze in der laufenden Saison,
      sonst fuehren Spieler die Liste an, die gar nicht mehr in diesen Ligen spielen. b18 = Jahrgang der heute 18-Jaehrigen. */
   const b18=refY-18, curK=state.hasCur?"total_cur":"total";
+  const eK=state.hasEmin?"emin":"min", ecK=state.hasEmin?"ecmin":"cmin";   // ohne v4-Daten Rueckfall auf Gesamtminuten
   const PRESETS=[
     {g:TX("Akademie / Nachwuchs","Academy / youth"),items:[
       {k:"a-top",l:TX("Top-Talente (U18 und jünger)","Top talents (U18 and younger)"),sort:"peak",
@@ -1058,21 +1064,21 @@ function renderScout(){
        d:TX("Bis 18 Jahre, aber nie in der ÖFB Jugendliga der Bundesliga-Akademien: Jugendregionalliga oder schon im Erwachsenenfußball. Top 20 % des Jahrgangs, heuer im Einsatz.",
             "Aged 18 or younger but never in the ÖFB Jugendliga of the Bundesliga academies: regional youth league or already in senior football. Top 20% of their birth year, active this season.")}]},
     {g:TX("Erwachsenenfußball (≤ 18 Jahre)","Senior football (age ≤ 18)"),items:[
-      {k:"s-proven",l:TX("Bewährte Top-Spieler (≤ 18)","Proven top performers (≤ 18)"),sort:"total",
-       f:{cat:["Erwachsen"],jg:[b18,""],min:[1800,""],cmin:[270,""],tal:["",20]},
-       d:TX("18 Jahre oder jünger und schon im Erwachsenenfußball: über 1.800 Minuten seit 2023/24, Top 20 % des Jahrgangs, heuer im Einsatz. Sortiert nach Gesamt-Rating. Für ältere Spieler den Regler Jahrgang (Alter) öffnen.",
-            "Aged 18 or younger and already in senior football: more than 1,800 minutes since 2023/24, top 20% of their birth year, active this season. Sorted by overall rating. Open the year of birth (age) slider for older players.")},
-      {k:"s-form",l:TX("Auffällig in dieser Saison (≤ 18)","Standout this season (≤ 18)"),sort:curK,
-       f:{cat:["Erwachsen"],jg:[b18,""],cmin:[450,""],[curK]:[0.04,""]},
-       d:TX("18 Jahre oder jünger, heuer über 450 Minuten und in der aktuellen Form klar über dem Durchschnitt. Sortiert nach aktueller Form.",
-            "Aged 18 or younger, more than 450 minutes this season and clearly above average in recent form. Sorted by recent form.")},
-      {k:"s-new",l:TX("Neu aufgetaucht (≤ 18)","New faces (≤ 18)"),sort:curK,
-       f:{cat:["Erwachsen"],jg:[b18,""],cmin:[450,""],min:["",2000],[curK]:[0,""]},
-       d:TX("18 Jahre oder jünger, heuer über 450 Minuten, davor kaum Einsätze (höchstens 2.000 Minuten gesamt) und mindestens Durchschnitt. Spieler, die in älteren Listen noch fehlen.",
-            "Aged 18 or younger, more than 450 minutes this season, hardly any before (at most 2,000 minutes in total) and at least average. Players still missing from older lists.")}]},
+      {k:"s-proven",l:TX("Bewährte Top-Spieler (≤ 18)","Proven top performers (≤ 18)"),sort:"total",show:["emin"],
+       f:{cat:["Erwachsen"],jg:[b18,""],[eK]:[1200,""],[ecK]:[270,""],tal:["",20]},
+       d:TX("18 Jahre oder jünger mit über 1.200 Minuten im Erwachsenenfußball (Akademie-Minuten zählen nicht), Top 20 % des Jahrgangs, heuer dort im Einsatz. Sortiert nach Gesamt-Rating. Für ältere Spieler den Regler Jahrgang (Alter) öffnen.",
+            "Aged 18 or younger with more than 1,200 minutes in senior football (academy minutes do not count), top 20% of their birth year, playing there this season. Sorted by overall rating. Open the year of birth (age) slider for older players.")},
+      {k:"s-form",l:TX("Auffällig in dieser Saison (≤ 18)","Standout this season (≤ 18)"),sort:curK,show:["emin"],
+       f:{cat:["Erwachsen"],jg:[b18,""],[ecK]:[450,""],[curK]:[0.04,""]},
+       d:TX("18 Jahre oder jünger, heuer über 450 Minuten im Erwachsenenfußball und in der aktuellen Form klar über dem Durchschnitt. Sortiert nach aktueller Form.",
+            "Aged 18 or younger, more than 450 senior football minutes this season and clearly above average in recent form. Sorted by recent form.")},
+      {k:"s-new",l:TX("Neu im Erwachsenenfußball (≤ 18)","New to senior football (≤ 18)"),sort:curK,show:["emin"],
+       f:{cat:["Erwachsen"],jg:[b18,""],[ecK]:[450,""],[eK]:["",1500],[curK]:[0,""]},
+       d:TX("18 Jahre oder jünger, heuer über 450 Minuten im Erwachsenenfußball, dort insgesamt höchstens 1.500 Minuten und mindestens Durchschnitt. Zeigt, wer den Schritt gerade macht, auch aus einer Akademie.",
+            "Aged 18 or younger, more than 450 senior football minutes this season, at most 1,500 there in total and at least average. Shows who is making the step right now, including from an academy.")}]},
     {g:TX("Spielertyp","Player type"),items:[
       {k:"t-goals",l:TX("Torjäger","Goal scorers"),sort:"goals",
-       f:{cat:["Erwachsen"],goals:[30,""],cmin:[450,""]},
+       f:{cat:["Erwachsen"],goals:[30,""],[ecK]:[450,""]},
        d:TX("Mindestens 30 Tore seit 2023/24 im Erwachsenenfußball und heuer im Einsatz. Sortiert nach Toren.","At least 30 goals since 2023/24 in senior football and active this season. Sorted by goals.")},
       {k:"t-off",l:TX("Offensiv prägend","Offensive difference-makers"),sort:"off",
        f:{off:[0.12,""],total:[0.05,""],min:[1800,""],cmin:[450,""]},
@@ -1095,20 +1101,26 @@ function renderScout(){
     const it=presetBy[presetSel.value];
     if(!it){ state.presetKey=""; presetInfo.textContent=""; fb.setState({}); return; }
     state.sortSc={k:it.sort,dir:-1};
-    if(state.scoutCols&&scCols.some(c=>c.k===it.sort)&&!state.scoutCols.has(it.sort)){ state.scoutCols.add(it.sort); if(colCb[it.sort])colCb[it.sort].checked=true; build(); }   // Sortierspalte sichtbar machen
+    if(state.scoutCols&&scCols.some(c=>c.k===it.sort)&&!state.scoutCols.has(it.sort)){ state.scoutCols.add(it.sort); if(colCb[it.sort])colCb[it.sort].checked=true; build(); }
+    // Erwachsenen-Vorlagen zeigen die Erwachsenen-Minuten anstelle der Gesamtminuten (gleiche Breite, kein Seitwaerts-Scrollen)
+    let chg=false; (it.show||[]).forEach(k=>{ if(scCols.some(c=>c.k===k)&&!state.scoutCols.has(k)){ state.scoutCols.add(k); if(colCb[k])colCb[k].checked=true; chg=true; } });
+    if(chg&&(it.show||[]).includes("emin")&&state.scoutCols.has("min")&&it.sort!=="min"){ state.scoutCols.delete("min"); if(colCb.min)colCb.min.checked=false; }
+    if(chg)build();   // Sortierspalte sichtbar machen
     fb.setState(it.f); state.presetKey=it.k; presetInfo.textContent=it.d;
   };
   const fb=makeFilterBar(side,rowsAll,[
     {type:"section",key:"sc-main",label:TX("Hauptfilter","Main filters")},
-    {key:"cat",type:"select",label:TX("Erwachsene oder Nachwuchs","Senior or youth football"),options:["Erwachsen","Jugend"],disp:catLabel,
-      pred:v=>{const st=new Set(Array.isArray(v)?v:[v]), e=st.has("Erwachsen"), j=st.has("Jugend"); return p=>(e&&p.hasE)||(j&&p.hasJ);},
-      help:TX("In welchem Bereich der Spieler seit 2023/24 eingesetzt wurde. Nachwuchs = ÖFB Jugendliga und Jugendregionalliga (U15, U16, U18). Erwachsene = Regionalliga, Landesliga, Oberliga. Wer in beiden gespielt hat, erscheint bei beiden.",
-              "Where the player has played since 2023/24. Youth = ÖFB youth league and regional youth league (U15, U16, U18). Senior = Regionalliga, Landesliga, Oberliga (men's 3rd to 5th tier). Players with appearances in both show up under both.")},
+    {key:"cat",type:"select",label:TX("Erwachsene oder Nachwuchs","Senior or youth football"),options:["Erwachsen","Jugend","NurErw"],disp:catLabel,
+      pred:v=>{const st=new Set(Array.isArray(v)?v:[v]), e=st.has("Erwachsen"), j=st.has("Jugend"), n=st.has("NurErw"); return p=>(e&&p.hasE)||(j&&p.hasJ)||(n&&p.hasE&&!p.hasJ);},
+      help:TX("In welchem Bereich der Spieler seit 2023/24 eingesetzt wurde. Erwachsene = hat in Regionalliga, Landesliga oder Oberliga gespielt, auch wenn er daneben in einer Nachwuchsliga war. Nachwuchs = ÖFB Jugendliga oder Jugendregionalliga (U15, U16, U18). Nur Erwachsene = nie in einer dieser Nachwuchsligen. Achtung: Die Gesamtminuten enthalten immer beide Bereiche; für den Erwachsenenfußball allein den Filter „Minuten Erwachsenenfußball“ nutzen.",
+              "Where the player has played since 2023/24. Senior = has played in Regionalliga, Landesliga or Oberliga, even if he also played in a youth league. Youth = ÖFB youth league or regional youth league (U15, U16, U18). Senior only = never in one of these youth leagues. Note: total minutes always include both areas; for senior football alone use the filter “Senior football minutes”.")},
     {key:"jg",type:"range",label:TX("Jahrgang (Alter)","Year of birth (age)"),get:p=>p.by,scale:"quantile",
       format:v=>`${v} (${refY-v}${TX(" J."," y")})`,chipFormat:v=>v,chipLabel:TX("Jahrgang","Born"),
       help:TX(`Ein Filter für beides: Der Regler läuft über das Geburtsjahr, daneben steht das Alter im Jahr ${refY}. In die Felder das Geburtsjahr eintippen.`,
               `One filter for both: the slider runs over the year of birth, with the age in ${refY} shown next to it. Type the year of birth into the fields.`)},
-    {key:"min",type:"range",label:TX("Einsatzminuten seit 2023/24","Minutes played since 2023/24"),get:p=>p.min,format:min,scale:"log",help:help("min")},
+    ...(state.hasEmin?[{key:"emin",type:"range",label:TX("Minuten Erwachsenenfußball seit 2023/24","Senior football minutes since 2023/24"),get:p=>p.emin,format:min,scale:"auto",
+      help:TX("Nur Minuten in Regionalliga, Landesliga und Oberliga. Minuten aus Jugendliga und Jugendregionalliga zählen hier nicht.","Minutes in Regionalliga, Landesliga and Oberliga only. Minutes from the youth leagues do not count here.")}]:[]),
+    {key:"min",type:"range",label:TX("Einsatzminuten seit 2023/24 (alle Bewerbe)","Minutes played since 2023/24 (all competitions)"),get:p=>p.min,format:min,scale:"log",help:help("min")},
     ...(state.hasSea?[{key:"cmin",type:"range",label:TX("Einsatzminuten ","Minutes played ")+cur,get:p=>p.cmin,format:min,scale:"log",
       help:TX("Minuten nur in der laufenden Saison. Damit findet man Spieler, die heuer neu viel spielen.","Minutes in the current season only. Use it to find players who are new and play a lot this season.")}]:[]),
     {key:"tal",type:"range",label:TX("Talent-Rang im Jahrgang (Top-%)","Talent rank in birth year (top %)"),help:help("pct_talent"),get:p=>p.pct_talent,
@@ -1131,6 +1143,8 @@ function renderScout(){
       help:TX("Startelf-Spieler = mindestens einmal von Beginn an gespielt. Nur Einwechsel/Bank = nie in der Startelf.","Has started = in the starting XI at least once. Substitute only = never in the starting XI.")},
     {key:"cap",type:"bool",label:TX("War schon Kapitän","Has been captain"),get:p=>p.cap,
       help:TX("Ja = mindestens einmal als Kapitän im Spielbericht.","Yes = listed as captain in at least one match report.")},
+    ...(state.hasEmin&&state.hasSea?[{key:"ecmin",type:"range",label:TX("Minuten Erwachsenenfußball ","Senior football minutes ")+cur,get:p=>p.ecmin,format:min,scale:"auto",
+      help:TX("Minuten im Erwachsenenfußball nur in der laufenden Saison.","Senior football minutes in the current season only.")}]:[]),
     {key:"goals",type:"range",label:TX("Tore seit 2023/24","Goals since 2023/24"),get:p=>p.goals,scale:"log"},
     {key:"total",type:"range",label:TX("Gesamt-Rating (Total)","Overall rating (Total)"),help:help("total"),get:p=>p.total,step:0.01,format:r2},
     ...(state.hasCur?[{key:"total_cur",type:"range",label:TX("Gesamt-Rating aktuell (zeitgewichtet)","Overall rating, recent form (time-weighted)"),help:help("total_cur"),get:p=>p.total_cur,step:0.01,format:r2}]:[]),
@@ -2600,6 +2614,7 @@ async function loadScout(){
     const t1=performance.now();
     state.scout=d; state.rows=decodeScout(d); state.curSeason=curSeason(d);
     state.hasSea=!!(state.curSeason&&d.cols.includes("sea"));   // Saisondaten erst ab scout.json v2
+    state.hasEmin=d.cols.includes("emin");                       // Erwachsenen-Minuten erst ab scout.json v4
     state.hasCur=d.cols.includes("total_cur");                   // zeitgewichtetes Total erst ab scout.json v3
     state.byId=new Map(); for(const r of state.rows)if(r.id)state.byId.set(r.id,r);
     setPerf("decode",performance.now()-t1);

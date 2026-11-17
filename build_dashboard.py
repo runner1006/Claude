@@ -36,7 +36,7 @@ from collections import defaultdict
 
 import numpy as np
 
-VERSION = 3   # v3: Spalte total_cur (zeitgewichtetes Total-Rating) in scout.json und Profil
+VERSION = 4   # v3: total_cur; v4: emin/ecmin (Minuten im Erwachsenenfussball gesamt / laufende Saison) in scout.json
 MINM = 270      # Mindestminuten fuer Rating-Benchmark und Kohorten-Referenz
 COHMIN = 20     # Mindestanzahl Kohorten-Spieler fuer Referenzlinien
 
@@ -220,10 +220,14 @@ def build(data_dir: str, ref: dt.date) -> None:
             a = agg[key] = {"id": pid, "name": r["name"], "teams": {}, "comps": {},
                             "pos": {}, "role": r["role"] or "", "cap": False,
                             "min": 0, "matches": 0, "goals": 0, "first": None, "last": None,
-                            "sea": {}}
+                            "sea": {}, "emin": 0, "esea": {}}
         a["matches"] += 1
         a["min"] += r["minutes"] or 0
         a["goals"] += r["goals"] or 0
+        if league_cat(comp) != "Jugend":      # Minuten im Erwachsenenfussball getrennt (Filter/Vorlagen)
+            a["emin"] += r["minutes"] or 0
+            if m["season"]:
+                a["esea"][m["season"]] = a["esea"].get(m["season"], 0) + (r["minutes"] or 0)
         if m["season"]:                       # Minuten/Einsaetze je Saison (Saisonfilter im Scouting)
             se = a["sea"].setdefault(m["season"], [0, 0])
             se[0] += r["minutes"] or 0
@@ -274,7 +278,7 @@ def build(data_dir: str, ref: dt.date) -> None:
     cols = ["id", "name", "teams", "comps", "by", "age", "pos", "role", "nat", "verband",
             "cap", "min", "matches", "goals", "first", "last",
             "off", "def", "total", "peak", "pct_talent", "pct_total", "pct_peak",
-            "r_min", "r_matches", "sea", "total_cur"]
+            "r_min", "r_matches", "sea", "total_cur", "emin", "ecmin"]
     seasons = sorted({s for a in agg.values() for s in a["sea"]})
     six = {s: i for i, s in enumerate(seasons)}
     rows = []
@@ -297,7 +301,8 @@ def build(data_dir: str, ref: dt.date) -> None:
                      r3(rt["pct_peak"]) if rt else None,
                      rt["minutes"] if rt else None, rt["matches"] if rt else None,
                      [[six[s], v[0], v[1]] for s, v in sorted(a["sea"].items())],
-                     r3(rt.get("total_cur")) if rt else None])
+                     r3(rt.get("total_cur")) if rt else None,
+                     a["emin"], a["esea"].get(seasons[-1], 0) if seasons else 0])
     # Team-/Bewerbsnamen als Woerterbuch (Index statt wiederholter Strings -> ~40 % kleiner)
     team_names = sorted({t for r in rows for t in r[2]}, key=str.casefold)
     comp_names = sorted({c for r in rows for c in r[3]}, key=str.casefold)
