@@ -6,58 +6,72 @@ function esc(s) {
 }
 
 const CSS = `
-:root{--bg:#fbf6ee;--karte:#fff;--text:#2b1a14;--leise:#7a665c;--rot:#a3182b;--rot2:#7d1020;--gruen:#1f6b3a;--rand:#e6d9c8;--warn:#b25c00}
+:root{--bg:#fff;--karte:#eef3ff;--text:#00245d;--leise:#4d618a;--blau:#69f;--orange:#ff8229;--sand:#ecc991;--gruen:#1f7a45;--rand:#d3d9e8;--rot:#b3261e}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--text);font:17px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-main{max-width:34rem;margin:0 auto;padding:20px 16px 48px}
+body{margin:0;background:var(--bg);color:var(--text);font:17px/1.5 RationalText,"Avenir Next","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;overflow-x:hidden}
+.kopf{position:relative;max-width:34rem;margin:0 auto;padding:22px 16px 0}
+.kopf.breit{max-width:64rem}
+.kopf img{display:block;height:26px;width:auto}
+.kopf span{display:block;margin-top:6px;font-size:.85rem;font-weight:600;letter-spacing:.04em;color:var(--leise)}
+.deko{position:absolute;z-index:-1;top:0;left:0;right:0;height:200px;overflow:hidden;pointer-events:none}
+.welle{position:absolute;top:-130px;right:-110px;width:240px;height:auto}
+main{max-width:34rem;margin:0 auto;padding:18px 16px 48px}
 main.breit{max-width:64rem}
-h1{font-size:1.6rem;line-height:1.2;margin:.2em 0 .4em}
-h2{font-size:1.15rem;margin:1.6em 0 .5em}
+h1,h2,.gewinner,.gross{font-family:Opposit,"Arial Black","Avenir Next Heavy","Segoe UI Black","Helvetica Neue",Arial,sans-serif;font-weight:800}
+h1{font-size:2rem;line-height:1.08;margin:.5em 0 .4em;letter-spacing:.005em}
+h2{font-size:1.25rem;line-height:1.15;margin:1.8em 0 .5em;letter-spacing:.03em}
 p{margin:.5em 0}
 .leise{color:var(--leise);font-size:.92rem}
-.karte{background:var(--karte);border:1px solid var(--rand);border-radius:14px;padding:18px;margin:14px 0}
+.karte{background:var(--karte);border-radius:24px;padding:20px;margin:16px 0}
 label{display:block;font-weight:600;margin:14px 0 4px}
-input[type=text],input[type=email],input[type=tel],input[type=password],input[type=number]{width:100%;font:inherit;padding:13px 12px;border:1.5px solid #cdbba6;border-radius:10px;background:#fff;color:inherit}
-input:focus{outline:3px solid #e9b9c0;border-color:var(--rot)}
+input[type=text],input[type=email],input[type=tel],input[type=password],input[type=number]{width:100%;font:inherit;padding:13px 16px;border:1.5px solid var(--rand);border-radius:14px;background:#fff;color:inherit}
+input::placeholder{color:#9ca3af}
+input:focus{outline:3px solid #c2d6ff;border-color:var(--blau)}
 .haken{display:flex;gap:12px;align-items:flex-start;font-weight:400;margin-top:18px}
-.haken input{width:26px;height:26px;flex:none;margin-top:1px;accent-color:var(--rot)}
-button,.knopf{font:inherit;font-weight:700;border:0;border-radius:12px;padding:15px 18px;background:var(--rot);color:#fff;cursor:pointer;width:100%;margin-top:18px;display:inline-block;text-align:center;text-decoration:none}
-button:active{background:var(--rot2)}
-button:disabled{opacity:.55;cursor:default}
-button.zweit{background:#fff;color:var(--rot);border:1.5px solid var(--rot)}
-button.klein{width:auto;padding:8px 12px;margin:0;font-size:.9rem}
+.haken input{width:26px;height:26px;flex:none;margin-top:1px;accent-color:var(--text)}
+button,.knopf{font:inherit;font-size:1.15rem;font-weight:700;border:0;border-radius:9999px;padding:14px 28px;background:var(--blau);color:#fff;cursor:pointer;width:100%;margin-top:18px;display:inline-block;text-align:center;text-decoration:none;transition:background-color .3s ease-in-out}
+button:hover,.knopf:hover,button:active{background:var(--orange)}
+button:disabled{opacity:.55;cursor:default;background:var(--blau)}
+button.zweit{background:none;color:var(--text);border-radius:0;padding:12px 0;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:8px}
+button.zweit:hover{background:none;color:var(--blau)}
+button.klein{width:auto;padding:8px 16px;margin:0;font-size:.92rem}
+button.klein.zweit{padding:8px 0}
 .fehler{color:var(--rot);font-weight:600;margin-top:12px;min-height:1.2em}
 .ok{color:var(--gruen)}
 .gross{font-size:3.2rem;line-height:1;margin:.2em 0}
 .mitte{text-align:center}
 .wahl{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.wahl button{margin:0;padding:26px 8px;font-size:1.25rem}
+.wahl button{margin:0;padding:26px 8px;font-size:1.3rem;border-radius:28px;background:var(--text)}
+.wahl button:hover,.wahl button:active{background:var(--blau)}
 .wahl small{display:block;font-weight:400;opacity:.9}
-.qr{background:#fff;padding:10px;border-radius:12px;max-width:21rem;margin:10px auto}
+.qr{background:#fff;padding:12px;border-radius:24px;border:3px solid var(--blau);max-width:21rem;margin:12px auto}
 .qr svg{display:block;width:100%;height:auto}
 table{border-collapse:collapse;width:100%;font-size:.92rem}
-th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--rand);vertical-align:top}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--rand);vertical-align:top}
 .rollen{overflow-x:auto}
 .kacheln{display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));gap:10px}
-.kachel{background:var(--karte);border:1px solid var(--rand);border-radius:12px;padding:12px}
-.kachel b{display:block;font-size:1.6rem}
+.kachel{background:var(--karte);border-radius:20px;padding:14px 16px}
+.kachel b{display:block;font-size:1.7rem;font-family:Opposit,"Arial Black",Arial,sans-serif}
 .reihe{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
 .reihe>*{flex:1 1 9rem}
-.gewinner{font-size:2.2rem;font-weight:800;line-height:1.15;margin:.3em 0}
-a{color:var(--rot)}
-.marke{font-weight:800;color:var(--rot);letter-spacing:.02em}
+.gewinner{font-size:2.6rem;line-height:1.1;margin:.3em 0;color:var(--orange)}
+a{color:var(--text);text-decoration-thickness:2px;text-underline-offset:4px}
+a:hover{color:var(--blau)}
+a.knopf,a.knopf:hover{color:#fff}
 @media print{
-  body{background:#fff} .nichtdrucken{display:none!important} main{max-width:none;padding:0}
+  .nichtdrucken,.deko{display:none!important} main{max-width:none;padding:0} .kopf{display:none}
 }
 .bogen{display:grid;grid-template-columns:repeat(3,1fr);gap:0}
-.los{border:1px dashed #999;padding:10px 10px 12px;text-align:center;break-inside:avoid;page-break-inside:avoid}
+.los{border:1px dashed #999;padding:10px 10px 12px;text-align:center;break-inside:avoid;page-break-inside:avoid;color:#00245d}
+.los img{height:11px;width:auto;display:block;margin:0 auto 4px}
 .los svg{width:70%;height:auto;display:block;margin:4px auto}
 .los b{font-size:1.1rem}
-.los small{display:block;font-size:.72rem;color:#444}
+.los small{display:block;font-size:.72rem}
 `;
 
-function seite(titel, inhalt, { breit = false, script = '' } = {}) {
+function seite(titel, inhalt, { breit = false, script = '', cfg = null } = {}) {
+  const zusatz = cfg && cfg.veranstalter ? `<span>${esc(cfg.veranstalter)}</span>` : '';
   return `<!doctype html>
 <html lang="de">
 <head>
@@ -68,6 +82,10 @@ function seite(titel, inhalt, { breit = false, script = '' } = {}) {
 <style>${CSS}</style>
 </head>
 <body>
+<div class="deko"><svg class="welle" viewBox="0 0 260 260" aria-hidden="true"><path fill="#69f" opacity=".8" d="M40 20c58-34 150-22 190 30 38 50 36 122-8 164-40 38-104 40-150 14C22 200-8 150 4 98 10 66 20 34 40 20Z"/></svg></div>
+<header class="kopf${breit ? ' breit' : ''}">
+<a href="/"><img src="/logo.png" alt="Sindbad" width="139" height="26"></a>${zusatz}
+</header>
 <main${breit ? ' class="breit"' : ''}>
 ${inhalt}
 </main>
@@ -79,23 +97,23 @@ ${script ? `<script>${script}</script>` : ''}
 function start(cfg) {
   return seite(
     'Glühwein-Verlosung',
-    `<p class="marke">${esc(cfg.veranstalter)}</p>
-<h1>Glühwein-Verlosung</h1>
+    `<h1>Glühwein-Verlosung</h1>
 <div class="karte">
 <p>Lose gibt es direkt bei uns am Stand: <b>1 Los um € 5,–</b> oder <b>5 Lose um € 20,–</b>.</p>
 <p>Nach dem Kauf bekommst du einen QR-Code. Damit trägst du dich in wenigen Sekunden für die Verlosung ein.</p>
 </div>
-<p class="leise"><a href="/datenschutz">Datenschutz</a></p>`
+<p class="leise"><a href="/datenschutz">Datenschutz</a></p>`,
+    { cfg }
   );
 }
 
 function hinweis(titel, text, cfg) {
   return seite(
     titel,
-    `<p class="marke">${esc(cfg.veranstalter)}</p>
-<h1>${esc(titel)}</h1>
+    `<h1>${esc(titel)}</h1>
 <div class="karte"><p>${esc(text)}</p></div>
-<p class="leise"><a href="/datenschutz">Datenschutz</a></p>`
+<p class="leise"><a href="/datenschutz">Datenschutz</a></p>`,
+    { cfg }
   );
 }
 
@@ -104,8 +122,7 @@ function formular(code, cfg) {
   const mal = code.lose === 1 ? 'einmal' : `${code.lose}-mal`;
   return seite(
     'Für die Verlosung eintragen',
-    `<p class="marke">${esc(cfg.veranstalter)}</p>
-<div id="eingabe">
+    `<div id="eingabe">
 <h1>Danke für deinen Kauf!</h1>
 <p>Du hast <b>${lose}</b> und nimmst damit <b>${mal}</b> an der Verlosung teil. Trag dich noch kurz ein, damit wir dich im Gewinnfall erreichen.</p>
 <form id="f" class="karte" novalidate>
@@ -133,6 +150,7 @@ function formular(code, cfg) {
   <p class="leise">Die Gewinner:innen werden am letzten Tag des Standbetriebs gezogen und von uns verständigt. Viel Glück!</p>
 </div>`,
     {
+      cfg,
       script: `
 var f=document.getElementById('f'),fehler=document.getElementById('fehler'),knopf=document.getElementById('senden');
 f.addEventListener('submit',function(e){
@@ -164,11 +182,10 @@ f.addEventListener('submit',function(e){
 function datenschutz(cfg) {
   return seite(
     'Datenschutzerklärung',
-    `<p class="marke">${esc(cfg.veranstalter)}</p>
-<h1>Datenschutzerklärung zur Verlosung</h1>
+    `<h1>Datenschutzerklärung zur Verlosung</h1>
 <div class="karte">
 <h2 style="margin-top:0">Verantwortlich</h2>
-<p>${esc(cfg.veranstalter)}<br>Kontakt: <a href="mailto:${esc(cfg.kontakt)}">${esc(cfg.kontakt)}</a></p>
+<p>${esc(cfg.rechtstraeger)}<br>Kontakt: <a href="mailto:${esc(cfg.kontakt)}">${esc(cfg.kontakt)}</a></p>
 <h2>Welche Daten wir erheben</h2>
 <p>Vorname, Nachname, E-Mail-Adresse, Telefonnummer, die Anzahl deiner Lose sowie den Zeitpunkt deiner Eintragung und Einwilligung.</p>
 <h2>Wofür wir die Daten verwenden</h2>
@@ -179,7 +196,8 @@ function datenschutz(cfg) {
 <p>Wir löschen alle Daten spätestens vier Wochen nach der Ziehung und der Übergabe der Gewinne.</p>
 <h2>Deine Rechte</h2>
 <p>Du kannst jederzeit Auskunft, Berichtigung oder Löschung verlangen und deine Einwilligung widerrufen (dann nimmst du nicht mehr an der Verlosung teil). Schreib uns dazu an die oben genannte Adresse. Außerdem hast du das Recht auf Beschwerde bei der Österreichischen Datenschutzbehörde (dsb.gv.at).</p>
-</div>`
+</div>`,
+    { cfg }
   );
 }
 
@@ -366,6 +384,7 @@ function druckbogen(charge, karten, cfg) {
   const k = karten
     .map(
       (c) => `<div class="los">
+<img src="/logo.png" alt="Sindbad">
 <b>${c.lose === 1 ? '1 Los' : `${c.lose} Lose`}</b>
 ${c.svg}
 <small>${esc(cfg.veranstalter)} · Glühwein-Verlosung</small>

@@ -5,6 +5,7 @@ const path = require('node:path');
 const QRCode = require('qrcode');
 const D = require('./db');
 const V = require('./views');
+const LOGO = require('node:fs').readFileSync(path.join(__dirname, 'logo.png'));
 
 function konfiguration(env = process.env) {
   const zufall = () => crypto.randomBytes(9).toString('base64url');
@@ -14,8 +15,9 @@ function konfiguration(env = process.env) {
     standPin: env.STAND_PIN || '',
     adminPasswort: env.ADMIN_PASSWORD || '',
     publicUrl: (env.PUBLIC_URL || '').replace(/\/+$/, ''),
-    veranstalter: env.VERANSTALTER || 'Glühweinstand',
-    kontakt: env.KONTAKT_EMAIL || 'kontakt@example.at',
+    veranstalter: env.VERANSTALTER || 'Sindbad Graz',
+    rechtstraeger: env.RECHTSTRAEGER || 'Sindbad – Mentoring für Jugendliche Österreich (ZVR 409303455), Standort Graz, Villefortgasse 11, 8010 Graz',
+    kontakt: env.KONTAKT_EMAIL || 'graz@sindbad.co.at',
     erzeugt: [],
   };
   // Keine unsicheren Standardwerte: fehlende Zugangsdaten werden zufällig erzeugt und im Log ausgegeben.
@@ -157,6 +159,7 @@ function erstelleApp(cfg, db) {
     // ---------- Öffentlich ----------
     if (m === 'GET' && pfad === '/') return html(res, V.start(cfg));
     if (m === 'GET' && pfad === '/datenschutz') return html(res, V.datenschutz(cfg));
+    if (m === 'GET' && pfad === '/logo.png') return sende(res, 200, 'image/png', LOGO, { 'Cache-Control': 'public, max-age=86400' });
     if (m === 'GET' && pfad === '/healthz') return sende(res, 200, 'text/plain', 'ok');
 
     if (m === 'GET' && pfad.startsWith('/l/')) {
