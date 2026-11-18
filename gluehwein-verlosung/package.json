@@ -1,0 +1,15 @@
+{
+  "name": "gluehwein-verlosung",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Losverkauf und Verlosung für den Glühweinstand: Einmal-Codes per QR, Teilnahmeformular, Ziehung",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=22.13" },
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  }
+}
